@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.17 2001/10/05 08:33:44 andrew Exp $
+/* $Id: glsnake.c,v 1.18 2001/10/05 08:41:35 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -882,16 +882,18 @@ void keyboard(unsigned char c, int x, int y) {
 	int i;
 	
 	switch (c) {
-		case 27:
+		case 27:  /* ESC */
 		case 'q':
 			exit(0);
 			break;
 		case 'e':
 			explode += EXPLODE_INCREMENT;
+			glutPostRedisplay();
 			break;
 		case 'E':
 			explode -= EXPLODE_INCREMENT;
 			if (explode < 0.0) explode = 0.0;
+			glutPostRedisplay();
 			break;
 		case '.':
 			/* next model */
@@ -925,6 +927,7 @@ void keyboard(unsigned char c, int x, int y) {
 				glEnable(GL_LIGHTING);
 			wireframe = 0;
 			shiny = 1 - shiny;
+			glutPostRedisplay();
 			break;
 		case 'w':
 			wireframe = 1 - wireframe;
@@ -932,6 +935,7 @@ void keyboard(unsigned char c, int x, int y) {
 				glDisable(GL_LIGHTING);
 			else
 				glEnable(GL_LIGHTING);
+			glutPostRedisplay();
 			break;
 		case 'p':
 			if (paused) {
@@ -1033,15 +1037,15 @@ void idol(void) {
 	int i;
 	struct timeb current_time;
 
-
-	/* ftime is winDOS compatible */
-	ftime(&current_time);
-
-	/* pause the model */
+	/* Do nothing to the model if we are paused */
 	if (paused) {
+		/* Avoid busy waiting when nothing is changing */
 		quick_sleep();
 		return;
 	}
+	/* ftime is winDOS compatible */
+	ftime(&current_time);
+
 	/* <spiv> Well, ftime gives time with millisecond resolution.
 	 * <Jaq> if current time is exactly equal to last iteration, 
 	 *       then don't do this block
