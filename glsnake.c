@@ -1765,12 +1765,18 @@ float morph_percent() {
 	for (i = 0; i < NODE_COUNT - 1; i++) {
 	    float rot, ang_diff;
 
-	    /* FIXME: this is incorrect for when the angles span the 360
-	     * degree point */
+	    /* work out the maximum rotation this node has to go through
+	     * from the previous to the next model, taking into account that
+	     * the snake always morphs through the smaller angle */
 	    rot = fabs(model[glc->prev_model].node[i] -
 		       model[glc->next_model].node[i]);
+	    if (rot > 180.0) rot = 180.0 - rot;
+	    /* work out the difference between the current position and the
+	     * target */
 	    ang_diff = fabs(glc->node[i] -
 			    model[glc->next_model].node[i]);
+	    if (ang_diff > 180.0) ang_diff = 180 - ang_diff;
+	    /* if it's the biggest so far, record it */
 	    if (rot > rot_max) rot_max = rot;
 	    if (ang_diff > ang_diff_max) ang_diff_max = ang_diff;
 	}
