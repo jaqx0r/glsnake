@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_PREREQ(2.50)
-AC_REVISION($Revision: 1.3 $)
+AC_REVISION($Revision: 1.4 $)
 
 AM_INIT_AUTOMAKE(glsnake, 0.8.2, jaq@spacepants.org)
 AC_CONFIG_SRCDIR(glsnake.c)
@@ -13,13 +13,85 @@ AM_MAINTAINER_MODE
 AC_PROG_CC
 
 # Checks for libraries.
-AC_CHECK_LIB(glut, glutInit,,AC_MSG_ERROR(GLUT library not found!))
+
+dnl --------------
+dnl check for GLUT
+dnl --------------
+HAVE_GLUT=no
+
+AC_ARG_WITH(glut,
+	AC_HELP_STRING([--with-glut(=DIR)],
+		[use GLUT (optionally, found in DIR)]),
+	dnl argument was given, check for --without
+	if test "x${with_glut}" != xno ; then
+		ac_with_glut=yes
+	else
+		ac_with_glut=no
+	fi,
+	ac_with_glut=auto
+)
+
+if test "x${ac_with_glut}" != xno ; then
+	# --with-glut was explicitly given, so look in that dir
+	if test "x${ac_with_glut}" != xauto ; then
+		GLUT_CFLAGS="$GLUT_CFLAGS -I$withval/include"
+		GLUT_LIBS="$GLUT_LIBS -L$withval/lib"
+	fi
+
+	# set CPPFLAGS for the coming tests
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $GLUT_CFLAGS"
+	
+	# test for the library first, for people who may have the libs
+	# but no headers (forgot to install dev package)
+	AC_CHECK_LIB(glut, glutMainLoop,
+		HAVE_GLUT=maybe,
+		# failed, so use -lGLU as well
+		unset ac_cv_lib_glut_glutMainLoop
+		GLUT_LIBS="$GLUT_LIBS -lGLU"
+		AC_CHECK_LIB(glut, glutMainLoop,
+			HAVE_GLUT=maybe,
+			HAVE_GLUT=no,
+			[ $GLUT_LIBS ]
+		),
+		[ $GLUT_LIBS ]
+	)
+
+	# check for the header
+	if test "x${HAVE_GLUT}" = xmaybe ; then
+		AC_CHECK_HEADER(GL/glut.h,
+			HAVE_GLUT=yes,
+			HAVE_GLUT=no
+		)
+	fi
+
+	# if it's all there, define the relevent parts
+	if test "x${HAVE_GLUT}" = xyes ; then
+		AC_DEFINE(HAVE_GLUT, 1, [Define this if you have GLUT])
+		GLUT_LIBS="$GLUT_LIBS -lglut"
+		AC_SUBST(GLUT_LIBS)
+		AC_SUBST(GLUT_CFLAGS)
+	else
+		# we were explicitly told to use glut and it's not there
+		if test "x${ac_with_glut}" = xyes ; then
+			AC_MSG_WARN([
+*** You have explicitly asked for GLUT support, but the required libraries
+*** and development files could not be found.
+*** GLUT interface will NOT be built.])
+		fi
+	fi
+
+	# restore CPPFLAGS
+	CPPFLAGS="$save_CPPFLAGS"
+else
+	HAVE_GLUT=disabled
+fi
+
 AC_CHECK_LIB(m, sqrt)
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stddef.h stdlib.h string.h sys/timeb.h])
-AC_CHECK_HEADERS([GL/glut.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 
@@ -27,5 +99,19 @@ AC_CHECK_HEADERS([GL/glut.h])
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([atexit ftime memset sqrt strdup])
 
+dnl fill in path variables
+
+dnl $libdir usually gets set to ${exec_prefix}/lib,
+dnl $prefix and $exec_prefix is likely to be "NONE"
+dnl autoconf usually sets pkgdatadir correctly in the makefile, but not
+dnl in the configure script
+
+test "$prefix" = "NONE" && prefix=/usr/local
+test "$exec_prefix" = "NONE" && exec_prefix=$prefix
+
+eval PKGDATADIR="$datadir/$PACKAGE"
+AC_DEFINE_UNQUOTED(PKGDATADIR, "$PKGDATADIR", [Define this path to where data files are kept])
+
+dnl spit it out
 AC_CONFIG_FILES([Makefile tools/Makefile data/Makefile pixmaps/Makefile])
 AC_OUTPUT

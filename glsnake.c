@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.51 2003/01/22 02:11:40 jaq Exp $
+/* $Id: glsnake.c,v 1.52 2003/02/20 07:48:29 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -196,6 +196,7 @@ int w = 0;
 /* trackball stuff */
 float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,1.0};
 float rotation[16];
+/* mouse drag vectors: start and end */
 float m_s[3], m_e[3];
 int dragging;
 
@@ -204,7 +205,7 @@ void calc_rotation() {
     double Nq, s;
     double xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 
-    /* this bit ripped from Shoemake's Quaternion notes from siggraph */
+    /* this bit ripped from Shoemake's quaternion notes from SIGGRAPH */
     Nq = cumquat[0] * cumquat[0] + cumquat[1] * cumquat[1] +
 	cumquat[2] * cumquat[2] + cumquat[3] * cumquat[3];
     s = (Nq > 0.0) ? (2.0 / Nq) : 0.0;
@@ -645,7 +646,7 @@ void set_colours(float max_angle) {
 	colour_t[1] = 0.1;
 	colour_t[2] = 0.9;
     }
-    /* jamie doesn't know if max_angle is the best thing for this */
+    /* dunno if max_angle is the best thing for this -jaq */
     if (max_angle == 0.0)
 	max_angle = 1.0;
     colour_i[0] = (colour_t[0] - colour[0]) / max_angle;
@@ -899,8 +900,7 @@ void motion(int x, int y) {
 void restore_idol(int value);
 void quick_sleep(void);
 
-/* "jwz?  no way man, he's my idle" -- Jamie, 2001.
- * I forget the context :( */
+/* "jwz?  no way man, he's my idle" */
 void idol(void) {
     /* time since last iteration */
     long iter_msec;
