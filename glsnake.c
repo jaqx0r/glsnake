@@ -688,16 +688,16 @@ void calc_snake_metrics() {
 	z += GETSCALAR(prevDstDir, Z_MASK);
 
 	switch ((int) node[i].destAngle) {
-	  case (int) (ZERO * 90.0):
+	  case (int) (ZERO):
 	    dstDir = -prevSrcDir;
 	    break;
-	  case (int) (PIN * 90.0):
+	  case (int) (PIN):
 	    dstDir = prevSrcDir;
 	    break;
-	  case (int) (RIGHT * 90.0):
-	  case (int) (LEFT * 90.0):
+	  case (int) (RIGHT):
+	  case (int) (LEFT):
 	    dstDir = cross_product(prevSrcDir, prevDstDir);
-	    if (node[i].destAngle == (int) (RIGHT * 90.0))
+	    if (node[i].destAngle == (int) (RIGHT))
 		dstDir = -dstDir;
 	    break;
 	  default:
@@ -726,10 +726,10 @@ void calc_snake_metrics() {
     last_turn = -1;
     if (is_cyclic)
 	switch (srcDir) {
-	  case -Z_MASK: last_turn = ZERO  * 90.0; break;
-	  case Z_MASK:  last_turn = PIN   * 90.0; break;
-	  case X_MASK:  last_turn = LEFT  * 90.0; break;
-	  case -X_MASK: last_turn = RIGHT * 90.0; break;
+	  case -Z_MASK: last_turn = ZERO; break;
+	  case Z_MASK:  last_turn = PIN; break;
+	  case X_MASK:  last_turn = LEFT; break;
+	  case -X_MASK: last_turn = RIGHT; break;
 	}
     
 }
@@ -782,16 +782,16 @@ void special(int key, int x, int y) {
 	    selected = (selected + 1) % 23;
 	    break;
 	  case GLUT_KEY_LEFT:
-	    *destAngle = fmod(*destAngle+(LEFT*90.0), 360);
+	    *destAngle = fmod(*destAngle+(LEFT), 360);
 	    morphing = new_morph = 1;
 	    break;
 	  case GLUT_KEY_RIGHT:
-	    *destAngle = fmod(*destAngle+(RIGHT*90.0), 360);
+	    *destAngle = fmod(*destAngle+(RIGHT), 360);
 	    morphing = new_morph = 1;
 	    break;
 	  case GLUT_KEY_HOME:
 	    for (i = 0; i < 24; i++)
-		node[i].destAngle = (ZERO*90.0);
+		node[i].destAngle = (ZERO);
 	    morphing = new_morph = 1;
 	    break;
 	  default:
@@ -875,13 +875,13 @@ void keyboard(unsigned char c, int x, int y) {
 	/* dump the current model so we can add it! */
 	printf("# %s\nnoname:\t", model[curModel].name);
 	for (i = 0; i < 24; i++) {
-	    if (node[i].curAngle == ZERO*90.0)
+	    if (node[i].curAngle == ZERO)
 		printf("Z");
-	    else if (node[i].curAngle == LEFT*90.0)
+	    else if (node[i].curAngle == LEFT)
 		printf("L");
-	    else if (node[i].curAngle == PIN*90.0)
+	    else if (node[i].curAngle == PIN)
 		printf("P");
-	    else if (node[i].curAngle == RIGHT*90.0)
+	    else if (node[i].curAngle == RIGHT)
 		printf("R");
 	    /*
 	      else
