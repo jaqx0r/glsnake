@@ -1,7 +1,7 @@
 #!/bin/sh
-# $Id: getmodels.sh,v 1.1 2001/10/09 10:25:32 jaq Exp $
+# $Id: getmodels.sh,v 1.2 2001/10/09 10:31:18 jaq Exp $
 # this script downloads the model descriptions and converts them to c code
-# that's inserted into the main code
+# that's inserted into the main code.  Jamie Wilkinson's fault^Wcode.
 
 # use it like ./getmodels.sh > newmodels
 

@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.31 2001/10/09 10:25:32 jaq Exp $
+/* $Id: glsnake.c,v 1.32 2001/10/09 10:31:18 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -96,7 +96,7 @@ model_t model[] = {
 		  LEFT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, 
 		  RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT }
 	},
-	{ "half_balls",
+	{ "Spiv's half balls",
 		{ LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, 
 		  LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT,
 		  RIGHT, LEFT, RIGHT, LEFT, LEFT, LEFT }
@@ -311,7 +311,7 @@ model_t model[] = {
 		  RIGHT, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO, PIN, ZERO,
 		  LEFT, RIGHT, PIN, LEFT, LEFT, LEFT }
 	},
-	{ "tie_fighter",
+	{ "tie fighter",
 		{ PIN, LEFT, RIGHT, LEFT, LEFT, PIN, RIGHT, ZERO, RIGHT,
 		  LEFT, ZERO, PIN, LEFT, LEFT, RIGHT, RIGHT, RIGHT, PIN,
 		  LEFT, ZERO, LEFT, RIGHT, ZERO }
