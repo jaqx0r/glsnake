@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.49 2001/12/18 05:20:16 jaq Exp $
+/* $Id: glsnake.c,v 1.50 2003/01/22 02:03:24 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -854,35 +854,46 @@ void mouse(int button, int state, int x, int y) {
 }
 
 void motion(int x, int y) {
-	double norm;
-	float q[4];
+    double norm;
+    float q[4];
 
-	if (dragging) {
-		m_e[0] = M_SQRT1_2 * (x - (width/ 2.0)) / (width / 2.0);
-		m_e[1] = M_SQRT1_2 * ((height / 2.0) - y) / (height / 2.0);
-		norm = m_e[0] * m_e[0] + m_e[1] * m_e[1];
-		m_e[2] = sqrt(1 - (m_e[0] * m_e[0] + m_e[1] * m_e[1]));
-		
-		/* now here, build a quaternion from m_s and m_e */
-		q[0] = m_s[1] * m_e[2] - m_s[2] * m_e[1];
-		q[1] = m_s[2] * m_e[0] - m_s[0] * m_e[2];
-		q[2] = m_s[0] * m_e[1] - m_s[1] * m_e[0];
-		q[3] = m_s[0] * m_e[0] + m_s[1] * m_e[1] + m_s[2] * m_e[2];
-
-		/* new rotation is the product of the new one and the old one */
-		cumquat[0] = q[3] * oldquat[0] + q[0] * oldquat[3] + 
-			     q[1] * oldquat[2] - q[2] * oldquat[1];
-		cumquat[1] = q[3] * oldquat[1] + q[1] * oldquat[3] + 
-			     q[2] * oldquat[0] - q[0] * oldquat[2];
-		cumquat[2] = q[3] * oldquat[2] + q[2] * oldquat[3] + 
-			     q[0] * oldquat[1] - q[1] * oldquat[0];
-		cumquat[3] = q[3] * oldquat[3] - q[0] * oldquat[0] - 
-			     q[1] * oldquat[1] - q[2] * oldquat[2];
-		
-		calc_rotation();
+    if (dragging) {
+	/* construct the motion end vector from the x,y position on the
+	 * window */
+	m_e[0] = (x - (width/ 2.0)) / (width / 2.0);
+	m_e[1] = ((height / 2.0) - y) / (height / 2.0);
+	/* calculate the normal of the vector... */
+	norm = m_e[0] * m_e[0] + m_e[1] * m_e[1];
+	/* check if norm is outside the sphere and wraparound if necessary */
+	if (norm > 1.0) {
+	    m_e[0] = -m_e[0];
+	    m_e[1] = -m_e[1];
+	    m_e[2] = sqrt(norm - 1);
+	} else {
+	    /* the z value comes from projecting onto an elliptical spheroid */
+	    m_e[2] = sqrt(1 - norm);
 	}
+
+	/* now here, build a quaternion from m_s and m_e */
+	q[0] = m_s[1] * m_e[2] - m_s[2] * m_e[1];
+	q[1] = m_s[2] * m_e[0] - m_s[0] * m_e[2];
+	q[2] = m_s[0] * m_e[1] - m_s[1] * m_e[0];
+	q[3] = m_s[0] * m_e[0] + m_s[1] * m_e[1] + m_s[2] * m_e[2];
+
+	/* new rotation is the product of the new one and the old one */
+	cumquat[0] = q[3] * oldquat[0] + q[0] * oldquat[3] + 
+	    q[1] * oldquat[2] - q[2] * oldquat[1];
+	cumquat[1] = q[3] * oldquat[1] + q[1] * oldquat[3] + 
+	    q[2] * oldquat[0] - q[0] * oldquat[2];
+	cumquat[2] = q[3] * oldquat[2] + q[2] * oldquat[3] + 
+	    q[0] * oldquat[1] - q[1] * oldquat[0];
+	cumquat[3] = q[3] * oldquat[3] - q[0] * oldquat[0] - 
+	    q[1] * oldquat[1] - q[2] * oldquat[2];
 	
-	glutPostRedisplay();
+	calc_rotation();
+    }
+	
+    glutPostRedisplay();
 }
 
 void restore_idol(int value);
@@ -1011,8 +1022,8 @@ void unmain(void) {
 int main(int argc, char ** argv) {
 	char * basedir;
 	
-	width = 640;
-	height = 480;
+	width = 320;
+	height = 240;
 
 	/* this is so we can run it from the source directory */
 	basedir = (char *) malloc(sizeof(char) * (strlen(dirname(argv[0])) + strlen("/data") + 1));
