@@ -13,3 +13,8 @@ configure
 stamp-h*
 .deps
 autom4te.cache
+depcomp
+install-sh
+missing
+mkinstalldirs
+
