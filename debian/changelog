@@ -1,0 +1,9 @@
+glsnake (1.39-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Peter Hardy <peterhardy@pacific.net.au>  Mon, 15 Oct 2001 01:20:25 +1000
+
+Local variables:
+mode: debian-changelog
+End:

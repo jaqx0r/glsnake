@@ -1,0 +1,2 @@
+?package(glsnake):needs=X11 section="Games/Toys"
+  title="glsnake" command="/usr/bin/glsnake"

@@ -1,0 +1,18 @@
+Source: glsnake
+Section: games
+Priority: optional
+Maintainer: Peter Hardy <peterhardy@pacific.net.au>
+Standards-Version: 3.0.1
+
+Package: glsnake
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: Hardware accelerated executive stress toy
+ glsnake is an imitation of Rubiks' Snake.
+ .
+ Currently, glsnake has an interactive mode where you can create your
+ own models, colour highlighting of different model classes, as well as
+ mouse support.
+ .
+ Think of this package as a temporary measure until glsnake is ported
+ to xscreensaver.
