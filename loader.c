@@ -1,4 +1,4 @@
-/* $Id: loader.c,v 1.3 2001/12/09 09:06:26 andrew Exp $
+/* $Id: loader.c,v 1.4 2001/12/09 11:29:32 andrew Exp $
  * loads a glsnake modelfile
  *
  * Lines beginning with '#' are comments and are ignored
@@ -11,7 +11,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "model.h"
-
+#include <libgen.h>
+#include <unistd.h>
 
 model_t * add_model(model_t * models, char * name, int * rotations, int * count) {
 	int i;
@@ -33,15 +34,24 @@ model_t * add_model(model_t * models, char * name, int * rotations, int * count)
  * returns a new pointer to models
  * count is number of models read
  */
-model_t * load_modelfile(char * filename, model_t * models, int * count) {
+model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count) {
 	char c;
 	FILE * f;
 	char buffy[256];
 	int rotations[24];
 	int name = 1;
 	int rots = 0;
+	char * fullpath;
 
-	f = fopen(filename, "r");
+	/* Figure out the full path to the model files,
+	 * in case the executable isn't in the current working directory */
+	fullpath = (char *) malloc((strlen(basedir) + strlen(filename) + 2));
+	strcpy(fullpath, basedir);
+	strcat(fullpath, "/");
+	strcat(fullpath, filename);
+	
+	f = fopen(fullpath, "r");
+	free(fullpath);
 	if (f == NULL) {
 		int error_msg_len = strlen(filename) + 33 + 1;
 		char * error_msg = (char *) malloc(sizeof(char) * error_msg_len);

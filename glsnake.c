@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.46 2001/12/05 05:53:05 jaq Exp $
+/* $Id: glsnake.c,v 1.47 2001/12/09 11:29:32 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <libgen.h>
 #include "model.h"
 
 #define X_MASK	1
@@ -131,7 +132,7 @@ float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
                       { 0.0, 0.0,-1.0}};
 
 /* model loading function in loader.c */
-model_t * load_modelfile(char * filename, model_t * models, int * count);
+model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count);
 
 typedef struct {
 	float curAngle;
@@ -1003,14 +1004,17 @@ void unmain(void) {
 }
 
 int main(int argc, char ** argv) {
+	char * basedir = dirname(argv[0]);
+	
 	width = 640;
 	height = 480;
 
 	glutInit(&argc, argv);
 
 	models = 0;
-	model = load_modelfile("data/models.glsnake", model, &models);
-	model = load_modelfile("data/ericandthomas.glsnake", model, &models);
+	model = load_modelfile(basedir, "data/models.glsnake", model, &models);
+	model = load_modelfile(basedir, "data/ericandthomas.glsnake", model, &models);
+	free(basedir);
 	if (models == 0) {
 		fputs("Unable to read any models!  Aborting...\n", stderr);
 		return 1;
