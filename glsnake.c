@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.13 2001/10/05 05:33:32 jaq Exp $
+/* $Id: glsnake.c,v 1.14 2001/10/05 05:53:48 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -457,7 +457,7 @@ float explode = 0.1;
 int wireframe = 0;
 int shiny = 0;
 int interactive = 0;
-int pause = 0;
+int paused = 0;
 
 /* trackball stuff */
 float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,1.0};
@@ -934,7 +934,7 @@ void keyboard(unsigned char c, int x, int y) {
 				glEnable(GL_LIGHTING);
 			break;
 		case 'p':
-			pause = 1 - pause;
+			paused = 1 - paused;
 			break;
 		case 'd':
 			/* dump the current model so we can add it! */
@@ -1030,7 +1030,7 @@ void idol(void) {
 	ftime(&current_time);
 
 	/* pause the model */
-	if (pause)
+	if (paused)
 		return;
 	/* <spiv> Well, ftime gives time with millisecond resolution.
 	 * <Jaq> if current time is exactly equal to last iteration, 
