@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.24 2001/10/06 14:50:49 andrew Exp $
+/* $Id: glsnake.c,v 1.25 2001/10/07 01:05:38 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -764,10 +764,8 @@ void calc_snake_metrics() {
 	int prevDstDir = Z_MASK;
 	int grid[25][25][25];
 
-	for (x = 0; x < 25; x++) 
-		for (y = 0; y < 25; y++)
-			for (z = 0; z < 25; z++)
-				grid[x][y][z] = 0;
+	/* zero the grid */
+	memset(&grid, 0, sizeof(int) * 25*25*25);
 
 	is_legal = 1;
 	x = y = z = 12;
