@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.20 2001/10/05 14:12:48 andrew Exp $
+/* $Id: glsnake.c,v 1.21 2001/10/05 14:31:51 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -799,6 +799,10 @@ void calc_snake_metrics() {
 					dstDir = -dstDir;
 				break;
 			default:
+				/* Prevent spurious "might be used 
+				 * uninitialised" warnings when compiling
+				 * with -O2 */
+				dstDir = 0;
 				break;
 		}
 
