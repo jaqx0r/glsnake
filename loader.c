@@ -1,4 +1,4 @@
-/* $Id: loader.c,v 1.4 2001/12/09 11:29:32 andrew Exp $
+/* $Id: loader.c,v 1.5 2001/12/09 12:10:36 andrew Exp $
  * loads a glsnake modelfile
  *
  * Lines beginning with '#' are comments and are ignored
@@ -43,8 +43,8 @@ model_t * load_modelfile(char * basedir, char * filename, model_t * models, int 
 	int rots = 0;
 	char * fullpath;
 
-	/* Figure out the full path to the model files,
-	 * in case the executable isn't in the current working directory */
+	/* Figure out the path to the model files, relative to the 
+	 * current working directory. */
 	fullpath = (char *) malloc((strlen(basedir) + strlen(filename) + 2));
 	strcpy(fullpath, basedir);
 	strcat(fullpath, "/");
