@@ -161,6 +161,32 @@ AC_CHECK_HEADERS([stddef.h stdlib.h string.h sys/timeb.h])
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([atexit ftime memset sqrt strdup])
 
+dnl check whether gettimeofday() exists, and how many arguments it has
+AC_MSG_CHECKING([how to call gettimeofday])
+AC_CACHE_VAL(ac_cv_gettimeofday_args,
+	[AC_TRY_COMPILE([#include <stdlib.h>
+			#include <sys/time.h>],
+			[struct timeval tv; struct timezone tzp;
+			 gettimeofday(&tv,&tzp);],
+			[ac_gettimeofday_args=2],
+			[AC_TRY_COMPILE([#include <stdlib.h>
+					 #include <sys/time.h>],
+					[struct timeval tv; gettimeofday(&tv);],
+					[ac_gettimeofday_args=1],
+					[ac_gettimeofday_args=0])])
+	ac_cv_gettimeofday_args=$ac_gettimeofday_args])
+ac_gettimeofday_args=$ac_cv_gettimeofday_args
+if test "$ac_gettimeofday_args" = 1 ; then
+	AC_DEFINE(HAVE_GETTIMEOFDAY, 1, [Define this if your system has the gettimeofday function])
+	AC_MSG_RESULT(one argument)
+elif test "$ac_gettimeofday_args" = 2 ; then
+	AC_DEFINE(HAVE_GETTIMEOFDAY, 1, [Define this if your system has the gettimeofday function])
+	AC_DEFINE(HAVE_GETTIMEOFDAY_TWO_ARGS, 1, [Define this if your system's gettimeofday takes two arguments])
+	AC_MSG_RESULT(two arguments)
+else
+	AC_MSG_RESULT(unknown)
+fi
+
 dnl spit it out
 AC_CONFIG_FILES([
 	Makefile

@@ -23,6 +23,8 @@
 # include "config.h"
 #endif
 
+/* HAVE_GLUT defined if we're building a standalone glsnake,
+ * and not defined if we're building as an xscreensaver hack */
 #ifdef HAVE_GLUT
 # include <GL/glut.h>
 #else
@@ -47,9 +49,14 @@ struct model_s {
     float node[24];
 };
 
-#include <sys/timeb.h>
-#include <math.h>
+/* Can't use ftime in xscreensaver */
+#ifdef HAVE_GLUT
+# include <sys/timeb.h>
+#else
+# include <sys/time.h>
+#endif
 
+#include <math.h>
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant  */
 #define M_SQRT1_2 0.70710678118654752440084436210485
 #endif
@@ -109,8 +116,13 @@ struct glsnake_cfg {
     float rotang2;
 
     /* timing variables */
+#ifdef HAVE_GLUT
     struct timeb last_iteration;
     struct timeb last_morph;
+#else
+    struct timeval last_iteration;
+    struct timeval last_morph;
+#endif
 
     /* window size */
     int width, height;
@@ -1889,7 +1901,11 @@ void glsnake_idle(void) {
     /* time since the beginning of last morph */
     long morf_msec;
     float morph_progress;
+#ifdef HAVE_GLUT
     struct timeb current_time;
+#else
+    struct timeval current_time;
+#endif
     morphFunc transition;
     
     /* Do nothing to the model if we are paused */
@@ -1903,9 +1919,6 @@ void glsnake_idle(void) {
 	return;
     }
 
-    /* ftime is winDOS compatible */
-    ftime(&current_time);
-    
     /* <spiv> Well, ftime gives time with millisecond resolution.
      * <spiv> (or worse, perhaps... who knows what the OS will do)
      * <spiv> So if no discernable amount of time has passed:
@@ -1915,15 +1928,40 @@ void glsnake_idle(void) {
      * <Jaq> i.e. if current time is exactly equal to last iteration,
      *       then don't do this block
      */
+#ifdef HAVE_GLUT
+    /* ftime is winDOS compatible */
+    ftime(&current_time);
+    
     iter_msec = (long) current_time.millitm - glc->last_iteration.millitm + 
 	((long) current_time.time - glc->last_iteration.time) * 1000L;
+#else /* !HAVE_GLUT */
+    {
+# ifdef GETTIMEOFDAY_TWO_ARGS
+	struct timezone tzp;
+	gettimeofday(&current_time, &tzp);
+# else
+	gettimeofday(&current_time);
+#endif
+    }
+    iter_msec = ((long) current_time.tv_usec - glc->last_iteration.tv_usec)/1000L + ((long) current_time.tv_sec - glc->last_iteration.tv_sec) * 1000L;
+#endif /* !HAVE_GLUT */
+
     if (iter_msec) {
 	/* save the current time */
+#ifdef HAVE_GLUT
 	memcpy(&glc->last_iteration, &current_time, sizeof(struct timeb));
+#else
+	memcpy(&glc->last_iteration, &current_time, sizeof(struct timeval));
+#endif
 	
 	/* work out if we have to switch models */
+#ifdef HAVE_GLUT
 	morf_msec = glc->last_iteration.millitm - glc->last_morph.millitm +
 	    ((long) (glc->last_iteration.time-glc->last_morph.time) * 1000L);
+#else 
+	morf_msec = (glc->last_iteration.tv_usec - glc->last_morph.tv_usec)/1000L + ((long) (glc->last_iteration.tv_sec - glc->last_morph.tv_sec) * 1000L);
+#endif
+
 	if ((morf_msec > DEF_STATICTIME) && !glc->interactive && !glc->morphing) {
 	    start_morph(rand() % models, 0);
 	}
@@ -1945,7 +1983,11 @@ void glsnake_idle(void) {
 	morph_progress = MIN(transition(iter_msec), 1.0);
 	
 	if (morph_progress >= 1.0) {
+#ifdef HAVE_GLUT
 	    memcpy(&glc->last_morph, &current_time, sizeof(struct timeb));
+#else
+	    memcpy(&glc->last_morph, &current_time, sizeof(struct timeval));
+#endif
 	    glc->morphing = 0;
 	}
 	
@@ -1994,9 +2036,22 @@ int main(int argc, char ** argv) {
     ui_init(&argc, argv);
 #endif
 
+#ifdef HAVE_GLUT
     ftime(&glc->last_iteration);
     memcpy(&glc->last_morph, &glc->last_iteration, sizeof(struct timeb));
     srand((unsigned int)glc->last_iteration.time);
+#else /* !HAVE_GLUT */
+    {
+# ifdef GETTIMEOFDAY_TWO_ARGS
+	struct timezone tzp;
+	gettimeofday(&glc->last_iteration, &tzp);
+# else
+	gettimeofday(&glc->last_iteration);
+# endif
+    }
+    memcpy(&glc->last_morph, &glc->last_iteration, sizeof(struct timeval));
+#endif /* !HAVE_GLUT */
+    
     memcpy(&glc->colour, &colour_normal, sizeof(glc->colour));
     memcpy(&glc->colour_prev, &colour_normal, sizeof(glc->colour_prev));
     
