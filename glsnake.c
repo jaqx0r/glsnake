@@ -1,12 +1,30 @@
-/* $Id: glsnake.c,v 1.9 2001/10/04 16:32:23 jaq Exp $
+/* $Id: glsnake.c,v 1.10 2001/10/04 16:35:38 jaq Exp $
+ * 
  * An OpenGL imitation of Rubik's Snake 
- * by Jamie Wilkinson, Andrew Bennetts and Peter Aylett
+ * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
+ * Andrew Bennetts <andrew@puzzling.org>, 
+ * and Peter Aylett <peter@ylett.com>
+ * 
  * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
  *
  * Jamie rewrote all the drawing code for OpenGL, and the trackball interface
  * Andrew fixed up the morphing code
  * Peter added a ton of new models, and the snake metrics
  * Mark Assad made it compile under Windows
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
 #include <GL/glut.h>
@@ -21,8 +39,6 @@
 #define RIGHT   270.0
 #define PIN     180.0
 #define LEFT    90.0
-
-#define ONE_ON_ROOT_2 0.707
 
 #define X_MASK	1
 #define Y_MASK	2
@@ -728,7 +744,8 @@ void keyboard(unsigned char c, int x, int y) {
 			explode -= EXPLODE_INCREMENT;
 			if (explode < 0.0) explode = 0.0;
 			break;
-		case '.': /* next model */
+		case '.':
+			/* next model */
 			curModel++;
 			curModel %= models;
 			start_morph(curModel , 0);
@@ -736,7 +753,8 @@ void keyboard(unsigned char c, int x, int y) {
 			/* Reset last_morph time */
 			ftime(&last_morph);			
 			break;
-		case ',': /* previous model */
+		case ',':
+			/* previous model */
 			curModel = (curModel + models - 1) % models;
 			start_morph(curModel, 0);
 
@@ -766,9 +784,6 @@ void keyboard(unsigned char c, int x, int y) {
 			else
 				glEnable(GL_LIGHTING);
 			break;
-		case 'd':
-			debug = 1 - debug;
-			break;
 		default:
 			break;
 	}
@@ -780,8 +795,8 @@ void mouse(int button, int state, int x, int y) {
 			switch (state) {
 				case GLUT_DOWN:
 					dragging = 1;
-					m_s[0] = ONE_ON_ROOT_2 * (x - (width/ 2.0)) / (width / 2.0);
-					m_s[1] = ONE_ON_ROOT_2 * ((height / 2.0) - y) / (height / 2.0);
+					m_s[0] = M_SQRT1_2 * (x - (width/ 2.0)) / (width / 2.0);
+					m_s[1] = M_SQRT1_2 * ((height / 2.0) - y) / (height / 2.0);
 					m_s[2] = sqrt(1 - (m_s[0] * m_s[0] + m_s[1] * m_s[1]));
 					break;
 				case GLUT_UP:
@@ -805,8 +820,8 @@ void motion(int x, int y) {
 	float q[4];
 
 	if (dragging) {
-		m_e[0] = ONE_ON_ROOT_2 * (x - (width/ 2.0)) / (width / 2.0);
-		m_e[1] = ONE_ON_ROOT_2 * ((height / 2.0) - y) / (height / 2.0);
+		m_e[0] = M_SQRT1_2 * (x - (width/ 2.0)) / (width / 2.0);
+		m_e[1] = M_SQRT1_2 * ((height / 2.0) - y) / (height / 2.0);
 		norm = m_e[0] * m_e[0] + m_e[1] * m_e[1];
 		m_e[2] = sqrt(1 - (m_e[0] * m_e[0] + m_e[1] * m_e[1]));
 		
