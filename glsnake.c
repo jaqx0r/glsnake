@@ -1,6 +1,12 @@
-/* $Id: glsnake.c,v 1.2 2001/10/04 16:15:45 jaq Exp $
- * An OpenGL imitation of Rubik's Snake
- * based on Allegro code by Peter Aylett and Andrew Bennetts
+/* $Id: glsnake.c,v 1.3 2001/10/04 16:18:21 jaq Exp $
+ * An OpenGL imitation of Rubik's Snake 
+ * by Jamie Wilkinson and Andrew Bennetts
+ * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
+ *
+ * Known issues:
+ * - Z-fighting occurs in solid mode with the edges drawn
+ * - z-fighting occurs when the nodes are close (explode distance == 0.0)
+ * - nodes pass through themselves! :)
  */
 
 #include <GL/glut.h>
@@ -9,32 +15,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-#if 0
-#define NUM_NODES          24     /* number of snake QUAD-nodes */
-#define NUM_VERTICES       6     /* a node has six corners */
-#define NUM_FACES          5     /* eight QUADangles per node */
-#define NODE_SPACING       14
-#define NODE_HALF_LENGTH   7     /* Usually, the spacing is twice the half length */
-#define RIGHT              (64<<16)
-#define LEFT               (192<<16)
-#define PIN                (128<<16)
-#define NUM_MODELS         8
-#endif
+/* angles */
 #define ZERO	0.0
 #define RIGHT   -90.0
 #define PIN     180.0
 #define LEFT    90.0
+
 #define ROTATION_RATE 0.25	  /* Rotations per second */
 #define EXPLODE_INCREMENT 0.1
 #define MORPH_DELAY 2.0		  /* Delay in seconds between morphs */
 #define MORPH_RATE  0.25	  /* Morphs per second */
-/*
-typedef struct VTX
-{
-   fixed x, y, z;
-} VTX;
-*/
 
 /* the id for the window we make */
 int window;
@@ -43,14 +33,21 @@ int window;
 int node_solid, node_wire;
 
 /* the triangular prism what makes up the basic unit */
-float prism_v[][3] = { { 0.0, 0.0, 1.0 }, 
+float prism_v[][3] = {{ 0.0, 0.0, 1.0 }, 
 					  { 1.0, 0.0, 1.0 },
 					  { 0.0, 1.0, 1.0 },
 					  { 0.0, 0.0, 0.0 },
 					  { 1.0, 0.0, 0.0 },
 					  { 0.0, 1.0, 0.0 }};
 
-/* the actual models */
+/* face normals */
+float prism_n[][3] = {{0.0,0.0,1.0},
+	                  {0.0,-1.0,0.0},
+					  {0.707,0.707,0.0},
+					  {-1.0,0.0,0.0},
+					  {0.0,0.0,-1.0}};
+
+/* the actual models -- all with 24 nodes (23 joints) */
 
 float ball[] = { RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT};
 
@@ -62,8 +59,11 @@ float zigzag2[] = { PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, 
 
 float zigzag3[] = { PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN };
 
- /* but try watching a caterpillar do a transition to this! */
+/* this model sucks */
+/* but try watching a caterpillar do a transition to this! */
+/*
 float zigzag3_wrong[] = { PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN};
+*/
 
 float caterpillar[] = { RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT };
 
@@ -73,33 +73,22 @@ float snowflake[] = { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT,
 
 float turtle[] = { RIGHT, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, PIN, RIGHT, LEFT, ZERO, ZERO, LEFT, LEFT, LEFT, RIGHT };
 
-/*float bow[] =
-{ LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT };
-*/
-
 float basket[] = { RIGHT, PIN, ZERO, ZERO, PIN, LEFT, ZERO, LEFT, LEFT, ZERO, LEFT, PIN, ZERO, ZERO, PIN, RIGHT, PIN, LEFT, PIN, ZERO, ZERO, PIN, LEFT };
-
 
 float thing[] = { PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT };
 
- /* Note: this is a 32 node model */
+/* Note: this is a 32 node model
 float snowflake32[] = { RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT};
+*/
 
 float straight[] = { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO };
 
-/*int *models[] = {ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, caterpillar, turtle, basket, thing};*/
-/*int *models[] = {ball, cat, bow, snowflake, caterpillar, turtle, basket, thing};*/
-
 float * model[] = { ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, caterpillar, turtle, basket, thing, straight };
 
 int models = sizeof(model) / sizeof(float *);
-int m = 0;
-int m_next;
-/*
-float ang[] = {0.0,LEFT, RIGHT, 0.0, LEFT, RIGHT, ZERO, LEFT, RIGHT, ZERO, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT};
-*/
+int m, m_next;
 
 /* rotation angle */
 float rotang = 0.0;
@@ -108,16 +97,13 @@ float rotang = 0.0;
 float morph = 0.0;
 
 /* option variables */
-float explode = 0.0;
+float explode = 0.1;
 int wireframe = 0;
-
 
 /* wot initialises it */
 void init(void) {
-	/*
-	float light_pos[] = {0.0, 0.0, 1.0};
-	float light_dir[] = {0.0, 0.0, -1.0};
-	*/
+	float light_pos[][3] = {{0.0, 0.0, 20.0}, {0.0, 20.0, 0.0}};
+	float light_dir[][3] = {{0.0, 0.0,-20.0}, {0.0,-20.0, 0.0}};
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	/* gouraud shadin' */
@@ -128,42 +114,47 @@ void init(void) {
 	/* set up our camera */
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(45.0, 640/480.0, 0.05, 100.0);
+	gluPerspective(40.0, 640/480.0, 0.05, 100.0);
 	gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	glMatrixMode(GL_MODELVIEW);
 	/* set up lighting */
-	/*
 	glColor3f(1.0, 1.0, 1.0);
-	glLightfv(GL_LIGHT0, GL_POSITION, light_pos);
-	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_dir);
+	glLightfv(GL_LIGHT0, GL_POSITION, light_pos[0]);
+	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_dir[0]);
+	glLightfv(GL_LIGHT1, GL_POSITION, light_pos[1]);
+	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir[1]);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
 	glEnable(GL_COLOR_MATERIAL);
-	*/
 	/* build a display list */
 	node_solid = glGenLists(1);
 	glNewList(node_solid, GL_COMPILE);
 	glBegin(GL_TRIANGLES);
+	glNormal3fv(prism_n[0]);
 	glVertex3fv(prism_v[0]);
 	glVertex3fv(prism_v[1]);
 	glVertex3fv(prism_v[2]);
 
+	glNormal3fv(prism_n[4]);
 	glVertex3fv(prism_v[3]);
 	glVertex3fv(prism_v[5]);
 	glVertex3fv(prism_v[4]);
 	glEnd();
-	
 	glBegin(GL_QUADS);
+	glNormal3fv(prism_n[1]);
 	glVertex3fv(prism_v[1]);
 	glVertex3fv(prism_v[0]);
 	glVertex3fv(prism_v[3]);
 	glVertex3fv(prism_v[4]);
 	
+	glNormal3fv(prism_n[2]);
 	glVertex3fv(prism_v[2]);
 	glVertex3fv(prism_v[1]);
 	glVertex3fv(prism_v[4]);
 	glVertex3fv(prism_v[5]);
 	
+	glNormal3fv(prism_n[3]);
 	glVertex3fv(prism_v[0]);
 	glVertex3fv(prism_v[2]);
 	glVertex3fv(prism_v[5]);
@@ -178,27 +169,23 @@ void init(void) {
 	glVertex3fv(prism_v[1]);
 	glVertex3fv(prism_v[2]);
 	glEnd();
-
 	glBegin(GL_LINE_LOOP);
 	glVertex3fv(prism_v[3]);
 	glVertex3fv(prism_v[5]);
 	glVertex3fv(prism_v[4]);
 	glEnd();
-	
 	glBegin(GL_LINE_LOOP);
 	glVertex3fv(prism_v[1]);
 	glVertex3fv(prism_v[0]);
 	glVertex3fv(prism_v[3]);
 	glVertex3fv(prism_v[4]);
 	glEnd();
-	
 	glBegin(GL_LINE_LOOP);
 	glVertex3fv(prism_v[2]);
 	glVertex3fv(prism_v[1]);
 	glVertex3fv(prism_v[4]);
 	glVertex3fv(prism_v[5]);
 	glEnd();
-	
 	glBegin(GL_LINE_LOOP);
 	glVertex3fv(prism_v[0]);
 	glVertex3fv(prism_v[2]);
@@ -206,7 +193,6 @@ void init(void) {
 	glVertex3fv(prism_v[3]);
 	glEnd();
 	glEndList();
-
 }
 
 /* wot draws it */
@@ -219,21 +205,24 @@ void display(void) {
 	/* go into the modelview stack */
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	
 	/* draw this dang thing */
-
-	/* origin */
-	glColor3f(1.0,1.0,0.0);
+	
+	/* the origin */
 	glPointSize(4.0);
 	glBegin(GL_POINTS);
-	glVertex3f(0.0, 0.0, 0.0);
+	glColor3f(1.0,1.0,0.0);
+	glVertex3f(0.0,0.0,0.0);
 	glEnd();
 
-	glRotatef(rotang, 1.0,1.0,1.0);
-
 	/* rotate and translate into snake space */
-
-	/* glTranslatef(8.0,0.0,0.0); */
 	glRotatef(45.0,0.0,0.0,1.0);
+	glTranslatef(-0.5,0.0,0.5);
+	
+	/* rotate the 0th junction */
+	glTranslatef(0.5,0.0,0.5);
+	glRotatef(rotang, 0.0,1.0,0.0); 
+	glTranslatef(-0.5,0.0,-0.5);
 
 	/* now draw each node along the snake -- this is quite ugly :p */
 
@@ -247,8 +236,9 @@ void display(void) {
 			glCallList(node_wire);
 		else {
 			glCallList(node_solid);
-			glColor3f(0.0,0.0,0.0);
+			/*glColor3f(0.0,0.0,0.0);
 			glCallList(node_wire);
+			*/
 		}
 
 		/* Interpolate between models */
@@ -296,10 +286,15 @@ void keyboard(unsigned char c, int x, int y) {
 			if (explode < 0.0) explode = 0.0;
 			break;
 		case 'n':
-			m = rand() % (models - 1);
+			m = m_next;
+			m_next = rand() % models;
 			break;
 		case 'w':
 			wireframe = 1 - wireframe;
+			if (wireframe)
+				glDisable(GL_LIGHTING);
+			else
+				glEnable(GL_LIGHTING);
 			break;
 		default:
 			break;
@@ -331,7 +326,7 @@ void idol(void) {
 		if (morph > 1.0) {
 			morph = 0.0;
 			m = m_next;
-			m_next = rand() % (models - 1);
+			m_next = rand() % models;
 			memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
 		}
 	}
@@ -352,7 +347,8 @@ int main(int argc, char ** argv) {
 	gettimeofday(&last_iteration, NULL);
 	memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
 	srand((unsigned int)last_iteration.tv_usec);
-	m_next = rand() % (models - 1);
+	m = rand() % models;
+	m_next = rand() % models;
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
@@ -363,100 +359,3 @@ int main(int argc, char ** argv) {
 	glutMainLoop();
 	return 0;
 }
-
-#if 0
-   /* color 0 = black */
-   pal[0].r = pal[0].g = pal[0].b = 0;
-
-   /* copy the desktop pallete */
-   for (c=1; c<64; c++)
-      pal[c] = desktop_pallete[c];
-
-   /* make a red gradient */
-   for (c=64; c<96; c++) {
-      pal[c].r = (c-64)*2;
-      pal[c].g = pal[c].b = 0;
-   }
-
-   /* make a green gradient */
-   for (c=96; c<128; c++) {
-      pal[c].g = (c-96)*2;
-      pal[c].r = pal[c].b = 0;
-   }
-
-   /* set up a greyscale in the top half of the pallete */
-   for (c=128; c<256; c++)
-      pal[c].r = pal[c].g = pal[c].b = (c-128)/2;
-
-      /* set up a bluescale in the top half of the pallete */
-   for (c=0; c<128; c++) {
-      pal[c].r = pal[c].g = 0; pal[c].b = (c-128)/2; }
-
-   /* set the graphics mode */
-   set_gfx_mode(GFX_AUTODETECT, 800, 600, 0, 0);
-
-
-   set_pallete(pal);
-
-   /* double buffer the animation */
-   buffer = create_bitmap(SCREEN_W, SCREEN_H);
-
-   /* set up the viewport for the perspective projection */
-   set_projection_viewport(0, 0, SCREEN_W, SCREEN_H);
-
-   /* initialise the bouncing shapes */
-   init_shapes();
-
-   last_retrace_count = retrace_count;
-
-     for (a=0; a<24; a++) nodes[a].ang=model1[a];
-      j = -32;
-
-/*      while (!keypressed() & !mouse_moved()) { */
-     while (!key[KEY_ESC]) {
-
-         j++;
-         clear(buffer);
-
-         translate_shapes(12);
-         draw_shapes(buffer);
-
-         if (j == -32) {
-            model2 = models[rand() % (NUM_MODELS - 1)];
-         }
-         else if (j == 160) {
-            model1 = models[rand() % (NUM_MODELS - 1)];
-         }
-
-
-         if ((ABS(j)) <= 160 && (ABS(j)) >= 32)
-            for (a=1; a<24; a++)
-                nodes[a].ang = ((model1[a] * (128-(ABS(j)-32)))>>7)+((model2[a] * (ABS(j)-32))>>7);
-                /*nodes[a].ang + (1<<16);*/
-
-         nodes[0].ang = nodes[0].ang + (3<<16);
-         /*      nodes[1].ang = nodes[1].ang + (4<<16);
-                 nodes[2].ang = nodes[2].ang + (5<<16);
-                 nodes[3].ang = nodes[3].ang + (7<<16);
-         */
-         vsync();
-         blit(buffer, screen, 0, 0, 0, 0, SCREEN_W, SCREEN_H);
-
-         if (j == 192) j = -192;
-
-           if (key[KEY_S] ) {
-              save_bitmap("output.bmp", buffer, pal);
-           }
-
-         if (key[KEY_P] || key[KEY_S] ) {
-            while (key[KEY_P]) {}
-            while (!key[KEY_P]) {}
-         }
-
-
-      }
-      destroy_bitmap(buffer);
-
-      return 0;
-}
-#endif
