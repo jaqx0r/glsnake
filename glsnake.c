@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.52 2003/02/20 07:48:29 jaq Exp $
+/* $Id: glsnake.c,v 1.53 2003/02/22 12:27:50 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -29,6 +29,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 
 #include <GL/glut.h>
 #include <sys/timeb.h>
@@ -177,6 +181,9 @@ struct timeb last_morph;
 int width, height;
 int old_width, old_height;
 
+/* field of view for zoom */
+float zoom = FOV;
+
 /* font list number */
 int font;
 
@@ -247,7 +254,7 @@ void init(void) {
     /* set up our camera */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(FOV, width/(float)height, 0.05, 100.0);
+    gluPerspective(zoom, width/(float)height, 0.05, 100.0);
     glMatrixMode(GL_MODELVIEW);
     gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     glLoadIdentity();
@@ -448,6 +455,8 @@ void draw_title(void) {
     glPopAttrib();
 }
 
+#define DOT() { glBegin(GL_POINTS); glVertex3f(0.0, 0.0, 0.0); glEnd(); }
+
 /* wot draws it */
 void display(void) {
     int i;
@@ -461,52 +470,73 @@ void display(void) {
     glLoadIdentity();
     gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     
-    glShadeModel(GL_SMOOTH); 
-    
+    /*    glShadeModel(GL_SMOOTH);  */
+
+    /* draw the origin */
+    glColor3f(1.0, 1.0, 0.0);
+   
     /* draw this dang thing */
     
     /* rotate and translate into snake space */
-    glRotatef(45.0,-5.0,0.0,1.0);
-    glTranslatef(-0.5,0.0,0.5);
-    
-    /* rotate the 0th junction */
-    glTranslatef(0.5,0.0,0.5);
+    /*    glRotatef(45.0, -5.0, 0.0, 1.0); */
+    /*
+    glRotatef(45.0, -5.0, 0.0, 1.0);
+    glTranslatef(-0.5, 0.0, 0.5);
+    */
+
+    /* rotate the snake around the centre of the first node */
+    /* move to the centre of the first piece */
+    glTranslatef(0.5, 0.0, 0.5);
+
+    /* apply the mouse drag rotation */
     glMultMatrixf(rotation);
-    glRotatef(rotang1, 0.0,1.0,0.0); 
-    glRotatef(rotang2, 0.0,0.0,1.0); 
-    glTranslatef(-0.5,0.0,-0.5);
     
+    /* apply the continuous rotation */
+    glRotatef(rotang1, 0.0, 1.0, 0.0); 
+    glRotatef(rotang2, 0.0, 0.0, 1.0); 
+    
+    /* move back to origin */
+    glTranslatef(-0.5, 0.0, -0.5);
+
+#if 0
     /* translate centre to middle node */
     for (i = 11; i >= 0; i--) {
 	ang = node[i].curAngle;
 	glTranslatef(0.5, 0.5, 0.5);
 	glRotatef(180+ang, -1.0, 0.0, 0.0);
-	glTranslatef(-1.0-explode, 0.0, 0.0);
+	glTranslatef(-1.0 - explode, 0.0, 0.0);
 	glRotatef(90, 0.0, 0.0, 1.0);
 	glTranslatef(-0.5, -0.5, -0.5);
     }
-    
+#endif
+
     /* now draw each node along the snake -- this is quite ugly :p */
     for (i = 0; i < 24; i++) {
 	glPushMatrix();
 	
 	/* choose a colour for this node */
 	if ((i == selected || i == selected+1) && interactive)
-	    glColor3f(1.0,1.0,0.0);
+	    /* yellow */
+	    glColor3f(1.0, 1.0, 0.0);
 	else {
-	    /* uncomment the commented lines to get authentic colours */
 	    if (i % 2) {
 		if (authentic)
-		    glColor3f(0.6, 0.0, 0.9);
+		    glColor3f(0.38, 0.0, 0.55);
+		    //glColor3f(0.6, 0.0, 0.9);
 		else
 		    glColor3fv(colour);
 	    } else {
 		if (authentic)
-		    glColor3f(0.2, 0.9, 1.0);
+		    glColor3f(0.0, 0.5, 0.34);
+		    //glColor3f(0.2, 0.9, 1.0);
 		else
 		    glColor3f(1.0, 1.0, 1.0);
 	    }
 	}
+
+#if 0
+	if (i == 0) glColor3f(0.0, 1.0, 1.0);
+#endif
 	
 	/* draw the node */
 	if (wireframe)
@@ -519,15 +549,15 @@ void display(void) {
 	/* Interpolate between models */
 	ang = node[i].curAngle;
 	
-	glTranslatef(0.5,0.5,0.5);		/* move to center */
+	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
 	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
 	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
 	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
-	glTranslatef(-0.5,-0.5,-0.5);		/* return from center */
+	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
     }
     
     /* clear up the matrix stack */
-    for (i = 0; i < 24; i++)
+    /* for (i = 0; i < 24; i++) */
 	glPopMatrix();
     
     if (titles)
@@ -542,7 +572,7 @@ void reshape(int w, int h) {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(FOV, w/(float)h, 0.05, 100.0);
+    gluPerspective(zoom, w/(float)h, 0.05, 100.0);
     glMatrixMode(GL_MODELVIEW);
     width = w;
     height = h;
@@ -778,7 +808,7 @@ void keyboard(unsigned char c, int x, int y) {
 	break;
       case 'p':
 	if (paused) {
-	    /* Reset last_iteration and last_morph time */
+	    /* unpausing, reset last_iteration and last_morph time */
 	    ftime(&last_iteration);
 	    ftime(&last_morph);
 	}
@@ -823,6 +853,14 @@ void keyboard(unsigned char c, int x, int y) {
 	break;
       case 'a':
 	authentic = 1 - authentic;
+	break;
+      case 'z':
+	zoom += 1.0;
+	reshape(width, height);
+	break;
+      case 'Z':
+	zoom -= 1.0;
+	reshape(width, height);
 	break;
       default:
 	break;
@@ -915,19 +953,22 @@ void idol(void) {
     if (paused) {
 	/* Avoid busy waiting when nothing is changing */
 	quick_sleep();
+	glutSwapBuffers();
+	glutPostRedisplay();
 	return;
     }
+
     /* ftime is winDOS compatible */
     ftime(&current_time);
     
     /* <spiv> Well, ftime gives time with millisecond resolution.
-     * <Jaq> if current time is exactly equal to last iteration, 
-     *       then don't do this block
      * <spiv> (or worse, perhaps... who knows what the OS will do)
      * <spiv> So if no discernable amount of time has passed:
      * <spiv>   a) There's no point updating the screen, because
      *             it would be the same
      * <spiv>   b) The code will divide by zero
+     * <Jaq> i.e. if current time is exactly equal to last iteration,
+     *       then don't do this block
      */
     iter_msec = (long) current_time.millitm - last_iteration.millitm + 
 	((long) current_time.time - last_iteration.time) * 1000L;
@@ -1033,7 +1074,7 @@ int main(int argc, char ** argv) {
     
     models = 0;
     model = load_models(basedir, model, &models);
-    model = load_models(""DATADIR"", model, &models);
+    model = load_models(PKGDATADIR, model, &models);
     free(basedir);
     
     if (models == 0) {

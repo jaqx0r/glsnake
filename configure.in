@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_PREREQ(2.50)
-AC_REVISION($Revision: 1.4 $)
+AC_REVISION($Revision: 1.5 $)
 
 AM_INIT_AUTOMAKE(glsnake, 0.8.2, jaq@spacepants.org)
 AC_CONFIG_SRCDIR(glsnake.c)
@@ -113,5 +113,21 @@ eval PKGDATADIR="$datadir/$PACKAGE"
 AC_DEFINE_UNQUOTED(PKGDATADIR, "$PKGDATADIR", [Define this path to where data files are kept])
 
 dnl spit it out
-AC_CONFIG_FILES([Makefile tools/Makefile data/Makefile pixmaps/Makefile])
+AC_CONFIG_FILES([
+	Makefile
+	tools/Makefile
+	data/Makefile
+	pixmaps/Makefile
+])
 AC_OUTPUT
+
+AC_MSG_RESULT([
+glsnake $VERSION: automatic configuration OK!
+
+Configuration summary:
+
+  Program: ............. ${prefix}/bin
+  Model data: .......... $PKGDATADIR
+
+Type 'make' to compile glsnake.
+])

@@ -10,9 +10,6 @@ noinst_HEADERS = model.h
 
 man_MANS = glsnake.6
 
-#CPPFLAGS = -DDATADIR=\""$(pkgdatadir)"\" -DDEBUG
-AM_CPPFLAGS = -DDATADIR=\""$(pkgdatadir)"\"
-
 SUBDIRS = . tools data pixmaps
 
 EXTRA_DIST = config/install-sh config/missing config/mkinstalldirs \
