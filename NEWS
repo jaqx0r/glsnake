@@ -1,6 +1,16 @@
 NEWS for glsnake
 ----------------
 
+Version 0.9:
+* A lot of changes since the last version, including:
+  - a rework of the code to merge the xscreensaver port back into the
+    main trunk
+  - fixed colour morph code
+  - improved model morph code
+  - THOUSANDS of new models
+  - simple build system!
+This same version appears in xscreensaver 4.13.
+
 Version 0.8.2:
 After fixing up the manpage a bit more, Jaq has decided to make 'd' work as
 expected.
