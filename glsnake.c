@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.15 2001/10/05 08:11:15 andrew Exp $
+/* $Id: glsnake.c,v 1.16 2001/10/05 08:19:15 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -1109,8 +1109,9 @@ void restore_idol(int value)
 
 void quick_sleep(void)
 {
-	/* By using glutTimerFunc, we can keep responding to 
-	 * mouse and keyboard events, though. */
+	/* By using glutTimerFunc we can keep responding to 
+	 * mouse and keyboard events, unlike using something like
+	 * usleep. */
 	glutIdleFunc(NULL);
 	glutTimerFunc(1, restore_idol, 0);
 }
