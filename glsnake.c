@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.14 2001/10/05 05:53:48 andrew Exp $
+/* $Id: glsnake.c,v 1.15 2001/10/05 08:11:15 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -1014,6 +1014,9 @@ void motion(int x, int y) {
 	glutPostRedisplay();
 }
 
+void restore_idol(int value);
+void quick_sleep(void);
+
 /* "jwz?  no way man, he's my idle" -- Jamie, 2001.
  * I forget the context :( */
 void idol(void) {
@@ -1030,8 +1033,10 @@ void idol(void) {
 	ftime(&current_time);
 
 	/* pause the model */
-	if (paused)
+	if (paused) {
+		quick_sleep();
 		return;
+	}
 	/* <spiv> Well, ftime gives time with millisecond resolution.
 	 * <Jaq> if current time is exactly equal to last iteration, 
 	 *       then don't do this block
@@ -1090,7 +1095,24 @@ void idol(void) {
 
 		glutSwapBuffers();
 		glutPostRedisplay();
+	} else {
+		/* We are going too fast, so we may as well let the 
+		 * cpu relax a little by sleeping for a millisecond. */
+		quick_sleep();
 	}
+}
+
+void restore_idol(int value)
+{
+	glutIdleFunc(idol);
+}
+
+void quick_sleep(void)
+{
+	/* By using glutTimerFunc, we can keep responding to 
+	 * mouse and keyboard events, though. */
+	glutIdleFunc(NULL);
+	glutTimerFunc(1, restore_idol, 0);
 }
 
 /* stick anything that needs to be shutdown properly here */
