@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.26 2001/10/08 11:55:20 andrew Exp $
+/* $Id: glsnake.c,v 1.27 2001/10/08 12:06:24 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -8,7 +8,7 @@
  * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
  *
  * Compile using a command like:
- *    gcc -O2 -lGL -lGLU -lglut -o glsnake glsnake.c
+ *    gcc -O2 -lGL -lGLU -lglut -lm -o glsnake glsnake.c
  *
  * Jamie rewrote all the drawing code for OpenGL, and the trackball interface
  * Andrew fixed up the morphing code
@@ -256,6 +256,14 @@ float prayer[] = { RIGHT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, ZERO, ZERO,
 	ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, ZERO, RIGHT, RIGHT, LEFT, RIGHT,
 	LEFT, LEFT, LEFT, PIN };
 
+float giraffe[] = {
+	ZERO,ZERO,ZERO,RIGHT,PIN,LEFT,ZERO,ZERO,ZERO,RIGHT,RIGHT,RIGHT,PIN,LEFT,RIGHT,ZERO,PIN,ZERO,LEFT,RIGHT,PIN,LEFT,LEFT,LEFT
+};
+
+float cobra[] = {
+	ZERO,PIN,ZERO,PIN,ZERO,ZERO,ZERO,ZERO,PIN,LEFT,ZERO,RIGHT,ZERO,RIGHT,PIN,LEFT,ZERO,RIGHT,PIN,LEFT,ZERO,LEFT,ZERO
+};
+
 /* these models from http://home.t-online.de/home/thlet.wolter/ */
 
 float wolf[] = { PIN, ZERO, ZERO, ZERO, PIN, PIN, ZERO, ZERO, ZERO, PIN, ZERO, PIN, PIN, ZERO, PIN, ZERO, ZERO, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO };
@@ -410,7 +418,7 @@ float * model[] = {
 	cat, dog, crucifix,
 	/* misc */
 	block, flower, turtle, basket, kayak, bird, seal, frog, quavers, fly,
-	puppy, duck, prayer, tie_fighter,
+	puppy, duck, prayer, tie_fighter, giraffe, cobra,
 	/* eric & thomas' easy models */
 	wolf, pitti, leaf, doubled, symmetry, ostrich, ribbon, roofed, furby,
 	mushroom, taperingturned, viaduct, window2world, platform, heart,
