@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.16 2001/10/05 08:19:15 andrew Exp $
+/* $Id: glsnake.c,v 1.17 2001/10/05 08:33:44 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -934,6 +934,11 @@ void keyboard(unsigned char c, int x, int y) {
 				glEnable(GL_LIGHTING);
 			break;
 		case 'p':
+			if (paused) {
+				/* Reset last_iteration and last_morph time */
+				ftime(&last_iteration);
+				ftime(&last_morph);
+			}
 			paused = 1 - paused;
 			break;
 		case 'd':
