@@ -1,3 +1,21 @@
+glsnake (0.7-4) unstable; urgency=low
+
+  * Changed the pixmap to the snowflake, because I like it better ;)
+
+  * Modified the Makefile a bit more
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Tue, 16 Oct 2001 13:05:31 +1000
+
+glsnake (0.7-3) unstable; urgency=low
+
+  * Added some nice little glsnake icons into the pixmaps/ directory.
+    One of these is being used in glsnake.menu now.
+
+  * Moved install lines from debian/rules into Makefile, and added gcc
+    flags to allow compilation on potato.
+
+ -- Peter Hardy <peterhardy@pacific.net.au>  Tue, 16 Oct 2001 02:16:34 +1000
+  
 glsnake (0.7-2) unstable; urgency=low
 
   * Incorporated Peter's patch into the main tree, modified debian/rules

@@ -3,6 +3,15 @@ CFLAGS=-O2 -Wall -pedantic
 
 all: glsnake
 
+install:
+	install glsnake $(DESTDIR)/usr/bin
+	mkdir $(DESTDIR)/usr/share/pixmaps/glsnake
+	install pixmaps/* $(DESTDIR)/usr/share/pixmaps/glsnake
+
+uninstall:
+	rm $(DESTDIR)/usr/bin/glsnake
+	rm -rf $(DESTDIR)/usr/share/pixmaps/glsnake
+
 ChangeLog:
 	cvs2cl -S --no-wrap
 
