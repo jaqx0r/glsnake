@@ -46,35 +46,33 @@
 
 #define NODE_COUNT 24
 
+#define VOFFSET 0.045
+
 #define X_MASK	1
 #define Y_MASK	2
 #define Z_MASK	4
 
-#define ROTATION_RATE1		0.10
-#define ROTATION_RATE2		0.14
-#define EXPLODE_INCREMENT	0.03
-/* time in milliseconds between morphs */
-#define MODEL_STATIC_TIME	5000L
-#define MORPH_ANG_VELOCITY	1.0
-#define MORPH_ANG_ACCEL		0.1
-
-/* the connecting string that holds the snake together */
-#define MAGICAL_RED_STRING 0
-
-/* default field of view */
-#define FOV 25.0
-
-#define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
+#define DEF_YSPIN               0.10
+#define DEF_ZSPIN               0.14
+#define DEF_EXPLODE             0.03
+#define DEF_VELOCITY            1.0
+#define DEF_ACCEL               0.1
+#define DEF_FOV                25.0
+#define DEF_STATICTIME       5000L
 
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant  */
 #define M_SQRT1_2 0.70710678118654752440084436210485
 #endif
 
+/* the connecting string that holds the snake together */
+#define MAGICAL_RED_STRING 0
+
+#define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
+
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
 /* the triangular prism what makes up the basic unit */
-#define VOFFSET 0.045
 float solid_prism_v[][3] = {
     /* first corner, bottom left front */
     { VOFFSET, VOFFSET, 1.0 },
@@ -286,7 +284,7 @@ void glsnake_init(void) {
 
     /* initialise the config struct */
     glc->selected = 11;
-    glc->morph_angular_velocity = MORPH_ANG_VELOCITY;
+    glc->morph_angular_velocity = DEF_VELOCITY;
     glc->morphing = 0;
     glc->new_morph = 1;
     glc->is_cyclic = 1;
@@ -299,7 +297,7 @@ void glsnake_init(void) {
     glc->rotang1 = 0.0;
     glc->rotang2 = 0.0;
 
-    glc->zoom = FOV;
+    glc->zoom = DEF_FOV;
     glc->explode = VOFFSET;
     glc->wireframe = 0;
     glc->paused = 0;
@@ -533,8 +531,6 @@ void draw_title(void) {
     glPopMatrix();
     glPopAttrib();
 }
-
-#define DOT() { glBegin(GL_POINTS); glVertex3f(0.0, 0.0, 0.0); glEnd(); }
 
 /* apply the matrix to the origin and stick it in vec */
 void matmult_origin(float rotmat[16], float vec[4]) {
@@ -868,11 +864,11 @@ void keyboard(unsigned char c, int x, int y) {
 	exit(0);
 	break;
       case 'e':
-	glc->explode += EXPLODE_INCREMENT;
+	glc->explode += DEF_EXPLODE;
 	glutPostRedisplay();
 	break;
       case 'E':
-	glc->explode -= EXPLODE_INCREMENT;
+	glc->explode -= DEF_EXPLODE;
 	if (glc->explode < 0.0) glc->explode = 0.0;
 	glutPostRedisplay();
 	break;
@@ -894,11 +890,11 @@ void keyboard(unsigned char c, int x, int y) {
 	ftime(&glc->last_morph);			
 	break;
       case '+':
-	glc->morph_angular_velocity += MORPH_ANG_ACCEL;
+	glc->morph_angular_velocity += DEF_ACCEL;
 	break;
       case '-':
-	if (glc->morph_angular_velocity > MORPH_ANG_ACCEL)
-	    glc->morph_angular_velocity -= MORPH_ANG_ACCEL;
+	if (glc->morph_angular_velocity > DEF_ACCEL)
+	    glc->morph_angular_velocity -= DEF_ACCEL;
 	break;
       case 'i':
 	if (glc->interactive) {
@@ -1190,7 +1186,7 @@ void glsnake_idle(void) {
 	/* work out if we have to switch models */
 	morf_msec = glc->last_iteration.millitm - glc->last_morph.millitm +
 	    ((long) (glc->last_iteration.time-glc->last_morph.time) * 1000L);
-	if ((morf_msec > MODEL_STATIC_TIME) && !glc->interactive && !glc->morphing) {
+	if ((morf_msec > DEF_STATICTIME) && !glc->interactive && !glc->morphing) {
 	    start_morph(rand() % models, 0);
 	}
 	
@@ -1200,8 +1196,8 @@ void glsnake_idle(void) {
 	}
 	
 	if (!glc->dragging && !glc->interactive) {
-	    glc->rotang1 += 360/((1000/ROTATION_RATE1)/iter_msec);
-	    glc->rotang2 += 360/((1000/ROTATION_RATE2)/iter_msec);
+	    glc->rotang1 += 360/((1000/DEF_YSPIN)/iter_msec);
+	    glc->rotang2 += 360/((1000/DEF_ZSPIN)/iter_msec);
 	}
 	//	transition = morphFuncs[rand() % (sizeof(morphFuncs)/sizeof(morphFunc))];
 
