@@ -111,7 +111,6 @@
 #endif
 
 static GLfloat explode;
-static GLfloat accel;
 static long statictime;
 static GLfloat yspin = 0;
 static GLfloat zspin = 0;
@@ -1955,8 +1954,13 @@ float morph(long iter_msec) {
 #ifdef HAVE_GLUT
 void glsnake_idle();
 
-void restore_idle(int value)
+void restore_idle(int v)
 {
+    /* doing this to hush gcc -W */
+    int i;
+
+    i = v;
+
     glutIdleFunc(glsnake_idle);
 }
 #endif
@@ -2330,6 +2334,9 @@ inline void ui_mousedrag() {
 
 void ui_keyboard(unsigned char c, int x, int y) {
     int i;
+
+    /* doing this to hush gcc -W */
+    i = x = y;
     
     switch (c) {
       case 27:  /* ESC */
@@ -2451,6 +2458,9 @@ void ui_special(int key, int x, int y) {
     int i;
     float *destAngle = &(model[glc->next_model].node[glc->selected]);
     int unknown_key = 0;
+
+    /* doing this to hush gcc -W :-) */
+    i = x = y;
 
     if (interactive) {
 	switch (key) {
