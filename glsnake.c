@@ -1,9 +1,14 @@
-/* $Id: glsnake.c,v 1.1 2001/10/04 16:13:37 jaq Exp $
+/* $Id: glsnake.c,v 1.2 2001/10/04 16:15:45 jaq Exp $
  * An OpenGL imitation of Rubik's Snake
  * based on Allegro code by Peter Aylett and Andrew Bennetts
  */
 
 #include <GL/glut.h>
+#include <sys/time.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 #if 0
 #define NUM_NODES          24     /* number of snake QUAD-nodes */
@@ -20,6 +25,10 @@
 #define RIGHT   -90.0
 #define PIN     180.0
 #define LEFT    90.0
+#define ROTATION_RATE 0.25	  /* Rotations per second */
+#define EXPLODE_INCREMENT 0.1
+#define MORPH_DELAY 2.0		  /* Delay in seconds between morphs */
+#define MORPH_RATE  0.25	  /* Morphs per second */
 /*
 typedef struct VTX
 {
@@ -45,50 +54,58 @@ float prism_v[][3] = { { 0.0, 0.0, 1.0 },
 
 float ball[] = { RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT};
 
-float cat[] = { ZERO, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO };
+float cat[] = { ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO };
 
-float zigzag1[] = { ZERO, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT };
+float zigzag1[] = { RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT };
 
-float zigzag2[] = { ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN};
+float zigzag2[] = { PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN};
 
-float zigzag3[] = { ZERO, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN };
+float zigzag3[] = { PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN };
 
  /* but try watching a caterpillar do a transition to this! */
-float zigzag3_wrong[] = { ZERO, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN};
+float zigzag3_wrong[] = { PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN};
 
-float caterpillar[] = { ZERO, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT };
+float caterpillar[] = { RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT };
 
-float bow[] = { ZERO, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT};
+float bow[] = { RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT};
 
-float snowflake[] = { ZERO, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT};
+float snowflake[] = { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT};
 
-float turtle[] = { ZERO, RIGHT, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, PIN, RIGHT, LEFT, ZERO, ZERO, LEFT, LEFT, LEFT, RIGHT };
+float turtle[] = { RIGHT, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, PIN, RIGHT, LEFT, ZERO, ZERO, LEFT, LEFT, LEFT, RIGHT };
 
-//float bow[] =
-//{ ZERO, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT };
+/*float bow[] =
+{ LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT };
+*/
 
-float basket[] = { ZERO, RIGHT, PIN, ZERO, ZERO, PIN, LEFT, ZERO, LEFT, LEFT, ZERO, LEFT, PIN, ZERO, ZERO, PIN, RIGHT, PIN, LEFT, PIN, ZERO, ZERO, PIN, LEFT };
+float basket[] = { RIGHT, PIN, ZERO, ZERO, PIN, LEFT, ZERO, LEFT, LEFT, ZERO, LEFT, PIN, ZERO, ZERO, PIN, RIGHT, PIN, LEFT, PIN, ZERO, ZERO, PIN, LEFT };
 
 
-float thing[] = { ZERO, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT };
+float thing[] = { PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT };
 
  /* Note: this is a 32 node model */
-float snowflake32[] = { ZERO, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT};
+float snowflake32[] = { RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT};
 
-//int *models[] = {ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, caterpillar, turtle, basket, thing};
+float straight[] = { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
+	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
+	ZERO, ZERO };
+
+/*int *models[] = {ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, caterpillar, turtle, basket, thing};*/
 /*int *models[] = {ball, cat, bow, snowflake, caterpillar, turtle, basket, thing};*/
 
-float * model[] = { ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, caterpillar, turtle, basket, thing };
+float * model[] = { ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, caterpillar, turtle, basket, thing, straight };
 
 int models = sizeof(model) / sizeof(float *);
 int m = 0;
-
+int m_next;
 /*
 float ang[] = {0.0,LEFT, RIGHT, 0.0, LEFT, RIGHT, ZERO, LEFT, RIGHT, ZERO, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT};
 */
 
 /* rotation angle */
 float rotang = 0.0;
+
+/* morph ratio (how far between model m and model m_next we are) */
+float morph = 0.0;
 
 /* option variables */
 float explode = 0.0;
@@ -195,6 +212,7 @@ void init(void) {
 /* wot draws it */
 void display(void) {
 	int i;
+	float ang;
 	
 	/* clear the buffer */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -232,20 +250,25 @@ void display(void) {
 			glColor3f(0.0,0.0,0.0);
 			glCallList(node_wire);
 		}
+
+		/* Interpolate between models */
+		ang = model[m][i] * (1.0 - morph) + model[m_next][i] * morph;
+		
 		glRotatef(180.0, 0.0,0.0,1.0);
 		if (i % 2) {
 			glTranslatef(-1.0,explode,0.0);
 			/* rotation of the joint */
 			glTranslatef(0.5,0.0,0.5);
-			glRotatef(model[m][i], 0.0, 1.0, 0.0);
+			glRotatef(ang, 0.0, 1.0, 0.0);
 			glTranslatef(-0.5,0.0,-0.5);
 		} else {
 			glTranslatef(explode,-1.0,0.0);
 			/* rotation of the joint */
 			glTranslatef(0.0,0.5,0.5);
-			glRotatef(model[m][i], 1.0, 0.0, 0.0);
+			glRotatef(ang, 1.0, 0.0, 0.0);
 			glTranslatef(0.0,-0.5,-0.5);
 		}
+
 	}
 	for (i = 0; i < 24; i++) {
 		glPopMatrix();
@@ -266,13 +289,14 @@ void keyboard(unsigned char c, int x, int y) {
 			exit(0);
 			break;
 		case 'e':
-			/* mmm, hardcoded */
-			explode = 0.2 - explode;
+			explode += EXPLODE_INCREMENT;
+			break;
+		case 'E':
+			explode -= EXPLODE_INCREMENT;
+			if (explode < 0.0) explode = 0.0;
 			break;
 		case 'n':
-			m++;
-			if (m >= models)
-				m = 0;
+			m = rand() % (models - 1);
 			break;
 		case 'w':
 			wireframe = 1 - wireframe;
@@ -282,11 +306,35 @@ void keyboard(unsigned char c, int x, int y) {
 	}
 }
 
+struct timeval last_iteration;
+struct timeval last_morph;
+
 /* "jwz?  no way man, he's my idle" -- me, 2001.  I forget the context :( */
 void idol(void) {
-	rotang += 0.05;
-	/* do the morphing stuff here */
+	long i_sec, i_usec;		/* used for tracking how far through an iteration we are */
+	long m_sec, m_usec;
+	i_sec = -last_iteration.tv_sec;
+	i_usec = -last_iteration.tv_usec;
+	gettimeofday(&last_iteration,NULL);
+	i_sec += last_iteration.tv_sec;
+	i_usec += last_iteration.tv_usec;
+	i_usec += i_sec*1000000;
 
+	rotang += 360/((1000000/ROTATION_RATE)/i_usec);
+	
+	/* do the morphing stuff here */
+	m_sec = last_iteration.tv_sec - last_morph.tv_sec;
+	m_usec = last_iteration.tv_usec - last_morph.tv_usec;
+	m_usec += m_sec*1000000;
+	if (m_usec > (long)(MORPH_DELAY*1000000)) {
+		morph = (m_usec - MORPH_DELAY*1000000) * (MORPH_RATE/1000000);
+		if (morph > 1.0) {
+			morph = 0.0;
+			m = m_next;
+			m_next = rand() % (models - 1);
+			memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
+		}
+	}
 	glutSwapBuffers();
 	glutPostRedisplay();
 }
@@ -301,6 +349,10 @@ int main(int argc, char ** argv) {
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(640, 480);
 	window = glutCreateWindow("glsnake");
+	gettimeofday(&last_iteration, NULL);
+	memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
+	srand((unsigned int)last_iteration.tv_usec);
+	m_next = rand() % (models - 1);
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
@@ -360,7 +412,7 @@ int main(int argc, char ** argv) {
      for (a=0; a<24; a++) nodes[a].ang=model1[a];
       j = -32;
 
-//      while (!keypressed() & !mouse_moved()) {
+/*      while (!keypressed() & !mouse_moved()) { */
      while (!key[KEY_ESC]) {
 
          j++;
@@ -380,7 +432,7 @@ int main(int argc, char ** argv) {
          if ((ABS(j)) <= 160 && (ABS(j)) >= 32)
             for (a=1; a<24; a++)
                 nodes[a].ang = ((model1[a] * (128-(ABS(j)-32)))>>7)+((model2[a] * (ABS(j)-32))>>7);
-                //nodes[a].ang + (1<<16);
+                /*nodes[a].ang + (1<<16);*/
 
          nodes[0].ang = nodes[0].ang + (3<<16);
          /*      nodes[1].ang = nodes[1].ang + (4<<16);
