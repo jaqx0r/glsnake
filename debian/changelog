@@ -1,3 +1,9 @@
+glsnake (0.8.2-1) unstable; urgency=low
+
+  * New upstream: fixed modelfile dump command, new manpage
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Tue, 18 Dec 2001 16:21:18 +1100
+
 glsnake (0.8.1-1) unstable; urgency=low
 
   * New upstream: converted to autotools, moved model data out of the source
