@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.41 2001/10/17 03:40:56 jaq Exp $
+/* $Id: glsnake.c,v 1.42 2001/10/18 16:04:32 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -50,7 +50,7 @@
 
 #define ROTATION_RATE1		0.10
 #define ROTATION_RATE2		0.14
-#define EXPLODE_INCREMENT	0.05
+#define EXPLODE_INCREMENT	0.03
 /* time in milliseconds between morphs */
 #define MODEL_STATIC_TIME	5000L
 #define MORPH_ANG_VELOCITY	1.0
@@ -66,18 +66,69 @@
 int window;
 
 /* the id of the display lists for drawing a node */
-int node_solid, node_wire, node_shiny;
+int node_solid, node_wire;
 
 /* the triangular prism what makes up the basic unit */
-float prism_v[][3] = {{ 0.0, 0.0, 1.0 },
+#define VOFFSET 0.045
+#define MODEL_TEST 0
+float solid_prism_v[][3] = {
+                      /* first corner, bottom left front */
+                      { VOFFSET, VOFFSET, 1.0 },
+					  { VOFFSET, 0.00, 1.0 - VOFFSET },
+                      { 0.00, VOFFSET, 1.0 - VOFFSET },
+					  /* second corner, rear */
+					  { VOFFSET, VOFFSET, 0.00 },
+					  { VOFFSET, 0.00, VOFFSET },
+					  { 0.00, VOFFSET, VOFFSET },
+					  /* third, right front */
+					  { 1.0 - VOFFSET / M_SQRT1_2, VOFFSET, 1.0 },
+					  { 1.0 - VOFFSET / M_SQRT1_2, 0.0, 1.0 - VOFFSET },
+					  { 1.0 - VOFFSET * M_SQRT1_2, VOFFSET, 1.0 - VOFFSET },
+					  /* fourth, right rear */
+					  { 1.0 - VOFFSET / M_SQRT1_2, VOFFSET, 0.0 },
+					  { 1.0 - VOFFSET / M_SQRT1_2, 0.0, VOFFSET },
+					  { 1.0 - VOFFSET * M_SQRT1_2, VOFFSET, VOFFSET },
+					  /* fifth, upper front */
+					  { VOFFSET, 1.0 - VOFFSET / M_SQRT1_2, 1.0 },
+					  { VOFFSET / M_SQRT1_2, 1.0 - VOFFSET * M_SQRT1_2, 1.0 - VOFFSET },
+					  { 0.0, 1.0 - VOFFSET / M_SQRT1_2, 1.0 - VOFFSET},
+					  /* sixth, upper rear */
+					  { VOFFSET, 1.0 - VOFFSET / M_SQRT1_2, 0.0 },
+					  { VOFFSET / M_SQRT1_2, 1.0 - VOFFSET * M_SQRT1_2, VOFFSET },
+					  { 0.0, 1.0 - VOFFSET / M_SQRT1_2, VOFFSET }};
+
+float solid_prism_n[][3] = {/* corners */
+                        { -VOFFSET, -VOFFSET, VOFFSET },
+                        { VOFFSET, -VOFFSET, VOFFSET },
+						{ -VOFFSET, VOFFSET, VOFFSET },
+						{ -VOFFSET, -VOFFSET, -VOFFSET },
+						{ VOFFSET, -VOFFSET, -VOFFSET },
+						{ -VOFFSET, VOFFSET, -VOFFSET },
+						/* edges */
+						{ -VOFFSET, 0.0, VOFFSET },
+						{ 0.0, -VOFFSET, VOFFSET },
+						{ VOFFSET, VOFFSET, VOFFSET },
+						{ -VOFFSET, 0.0, -VOFFSET },
+						{ 0.0, -VOFFSET, -VOFFSET },
+						{ VOFFSET, VOFFSET, -VOFFSET },
+						{ -VOFFSET, -VOFFSET, 0.0 },
+						{ VOFFSET, -VOFFSET, 0.0 },
+						{ -VOFFSET, VOFFSET, 0.0 },
+						/* faces */
+						{ 0.0, 0.0, 1.0 },
+						{ 0.0, -1.0, 0.0 },
+                        { M_SQRT1_2, M_SQRT1_2, 0.0 },
+                        { -1.0, 0.0, 0.0 },
+                        { 0.0, 0.0, -1.0 }};
+
+float wire_prism_v[][3] = {{ 0.0, 0.0, 1.0 },
                       { 1.0, 0.0, 1.0 },
                       { 0.0, 1.0, 1.0 },
                       { 0.0, 0.0, 0.0 },
                       { 1.0, 0.0, 0.0 },
                       { 0.0, 1.0, 0.0 }};
 
-/* face normals */
-float prism_n[][3] = {{ 0.0, 0.0, 1.0},
+float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
                       { 0.0,-1.0, 0.0},
                       { M_SQRT1_2, M_SQRT1_2, 0.0},
                       {-1.0, 0.0, 0.0},
@@ -1361,13 +1412,13 @@ int font;
 char * interactstr = "interactive";
 
 /* option variables */
-float explode = 0.1;
+float explode = VOFFSET;
 int wireframe = 0;
-int shiny = 0;
 int interactive = 0;
 int paused = 0;
 int fullscreen = 0;
 int titles = 1;
+int authentic = 0;
 
 int w = 0;
 
@@ -1419,11 +1470,16 @@ void init(void) {
 	/* enable backface culling */
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
+	glEnable(GL_NORMALIZE);
 	
 	/* set up our camera */
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(40.0, 640/480.0, 0.05, 100.0);
+#if MODEL_TEST
+	gluPerspective(10.0, 640/480.0, 0.05, 100.0);
+#else
+	gluPerspective(30.0, 640/480.0, 0.05, 100.0);
+#endif
 	gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	glMatrixMode(GL_MODELVIEW);
 	
@@ -1441,101 +1497,156 @@ void init(void) {
 	/* build a solid display list */
 	node_solid = glGenLists(1);
 	glNewList(node_solid, GL_COMPILE);
+	/* corners */
+#if !!MODEL_TEST
+	glColor3f(1.0, 0.0, 0.0);
+#endif
 	glBegin(GL_TRIANGLES);
-	glNormal3fv(prism_n[0]);
-	glVertex3fv(prism_v[0]);
-	glVertex3fv(prism_v[1]);
-	glVertex3fv(prism_v[2]);
+	glNormal3fv(solid_prism_n[0]);
+	glVertex3fv(solid_prism_v[0]);
+	glVertex3fv(solid_prism_v[2]);
+	glVertex3fv(solid_prism_v[1]);
 
-	glNormal3fv(prism_n[4]);
-	glVertex3fv(prism_v[3]);
-	glVertex3fv(prism_v[5]);
-	glVertex3fv(prism_v[4]);
+	glNormal3fv(solid_prism_n[1]);
+	glVertex3fv(solid_prism_v[6]);
+	glVertex3fv(solid_prism_v[7]);
+	glVertex3fv(solid_prism_v[8]);
+
+	glNormal3fv(solid_prism_n[2]);
+	glVertex3fv(solid_prism_v[12]);
+	glVertex3fv(solid_prism_v[13]);
+	glVertex3fv(solid_prism_v[14]);
+
+	glNormal3fv(solid_prism_n[3]);
+	glVertex3fv(solid_prism_v[3]);
+	glVertex3fv(solid_prism_v[4]);
+	glVertex3fv(solid_prism_v[5]);
+
+	glNormal3fv(solid_prism_n[4]);
+	glVertex3fv(solid_prism_v[9]);
+	glVertex3fv(solid_prism_v[11]);
+	glVertex3fv(solid_prism_v[10]);
+
+	glNormal3fv(solid_prism_n[5]);
+	glVertex3fv(solid_prism_v[16]);
+	glVertex3fv(solid_prism_v[15]);
+	glVertex3fv(solid_prism_v[17]);
 	glEnd();
+	/* edges */
+#if !!MODEL_TEST
+	glColor3f(0.0, 1.0, 0.0);
+#endif
 	glBegin(GL_QUADS);
-	glNormal3fv(prism_n[1]);
-	glVertex3fv(prism_v[1]);
-	glVertex3fv(prism_v[0]);
-	glVertex3fv(prism_v[3]);
-	glVertex3fv(prism_v[4]);
+	glNormal3fv(solid_prism_n[6]);
+	glVertex3fv(solid_prism_v[0]);
+	glVertex3fv(solid_prism_v[12]);
+	glVertex3fv(solid_prism_v[14]);
+	glVertex3fv(solid_prism_v[2]);
 	
-	glNormal3fv(prism_n[2]);
-	glVertex3fv(prism_v[2]);
-	glVertex3fv(prism_v[1]);
-	glVertex3fv(prism_v[4]);
-	glVertex3fv(prism_v[5]);
+	glNormal3fv(solid_prism_n[7]);
+	glVertex3fv(solid_prism_v[0]);
+	glVertex3fv(solid_prism_v[1]);
+	glVertex3fv(solid_prism_v[7]);
+	glVertex3fv(solid_prism_v[6]);
 	
-	glNormal3fv(prism_n[3]);
-	glVertex3fv(prism_v[0]);
-	glVertex3fv(prism_v[2]);
-	glVertex3fv(prism_v[5]);
-	glVertex3fv(prism_v[3]);
+	glNormal3fv(solid_prism_n[8]);
+	glVertex3fv(solid_prism_v[6]);
+	glVertex3fv(solid_prism_v[8]);
+	glVertex3fv(solid_prism_v[13]);
+	glVertex3fv(solid_prism_v[12]);
+	
+	glNormal3fv(solid_prism_n[9]);
+	glVertex3fv(solid_prism_v[3]);
+	glVertex3fv(solid_prism_v[5]);
+	glVertex3fv(solid_prism_v[17]);
+	glVertex3fv(solid_prism_v[15]);
+	
+	glNormal3fv(solid_prism_n[10]);
+	glVertex3fv(solid_prism_v[3]);
+	glVertex3fv(solid_prism_v[9]);
+	glVertex3fv(solid_prism_v[10]);
+	glVertex3fv(solid_prism_v[4]);
+	
+	glNormal3fv(solid_prism_n[11]);
+	glVertex3fv(solid_prism_v[15]);
+	glVertex3fv(solid_prism_v[16]);
+	glVertex3fv(solid_prism_v[11]);
+	glVertex3fv(solid_prism_v[9]);
+
+	glNormal3fv(solid_prism_n[12]);
+	glVertex3fv(solid_prism_v[1]);
+	glVertex3fv(solid_prism_v[2]);
+	glVertex3fv(solid_prism_v[5]);
+	glVertex3fv(solid_prism_v[4]);
+
+	glNormal3fv(solid_prism_n[13]);
+	glVertex3fv(solid_prism_v[8]);
+	glVertex3fv(solid_prism_v[7]);
+	glVertex3fv(solid_prism_v[10]);
+	glVertex3fv(solid_prism_v[11]);
+
+	glNormal3fv(solid_prism_n[14]);
+	glVertex3fv(solid_prism_v[13]);
+	glVertex3fv(solid_prism_v[16]);
+	glVertex3fv(solid_prism_v[17]);
+	glVertex3fv(solid_prism_v[14]);
+	glEnd();
+	
+	/* faces */
+#if !!MODEL_TEST
+	glColor3f(0.0, 0.0, 1.0);
+#endif
+	glBegin(GL_TRIANGLES);
+	glNormal3fv(solid_prism_n[15]);
+	glVertex3fv(solid_prism_v[0]);
+	glVertex3fv(solid_prism_v[6]);
+	glVertex3fv(solid_prism_v[12]);
+	
+	glNormal3fv(solid_prism_n[19]);
+	glVertex3fv(solid_prism_v[3]);
+	glVertex3fv(solid_prism_v[15]);
+	glVertex3fv(solid_prism_v[9]);
+	glEnd();
+	
+	glBegin(GL_QUADS);
+	glNormal3fv(solid_prism_n[16]);
+	glVertex3fv(solid_prism_v[1]);
+	glVertex3fv(solid_prism_v[4]);
+	glVertex3fv(solid_prism_v[10]);
+	glVertex3fv(solid_prism_v[7]);
+
+	glNormal3fv(solid_prism_n[17]);
+	glVertex3fv(solid_prism_v[8]);
+	glVertex3fv(solid_prism_v[11]);
+	glVertex3fv(solid_prism_v[16]);
+	glVertex3fv(solid_prism_v[13]);
+
+	glNormal3fv(solid_prism_n[18]);
+	glVertex3fv(solid_prism_v[2]);
+	glVertex3fv(solid_prism_v[14]);
+	glVertex3fv(solid_prism_v[17]);
+	glVertex3fv(solid_prism_v[5]);
 	glEnd();
 	glEndList();
 	
-	/* build shiny display list */
-	node_shiny = glGenLists(1);
-	glNewList(node_shiny, GL_COMPILE);
-	glBegin(GL_TRIANGLES);
-	glNormal3fv(prism_n[0]);
-	glVertex3fv(prism_v[0]);
-	glNormal3fv(prism_n[1]);
-	glVertex3fv(prism_v[1]);
-	glNormal3fv(prism_n[2]);
-	glVertex3fv(prism_v[2]);
-
-	glNormal3fv(prism_n[4]);
-	glVertex3fv(prism_v[3]);
-	glNormal3fv(prism_n[3]);
-	glVertex3fv(prism_v[5]);
-	glNormal3fv(prism_n[2]);
-	glVertex3fv(prism_v[4]);
-	glEnd();
-	glBegin(GL_QUADS);
-	glNormal3fv(prism_n[1]);
-	glVertex3fv(prism_v[1]);
-	glNormal3fv(prism_n[2]);
-	glVertex3fv(prism_v[0]);
-	glNormal3fv(prism_n[3]);
-	glVertex3fv(prism_v[3]);
-	glNormal3fv(prism_n[4]);
-	glVertex3fv(prism_v[4]);
-
-	glNormal3fv(prism_n[2]);
-	glVertex3fv(prism_v[2]);
-	glVertex3fv(prism_v[1]);
-	glVertex3fv(prism_v[4]);
-	glVertex3fv(prism_v[5]);
-
-	glNormal3fv(prism_n[3]);
-	glVertex3fv(prism_v[0]);
-	glNormal3fv(prism_n[2]);
-	glVertex3fv(prism_v[2]);
-	glNormal3fv(prism_n[1]);
-	glVertex3fv(prism_v[5]);
-	glNormal3fv(prism_n[0]);
-	glVertex3fv(prism_v[3]);
-	glEnd();
-	glEndList();
-
 	/* build wire display list */
 	node_wire = glGenLists(1);
 	glNewList(node_wire, GL_COMPILE);
 	glBegin(GL_LINE_STRIP);
-	glVertex3fv(prism_v[0]);
-	glVertex3fv(prism_v[1]);
-	glVertex3fv(prism_v[2]);
-	glVertex3fv(prism_v[0]);
-	glVertex3fv(prism_v[3]);
-	glVertex3fv(prism_v[4]);
-	glVertex3fv(prism_v[5]);
-	glVertex3fv(prism_v[3]);
+	glVertex3fv(wire_prism_v[0]);
+	glVertex3fv(wire_prism_v[1]);
+	glVertex3fv(wire_prism_v[2]);
+	glVertex3fv(wire_prism_v[0]);
+	glVertex3fv(wire_prism_v[3]);
+	glVertex3fv(wire_prism_v[4]);
+	glVertex3fv(wire_prism_v[5]);
+	glVertex3fv(wire_prism_v[3]);
 	glEnd();
 	glBegin(GL_LINES);
-	glVertex3fv(prism_v[1]);
-	glVertex3fv(prism_v[4]);
-	glVertex3fv(prism_v[2]);
-	glVertex3fv(prism_v[5]);
+	glVertex3fv(wire_prism_v[1]);
+	glVertex3fv(wire_prism_v[4]);
+	glVertex3fv(wire_prism_v[2]);
+	glVertex3fv(wire_prism_v[5]);
 	glEnd();
 	glEndList();
 
@@ -1579,8 +1690,10 @@ void draw_title(void) {
 
 /* wot draws it */
 void display(void) {
+#if !MODEL_TEST
 	int i;
 	float ang;
+#endif
 	
 	/* clear the buffer */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1593,13 +1706,16 @@ void display(void) {
 
 	/* draw this dang thing */
 	
+#if !MODEL_TEST
 	/* rotate and translate into snake space */
 	glRotatef(45.0,-5.0,0.0,1.0);
 	glTranslatef(-0.5,0.0,0.5);
+#endif
 	
 	/* rotate the 0th junction */
 	glTranslatef(0.5,0.0,0.5);
 	glMultMatrixf(rotation);
+#if !MODEL_TEST
 	glRotatef(rotang1, 0.0,1.0,0.0); 
 	glRotatef(rotang2, 0.0,0.0,1.0); 
 	glTranslatef(-0.5,0.0,-0.5);
@@ -1623,21 +1739,28 @@ void display(void) {
 			glColor3f(1.0,1.0,0.0);
 		else {
 			// uncomment the commented lines to get authentic colours
-			if (i % 2)
-				//glColor3f(0.6, 0.0, 0.9);
-				glColor3fv(colour);
-			else
-				//glColor3f(0.2, 0.9, 1.0);
-				glColor3f(1.0, 1.0, 1.0);
+			if (i % 2) {
+				if (authentic)
+					glColor3f(0.6, 0.0, 0.9);
+				else
+					glColor3fv(colour);
+			} else {
+#endif
+				if (authentic)
+					glColor3f(0.2, 0.9, 1.0);
+				else
+					glColor3f(1.0, 1.0, 1.0);
+#if !MODEL_TEST
+			}
 		}
 
 		/* draw the node */
 		if (wireframe)
 			glCallList(node_wire);
-		else if (shiny)
-			glCallList(node_shiny);
 		else
+#endif
 			glCallList(node_solid);
+#if !MODEL_TEST
 
 		/* now work out where to draw the next one */
 		
@@ -1654,6 +1777,7 @@ void display(void) {
 	/* clear up the matrix stack */
 	for (i = 0; i < 24; i++)
 		glPopMatrix();
+#endif
 	
 
 	if (titles)
@@ -1883,14 +2007,12 @@ void keyboard(unsigned char c, int x, int y) {
 				morph_angular_velocity -= MORPH_ANG_ACCEL;
 			break;
 		case 'i':
+			if (interactive) {
+				/* Reset last_iteration and last_morph time */
+				ftime(&last_iteration);
+				ftime(&last_morph);
+			}
 			interactive = 1 - interactive;
-			glutPostRedisplay();
-			break;
-		case 's':
-			if (wireframe)
-				glEnable(GL_LIGHTING);
-			wireframe = 0;
-			shiny = 1 - shiny;
 			glutPostRedisplay();
 			break;
 		case 'w':
@@ -1944,6 +2066,9 @@ void keyboard(unsigned char c, int x, int y) {
 			titles = 1 - titles;
 			if (interactive || paused)
 				glutPostRedisplay();
+			break;
+		case 'a':
+			authentic = 1 - authentic;
 			break;
 		default:
 			break;
