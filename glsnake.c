@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.36 2001/10/11 08:57:14 andrew Exp $
+/* $Id: glsnake.c,v 1.37 2001/10/11 09:06:52 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -1793,7 +1793,7 @@ void start_morph(int modelIndex, int immediate) {
 
 void special(int key, int x, int y) {
 	int i;
-	float tmp;
+	float *destAngle = &(node[selected].destAngle);
 	int unknown_key = 0;
 
 	if (interactive) {
@@ -1805,13 +1805,11 @@ void special(int key, int x, int y) {
 				selected = (selected + 1) % 23;
 				break;
 			case GLUT_KEY_LEFT:
-				tmp = fmod(node[selected].destAngle+LEFT,360);
-				node[selected].destAngle = tmp;
+				*destAngle = fmod(*destAngle+LEFT, 360);
 				morphing = 1;
 				break;
 			case GLUT_KEY_RIGHT:
-				tmp = fmod(node[selected].destAngle+RIGHT,360);
-				node[selected].destAngle = tmp;
+				*destAngle = fmod(*destAngle+RIGHT, 360);
 				morphing = 1;
 				break;
 			case GLUT_KEY_HOME:
@@ -2064,12 +2062,12 @@ void idol(void) {
 			if (curAngle != destAngle) {
 				still_morphing = 1;
 				if (fabs(curAngle-destAngle) <= iter_angle_max)
-					curAngle = destAngle;
+					node[i].curAngle = destAngle;
 				else if (fmod(curAngle-destAngle+360,360) > 180)
-					curAngle = fmod(curAngle + 
+					node[i].curAngle = fmod(curAngle + 
 							iter_angle_max, 360);
 				else
-					curAngle = fmod(curAngle + 360 - 
+					node[i].curAngle = fmod(curAngle+360 - 
 							iter_angle_max, 360);
 			}
 		}
