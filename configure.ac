@@ -2,7 +2,7 @@
 AC_INIT
 AC_PREREQ(2.50)
 AC_CONFIG_AUX_DIR(config)
-AM_INIT_AUTOMAKE(glsnake, 0.8, jaq@spacepants.org)
+AM_INIT_AUTOMAKE(glsnake, 0.8.1, jaq@spacepants.org)
 AC_CONFIG_SRCDIR(glsnake.c)
 AM_CONFIG_HEADER(config.h)
 

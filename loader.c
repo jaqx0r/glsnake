@@ -1,4 +1,4 @@
-/* $Id: loader.c,v 1.5 2001/12/09 12:10:36 andrew Exp $
+/* $Id: loader.c,v 1.6 2001/12/18 03:47:38 jaq Exp $
  * loads a glsnake modelfile
  *
  * Lines beginning with '#' are comments and are ignored
@@ -10,9 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include "model.h"
-#include <libgen.h>
-#include <unistd.h>
 
 model_t * add_model(model_t * models, char * name, int * rotations, int * count) {
 	int i;
@@ -34,24 +35,16 @@ model_t * add_model(model_t * models, char * name, int * rotations, int * count)
  * returns a new pointer to models
  * count is number of models read
  */
-model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count) {
+//model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count) {
+model_t * load_modelfile(char * filename, model_t * models, int * count) {
 	char c;
 	FILE * f;
 	char buffy[256];
 	int rotations[24];
 	int name = 1;
 	int rots = 0;
-	char * fullpath;
 
-	/* Figure out the path to the model files, relative to the 
-	 * current working directory. */
-	fullpath = (char *) malloc((strlen(basedir) + strlen(filename) + 2));
-	strcpy(fullpath, basedir);
-	strcat(fullpath, "/");
-	strcat(fullpath, filename);
-	
-	f = fopen(fullpath, "r");
-	free(fullpath);
+	f = fopen(filename, "r");
 	if (f == NULL) {
 		int error_msg_len = strlen(filename) + 33 + 1;
 		char * error_msg = (char *) malloc(sizeof(char) * error_msg_len);
@@ -136,5 +129,35 @@ model_t * load_modelfile(char * basedir, char * filename, model_t * models, int 
 				break;
 		}
 	}
+	return models;
+}
+
+model_t * load_models(char * dirpath, model_t * models, int * count) {
+	char name[1024];
+	struct dirent * dp;
+	DIR * dfd;
+	struct stat statbuffy;
+
+	if ((dfd = opendir(dirpath)) == NULL) {
+		if (strstr(dirpath, "data") == NULL)
+			fprintf(stderr, "load_models: can't read %s/\n", dirpath);
+		return models;
+	}
+	while ((dp = readdir(dfd)) != NULL) {
+		if (strcmp(dp->d_name, ".") == 0 || strcmp(dp->d_name, "..") == 0)
+			continue;
+		if (strlen(dirpath) + strlen(dp->d_name) + 2 > sizeof(name))
+			fprintf(stderr, "load_models: name %s/%s too long\n", dirpath, dp->d_name);
+		else {
+			sprintf(name, "%s/%s", dirpath, dp->d_name);
+			if (strcmp(&name[(int) strlen(name) - 7], "glsnake") == 0) {
+#ifdef DEBUG
+				fprintf(stderr, "load_models: opening %s\n", name);	
+#endif
+				models = load_modelfile(name, models, count);
+			}
+		}
+	}
+	closedir(dfd);
 	return models;
 }

@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.47 2001/12/09 11:29:32 andrew Exp $
+/* $Id: glsnake.c,v 1.48 2001/12/18 03:47:38 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -59,6 +59,8 @@
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant */
 #define M_SQRT1_2 0.70710678118654752440084436210485
 #endif
+
+#define DATA(x) DATADIR ## x
 
 /* the id for the window we make */
 int window;
@@ -132,7 +134,9 @@ float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
                       { 0.0, 0.0,-1.0}};
 
 /* model loading function in loader.c */
-model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count);
+//model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count);
+//model_t * load_modelfile(char * filename, model_t * models, int * count);
+model_t * load_models(char * dirname, model_t * models, int * count);
 
 typedef struct {
 	float curAngle;
@@ -1004,17 +1008,22 @@ void unmain(void) {
 }
 
 int main(int argc, char ** argv) {
-	char * basedir = dirname(argv[0]);
+	char * basedir;
 	
 	width = 640;
 	height = 480;
 
+	/* this is so we can run it from the source directory */
+	basedir = (char *) malloc(sizeof(char) * (strlen(dirname(argv[0])) + strlen("/data") + 1));
+	sprintf(basedir, "%s/data", dirname(argv[0]));
+	
 	glutInit(&argc, argv);
 
 	models = 0;
-	model = load_modelfile(basedir, "data/models.glsnake", model, &models);
-	model = load_modelfile(basedir, "data/ericandthomas.glsnake", model, &models);
+	model = load_models(basedir, model, &models);
+	model = load_models(""DATADIR"", model, &models);
 	free(basedir);
+	
 	if (models == 0) {
 		fputs("Unable to read any models!  Aborting...\n", stderr);
 		return 1;

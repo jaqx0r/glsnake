@@ -1,3 +1,10 @@
+glsnake (0.8.1-1) unstable; urgency=low
+
+  * New upstream: converted to autotools, moved model data out of the source
+    into loadable files.
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Tue, 18 Dec 2001 14:00:08 +1100
+
 glsnake (0.7.6-2) unstable; urgency=low
 
   * Added Peter's new manpage 
