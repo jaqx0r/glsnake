@@ -3,7 +3,7 @@ AC_INIT
 AC_PREREQ(2.50)
 AC_REVISION($Revision: 1.5 $)
 
-AM_INIT_AUTOMAKE(glsnake, 0.8.2, jaq@spacepants.org)
+AM_INIT_AUTOMAKE(glsnake, 0.8.9, jaq@spacepants.org)
 AC_CONFIG_SRCDIR(glsnake.c)
 AM_CONFIG_HEADER(config.h)
 
