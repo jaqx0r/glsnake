@@ -34,7 +34,13 @@
 # include "config.h"
 #endif
 
-#include <GL/glut.h>
+#ifdef HAVE_GLUT
+# include <GL/glut.h>
+#else
+# include <GL/gl.h>
+# include <GL/glu.h>
+#endif
+
 #include <sys/timeb.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -521,10 +527,12 @@ void draw_title(void) {
 	    s = interactstr;
 	else
 	    s = model[glc->curModel].name;
+#ifdef HAVE_GLUT
 	w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (unsigned char *) s);
 	glRasterPos2f(glc->width - w - 3, 4);
 	while (s[i] != 0)
 	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
+#endif
     }
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -688,7 +696,9 @@ void glsnake_display(void) {
 	draw_title();
     
     glFlush();
+#ifdef HAVE_GLUT
     glutSwapBuffers();
+#endif
 }
 
 /* wot gets called when the winder is resized */
@@ -818,11 +828,12 @@ void start_morph(int modelIndex, int immediate) {
     glc->morphing = 1;
 }
 
+#ifdef HAVE_GLUT    
 void special(int key, int x, int y) {
     int i;
     float *destAngle = &(glc->node[glc->selected].destAngle);
     int unknown_key = 0;
-    
+
     if (glc->interactive) {
 	switch (key) {
 	  case GLUT_KEY_UP:
@@ -854,6 +865,7 @@ void special(int key, int x, int y) {
     if (!unknown_key)
 	glutPostRedisplay();
 }
+#endif
 
 void keyboard(unsigned char c, int x, int y) {
     int i;
@@ -865,12 +877,16 @@ void keyboard(unsigned char c, int x, int y) {
 	break;
       case 'e':
 	glc->explode += DEF_EXPLODE;
+#ifdef HAVE_GLUT
 	glutPostRedisplay();
+#endif
 	break;
       case 'E':
 	glc->explode -= DEF_EXPLODE;
 	if (glc->explode < 0.0) glc->explode = 0.0;
+#ifdef HAVE_GLUT
 	glutPostRedisplay();
+#endif
 	break;
       case '.':
 	/* next model */
@@ -903,7 +919,9 @@ void keyboard(unsigned char c, int x, int y) {
 	    ftime(&glc->last_morph);
 	}
 	glc->interactive = 1 - glc->interactive;
+#ifdef HAVE_GLUT
 	glutPostRedisplay();
+#endif
 	break;
       case 'w':
 	glc->wireframe = 1 - glc->wireframe;
@@ -911,7 +929,9 @@ void keyboard(unsigned char c, int x, int y) {
 	    glDisable(GL_LIGHTING);
 	else
 	    glEnable(GL_LIGHTING);
+#ifdef HAVE_GLUT
 	glutPostRedisplay();
+#endif
 	break;
       case 'p':
 	if (glc->paused) {
@@ -947,16 +967,22 @@ void keyboard(unsigned char c, int x, int y) {
 	if (glc->fullscreen) {
 	    glc->old_width = glc->width;
 	    glc->old_height = glc->height;
+#ifdef HAVE_GLUT
 	    glutFullScreen();
+#endif
 	} else {
+#ifdef HAVE_GLUT
 	    glutReshapeWindow(glc->old_width, glc->old_height);
 	    glutPositionWindow(50,50);
+#endif
 	}
 	break;
       case 't':
 	glc->titles = 1 - glc->titles;
+#ifdef HAVE_GLUT
 	if (glc->interactive || glc->paused)
 	    glutPostRedisplay();
+#endif
 	break;
       case 'a':
 	glc->authentic = 1 - glc->authentic;
@@ -974,6 +1000,7 @@ void keyboard(unsigned char c, int x, int y) {
     }
 }
 
+#ifdef HAVE_GLUT
 void mouse(int button, int state, int x, int y) {
     if (button==0) {
 	switch (state) {
@@ -998,6 +1025,7 @@ void mouse(int button, int state, int x, int y) {
     }
     glutPostRedisplay();
 }
+#endif
 
 void motion(int x, int y) {
     double norm;
@@ -1038,8 +1066,9 @@ void motion(int x, int y) {
 	
 	calc_rotation();
     }
-	
+#ifdef HAVE_GLUT	
     glutPostRedisplay();
+#endif
 }
 
 /* Returns morph progress */
@@ -1160,8 +1189,10 @@ void glsnake_idle(void) {
     if (glc->paused) {
 	/* Avoid busy waiting when nothing is changing */
 	quick_sleep();
+#ifdef HAVE_GLUT
 	glutSwapBuffers();
 	glutPostRedisplay();
+#endif
 	return;
     }
 
@@ -1201,7 +1232,7 @@ void glsnake_idle(void) {
 	}
 	//	transition = morphFuncs[rand() % (sizeof(morphFuncs)/sizeof(morphFunc))];
 
-	transition = morph_one_at_a_time;
+	transition = morph;
 
 	morph_progress = MIN(transition(iter_msec), 1.0);
 	
@@ -1212,8 +1243,10 @@ void glsnake_idle(void) {
 	
 	morph_colour(morph_progress);
 	
+#ifdef HAVE_GLUT
 	glutSwapBuffers();
 	glutPostRedisplay();
+#endif
     } else {
 	/* We are going too fast, so we may as well let the 
 	 * cpu relax a little by sleeping for a millisecond. */
@@ -1223,7 +1256,9 @@ void glsnake_idle(void) {
 
 void restore_idle(int value)
 {
+#ifdef HAVE_GLUT
     glutIdleFunc(glsnake_idle);
+#endif
 }
 
 void quick_sleep(void)
@@ -1231,13 +1266,17 @@ void quick_sleep(void)
     /* By using glutTimerFunc we can keep responding to 
      * mouse and keyboard events, unlike using something like
      * usleep. */
+#ifdef HAVE_GLUT
     glutIdleFunc(NULL);
     glutTimerFunc(1, restore_idle, 0);
+#endif
 }
 
 /* stick anything that needs to be shutdown properly here */
 void unmain(void) {
+#ifdef HAVE_GLUT
     glutDestroyWindow(glc->window);
+#endif
     free(glc);
 }
 
@@ -1250,12 +1289,14 @@ int main(int argc, char ** argv) {
     glc->width = 320;
     glc->height = 240;
     
+#ifdef HAVE_GLUT
     glutInit(&argc, argv);
     
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(glc->width, glc->height);
     glc->window = glutCreateWindow("glsnake");
-    
+#endif
+
     ftime(&glc->last_iteration);
     memcpy(&glc->last_morph, &glc->last_iteration, sizeof(struct timeb));
     srand((unsigned int)glc->last_iteration.time);
@@ -1266,7 +1307,8 @@ int main(int argc, char ** argv) {
     for (i = 0; i < 24; i++)
 	glc->node[i].curAngle = 0.0;
     start_morph(0, 1);	
-    
+
+#ifdef HAVE_GLUT    
     glutDisplayFunc(glsnake_display);
     glutReshapeFunc(glsnake_reshape);
     glutKeyboardFunc(keyboard);
@@ -1274,13 +1316,16 @@ int main(int argc, char ** argv) {
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
     glutIdleFunc(glsnake_idle);
+#endif
 
     glsnake_init();
     
     atexit(unmain);
     
+#ifdef HAVE_GLUT
     glutSwapBuffers();
     glutMainLoop();
+#endif
     
     return 0;
 }

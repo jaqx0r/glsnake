@@ -87,6 +87,68 @@ else
 	HAVE_GLUT=disabled
 fi
 
+# check for OpenGL if not/can't build with GLUT
+HAVE_OPENGL="no"
+if test "x$HAVE_GLUT" != "xyes" ; then
+	# set CPPFLAGS for coming tests
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $OPENGL_CPPFLAGS"
+
+	# test for installed library first, for people who may have
+	# the library but not the headers
+	AC_CHECK_LIB(GL, glBegin,
+		OPENGL_LIBS="$OPENGL_LIBS -lGL"
+		HAVE_OPENGL="maybe",
+		dnl add -lX11 and -lXext if the first test fails
+		dnl (for, e.g., FreeBSD)
+		unset ac_cv_lib_GL_glBegin
+		AC_CHECK_LIB(GL, glBegin,
+			OPENGL_LIBS="$OPENGL_LIBS -lX11 -lXext"
+			HAVE_OPENGL="maybe",
+			HAVE_OPENGL="no",
+			[$OPENGL_LIBS -lX11 -lXext]
+		),
+		[$OPENGL_LIBS]
+	)
+
+	# test for GLU
+	AC_CHECK_LIB(GLU, gluPerspective,
+		OPENGL_LIBS="$OPENGL_LIBS -lGLU"
+		HAVE_OPENGL="maybe",
+		unset ac_cv_lib_GL_glBegin
+		AC_CHECK_LIB(GL, glBegin,
+			OPENGL_LIBS="$OPENGL_LIBS -lX11 -lXext"
+			HAVE_OPENGL="maybe",
+			HAVE_OPENGL="no",
+			[$OPENGL_LIBS -lX11 -lXext]
+		),
+		[$OPENGL_LIBS]
+	)
+
+	# test for the header now
+	if test "x$HAVE_OPENGL" = "xmaybe" ; then
+		AC_CHECK_HEADER(GL/gl.h,
+			HAVE_OPENGL="maybe",
+			HAVE_OPENGL="no"
+		)
+	fi
+	if test "x$HAVE_OPENGL" = "xmaybe" ; then
+		AC_CHECK_HEADER(GL/glu.h,
+			HAVE_OPENGL="yes",
+			HAVE_OPENGL="no"
+		)
+	fi
+
+	if test "x$HAVE_OPENGL" = "xyes" ; then
+		AC_DEFINE(HAVE_OPENGL, 1, [Define this if you have OpenGL])
+		AC_SUBST(OPENGL_CFLAGS)
+		AC_SUBST(OPENGL_LIBS)
+	fi
+
+	# restore CPPFLAGS
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+
 AC_CHECK_LIB(m, sqrt)
 
 # Checks for header files.

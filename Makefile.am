@@ -3,8 +3,8 @@
 bin_PROGRAMS = glsnake
 
 glsnake_SOURCES = glsnake.c
-glsnake_CFLAGS = @GLUT_CFLAGS@
-glsnake_LDADD = @GLUT_LIBS@
+glsnake_CFLAGS = @GLUT_CFLAGS@ @OPENGL_CFLAGS@
+glsnake_LDADD = @GLUT_LIBS@ @OPENGL_LIBS@
 
 noinst_HEADERS = models.h
 
