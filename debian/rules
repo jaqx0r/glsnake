@@ -1,6 +1,4 @@
 #!/usr/bin/make -f
-# Nastily hacked rules file to build glsnake
-# It works, but don't expect it to be nice about it.
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
@@ -11,18 +9,14 @@ export DH_COMPAT=1
 build: build-stamp
 build-stamp:
 	dh_testdir
-	
-	gcc -L/usr/X11R6/lib -O2 -lXmu -lGL -lGLU -lglut -lm -o glsnake glsnake.c
-
+	make
 	touch build-stamp
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp
-	
-	rm -f glsnake
-	
+	make clean
 	dh_clean
 
 install: build
@@ -57,13 +51,13 @@ binary-arch: build install
 	dh_installmanpages
 	dh_installinfo
 #	dh_undocumented
-	dh_installchangelogs 
+	dh_installchangelogs ChangeLog
 	dh_link
 	dh_strip
 	dh_compress
 	dh_fixperms
 	# You may want to make some executables suid here.
-	dh_suidregister
+#	dh_suidregister
 #	dh_makeshlibs
 	dh_installdeb
 #	dh_perl

@@ -7,6 +7,6 @@ ChangeLog:
 	cvs2cl -S --no-wrap
 
 clean:
-	rm -f glsnake ChangeLog*
+	rm -f glsnake
 
 .PHONY: ChangeLog clean
