@@ -1,20 +1,9 @@
-/* $Id: glsnake.c,v 1.56 2003/02/23 09:42:38 jaq Exp $
+/* glsnake.c - OpenGL imitation of Rubik's Snake
  * 
- * An OpenGL imitation of Rubik's Snake 
- * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
- * Andrew Bennetts <andrew@puzzling.org>, 
- * and Peter Aylett <peter@ylett.com>
+ * (c) 2001-2003 Jamie Wilkinson <jaq@spacepants.org>
+ * (c) 2001-2003 Andrew Bennetts <andrew@puzzling.org> 
+ * (c) 2001-2003 Peter Aylett <peter@ylett.com>
  * 
- * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
- *
- * Compile using a command like:
- *    gcc -O2 -lGL -lGLU -lglut -lm -o glsnake glsnake.c
- *
- * Jamie rewrote all the drawing code for OpenGL, and the trackball interface
- * Andrew fixed up the morphing code
- * Peter added a ton of new models, file input, some OpenGL and snake metrics
- * Mark Assad made it compile under Windows
- *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
