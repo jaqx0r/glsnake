@@ -1,4 +1,4 @@
-/* $Id: loader.c,v 1.2 2001/12/04 07:58:03 andrew Exp $
+/* $Id: loader.c,v 1.3 2001/12/09 09:06:26 andrew Exp $
  * loads a glsnake modelfile
  *
  * Lines beginning with '#' are comments and are ignored
@@ -47,6 +47,7 @@ model_t * load_modelfile(char * filename, model_t * models, int * count) {
 		char * error_msg = (char *) malloc(sizeof(char) * error_msg_len);
 		sprintf(error_msg, "Unable to open model data file \"%s\"", filename);
 		perror(error_msg);
+		free(error_msg);
 		return models;
 	}
 		
