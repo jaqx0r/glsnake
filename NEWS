@@ -1,0 +1,6 @@
+NEWS for glsnake
+----------------
+
+Version 0.8:
+Jamie has moved the entire source tree to the GNU autotools, which is great
+news for all our users!

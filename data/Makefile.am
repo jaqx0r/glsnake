@@ -1,8 +1,5 @@
-## Process this file with automake to create Makefile.in
-
 data_DATA = models.glsnake ericandthomas.glsnake
+EXTRA_DIST = models.glsnake ericandthomas.glsnake snake.c
 
 ericandthomas.glsnake:
 	../tools/getmodels.sh > $@
-
-.PHONY: veryclean

@@ -28,7 +28,7 @@ is an imitation of Rubiks\' Snake, using OpenGL.
 The right mouse button can be used to drag the object to a new
 orientation.
 .TP
-.B ESC, q
+.B ESC q
 Quit.
 .TP
 .B f
@@ -41,16 +41,16 @@ Toggle displaying of model titles.
 Toggle wireframe mode on and off.
 .TP
 .B a
-Toggle between normal colours, and Jaq's funky colour scheme.
+Toggle between two standard colour schemes.
 .TP
-.B e, E
+.B e E
 Change the explode distance.
 .TP
-.B +, -
+.B + -
 Change the speed of rotation.
 .TP
 .B . ,
-Change to the next, and previous models.
+Change to the next and previous models.
 .TP
 .B i
 Enter interactive mode.
@@ -64,11 +64,16 @@ Dump the current model.
 Dumps a description of the current model to stdout, in a format that can
 be easily inserted into glsnake.
 .SH BUGS
-.B glsnake
-will happily intersect itself while morphing (this is not a bug).
-Rotating the object with the mouse is only defined within an ellipse
-circubscribing the 4 corners of the window.
-There Are No Flocking Algorithms.
+The snake will happily intersect itself while morphing (this is not a bug).
+.br
+.sp 1
+Rotating the object with the mouse is only defined whilst the mouse pointer is
+within an ellipse circumscribing the 4 corners of the window.  If you release
+the mouse button whilst dragging out of this window, you may not be able to
+recover the model without quitting.
+.br
+.sp 1
+There are No Flocking Algorithms.
 .SH AUTHOR
 .B glsnake
 was written by Jamie Wilkinson
@@ -83,6 +88,7 @@ and Peter Aylett
 .nh
 <peter@ylett.com>.
 .hy
+.sp 1
 This manual page was written by Peter Hardy
 .nh
 <peterhardy@pacific.net.au>,

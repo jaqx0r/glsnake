@@ -26,5 +26,5 @@ AC_CHECK_HEADERS([GL/glut.h])
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([atexit ftime memset sqrt strdup])
 
-AC_CONFIG_FILES([Makefile data/Makefile tools/Makefile])
+AC_CONFIG_FILES([Makefile tools/Makefile data/Makefile pixmaps/Makefile])
 AC_OUTPUT
