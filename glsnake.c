@@ -396,6 +396,7 @@ struct model_s model[] = {
 	RIGHT, PIN, RIGHT, RIGHT, ZERO, RIGHT, ZERO, ZERO, PIN, ZERO,
 	ZERO, PIN, PIN, ZERO }
     },
+
     /* the following modesl were created during the slug/compsoc codefest
      * febrray 2003 */
     { "cool gegl",
@@ -517,7 +518,6 @@ struct model_s model[] = {
 
     /* These models come from the website at 
      * http://www.geocities.com/stigeide/snake */
-
     { "Abstract",
         { RIGHT, LEFT, RIGHT, ZERO, PIN, ZERO, LEFT, RIGHT, LEFT, PIN, ZERO, ZERO, PIN, LEFT, RIGHT, LEFT, ZERO, PIN, ZERO, RIGHT, LEFT, RIGHT, ZERO }
     },
@@ -1222,14 +1222,6 @@ static struct glsnake_cfg * glc = NULL;
 
 typedef float (*morphFunc)(long);
 
-float morph(long);
-float morph_one_at_a_time(long);
-
-morphFunc morphFuncs[] = {
-	morph,
-	morph_one_at_a_time
-};
-
 /* colour cycling constants */
 GLfloat colour_cyclic[2][3]    = { { 0.4,  0.8, 0.2  },
 				   { 1.0,  1.0, 1.0  } };
@@ -1767,25 +1759,15 @@ void start_colour_morph(void) {
 /* Start morph process to this model */
 void start_morph(int modelIndex, int immediate) {
     int i;
-    float max_angle;
-    
-    glc->new_morph = 1;
-    max_angle = 0.0;
+
     for (i = 0; i < 23; i++) {
-	glc->node[i].prevAngle = glc->node[i].curAngle;
 	glc->node[i].destAngle = model[modelIndex].node[i];
 	if (immediate)
 	    glc->node[i].curAngle = model[modelIndex].node[i];
-	if (fabs(glc->node[i].destAngle - glc->node[i].curAngle) > max_angle)
-	    max_angle = fabs(glc->node[i].destAngle - glc->node[i].curAngle);
     }
-    if (max_angle > 180.0)
-	max_angle = 180.0;
-    
-    calc_snake_metrics();
-    
-    start_colour_morph();
-    
+
+    calc_snake_metrics(glc);
+    morph_colour(0);
     glc->curModel = modelIndex;
     glc->morphing = 1;
 }
@@ -1800,7 +1782,7 @@ float morph(long iter_msec) {
 	if (glc->new_morph)
 	    glc->new_morph = 0;
 	
-	iter_angle_max = 90.0 * (glc->morph_angular_velocity/200.0) * iter_msec;
+	iter_angle_max = 90.0 * (DEF_VELOCITY/1000.0) * iter_msec;
 	
 	still_morphing = 0;
 	largest_diff = largest_progress = 0.0;
@@ -1821,51 +1803,6 @@ float morph(long iter_msec) {
 	}
 	
 	return MIN(largest_diff / largest_progress, 1.0);
-}
-
-float morph_one_at_a_time(long iter_msec) {
-	/* work out the maximum angle for this iteration */
-	int still_morphing, iter_done;
-	float iter_angle_max;
-	unsigned int i;
-	static int done[24-1] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-	static float progress, final;
-
-	if (glc->new_morph) {
-		memset(&done, 0, sizeof(done));
-		glc->new_morph = 0;
-		progress = final = 0.0;
-		for (i = 0; i < 24; i++) {
-			final += fabs(fmod(glc->node[i].destAngle-glc->node[i].curAngle, 180));
-		}
-	}
-	
-	iter_angle_max = 90.0 * (glc->morph_angular_velocity/1000.0) * iter_msec;
-	
-	still_morphing = iter_done = 0;
-	for (i = 0; i < 24; i++) {
-		if (iter_done)
-			/* Stop after turning one join */
-			break;
-		
-		if (!done[i]) {
-			float curAngle = glc->node[i].curAngle;
-			float destAngle = glc->node[i].destAngle;
-			if (curAngle != destAngle) {
-				still_morphing = iter_done = 1;
-				if (fabs(curAngle-destAngle) <= iter_angle_max)
-					glc->node[i].curAngle = destAngle;
-				else if (fmod(curAngle-destAngle+360,360) > 180)
-					glc->node[i].curAngle = fmod(curAngle + iter_angle_max, 360);
-				else
-					glc->node[i].curAngle = fmod(curAngle+360 - iter_angle_max, 360);
-				progress += fabs(fmod(glc->node[i].curAngle-curAngle, 180));
-			} else {
-				done[i] = 1;
-			}
-		}
-	}
-	return progress/final;
 }
 
 void morph_colour(float percent) {
@@ -1900,13 +1837,15 @@ void glsnake_idle(void) {
     long iter_msec;
     /* time since the beginning of last morph */
     long morf_msec;
-    float morph_progress;
+    float iter_angle_max;
 #ifdef HAVE_GLUT
     struct timeb current_time;
 #else
     struct timeval current_time;
 #endif
     morphFunc transition;
+    int still_morphing;
+    int i;
     
     /* Do nothing to the model if we are paused */
     if (glc->paused) {
@@ -1963,6 +1902,7 @@ void glsnake_idle(void) {
 #endif
 
 	if ((morf_msec > DEF_STATICTIME) && !glc->interactive && !glc->morphing) {
+	    memcpy(&glc->last_morph, &(glc->last_iteration), sizeof(glc->last_morph));
 	    start_morph(rand() % models, 0);
 	}
 	
@@ -1976,22 +1916,29 @@ void glsnake_idle(void) {
 	    glc->rotang1 += 360/((1000/DEF_YSPIN)/iter_msec);
 	    glc->rotang2 += 360/((1000/DEF_ZSPIN)/iter_msec);
 	}
-	//	transition = morphFuncs[rand() % (sizeof(morphFuncs)/sizeof(morphFunc))];
 
-	transition = morph;
+	iter_angle_max = 90.0 * (DEF_VELOCITY/1000.0) * iter_msec;
 
-	morph_progress = MIN(transition(iter_msec), 1.0);
-	
-	if (morph_progress >= 1.0) {
-#ifdef HAVE_GLUT
-	    memcpy(&glc->last_morph, &current_time, sizeof(struct timeb));
-#else
-	    memcpy(&glc->last_morph, &current_time, sizeof(struct timeval));
-#endif
-	    glc->morphing = 0;
+	still_morphing = 0;
+	for (i = 0; i < 24; i++) {
+	    float cur_angle = glc->node[i].curAngle;
+	    float dest_angle = glc->node[i].destAngle;
+	    if (cur_angle != dest_angle) {
+		still_morphing = 1;
+		if (fabs(cur_angle - dest_angle) <= iter_angle_max)
+		    glc->node[i].curAngle = dest_angle;
+		else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
+		    glc->node[i].curAngle = fmod(cur_angle + iter_angle_max, 360);
+		else
+		    glc->node[i].curAngle = fmod(cur_angle + 360 - iter_angle_max, 360);
+	    }
 	}
-	
-	morph_colour(morph_progress);
+
+	if (!still_morphing)
+	    glc->morphing = 0;
+
+	/* colour cycling */
+	morph_colour(100.0);
 	
 #ifdef HAVE_GLUT
 	glutSwapBuffers();
@@ -2019,6 +1966,8 @@ void quick_sleep(void)
 #ifdef HAVE_GLUT
     glutIdleFunc(NULL);
     glutTimerFunc(1, restore_idle, 0);
+#else
+    usleep(1);
 #endif
 }
 
@@ -2273,7 +2222,7 @@ void ui_special(int key, int x, int y) {
 	}
     }
     calc_snake_metrics();
-    //morph_colour(fabs(fmod(node[glc->selected].destAngle - node[glc->selected].curAngle,180))/180.0);
+
     if (!unknown_key)
 	glutPostRedisplay();
 }
