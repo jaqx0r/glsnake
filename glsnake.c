@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.12 2001/10/05 03:01:22 andrew Exp $
+/* $Id: glsnake.c,v 1.13 2001/10/05 05:33:32 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -62,19 +62,19 @@ int window;
 int node_solid, node_wire, node_shiny;
 
 /* the triangular prism what makes up the basic unit */
-float prism_v[][3] = {{ 0.0, 0.0, 1.0 }, 
-			  { 1.0, 0.0, 1.0 },
-			  { 0.0, 1.0, 1.0 },
-			  { 0.0, 0.0, 0.0 },
-			  { 1.0, 0.0, 0.0 },
-			  { 0.0, 1.0, 0.0 }};
+float prism_v[][3] = {{ 0.0, 0.0, 1.0 },
+                      { 1.0, 0.0, 1.0 },
+                      { 0.0, 1.0, 1.0 },
+                      { 0.0, 0.0, 0.0 },
+                      { 1.0, 0.0, 0.0 },
+                      { 0.0, 1.0, 0.0 }};
 
 /* face normals */
-float prism_n[][3] = {{0.0,0.0,1.0},
-	                  {0.0,-1.0,0.0},
-			  {0.707,0.707,0.0},
-			  {-1.0,0.0,0.0},
-			  {0.0,0.0,-1.0}};
+float prism_n[][3] = {{ 0.0, 0.0, 1.0},
+                      { 0.0,-1.0, 0.0},
+                      { M_SQRT1_2, M_SQRT1_2, 0.0},
+                      {-1.0, 0.0, 0.0},
+                      { 0.0, 0.0,-1.0}};
 
 /* the actual models -- all with 24 nodes (23 joints) */
 
