@@ -11,22 +11,43 @@ struct model_s {
     char * name;
     float node[24];
 } model[] = {
-    /* These models were taken from Andrew and Peter's original snake.c
-     * as well as some newer ones made up by Jamie, Andrew and Peter. */
+    /* the models in the Rubik's snake manual */
     { "ball",
       { RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT,
 	RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT,
 	RIGHT, LEFT, RIGHT, LEFT }
     },
+    { "snow",
+      { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT,
+	RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT,
+	RIGHT, LEFT, LEFT, LEFT }
+    },
+    { "propellor",
+      { ZERO, ZERO, ZERO, RIGHT, LEFT, RIGHT, ZERO, LEFT, ZERO, ZERO,
+	ZERO, RIGHT, LEFT, RIGHT, ZERO, LEFT, ZERO, ZERO, ZERO, RIGHT,
+	LEFT, RIGHT, ZERO, LEFT }
+    },
+    { "flamingo",
+      { ZERO, PIN, ZERO, ZERO, ZERO, ZERO, ZERO, PIN, RIGHT, RIGHT, PIN,
+	RIGHT, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, RIGHT, ZERO, ZERO,
+	ZERO, PIN }
+    },
+    { "cat",
+      { ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, PIN,
+	ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, ZERO,
+	ZERO }
+    },
+    { "rooster",
+      { ZERO, ZERO, PIN, PIN, ZERO, LEFT, ZERO, LEFT, RIGHT, PIN, RIGHT,
+	ZERO, PIN, PIN, ZERO, RIGHT, PIN, RIGHT, LEFT, ZERO, LEFT, ZERO,
+	PIN }
+    },
+    /* These models were taken from Andrew and Peter's original snake.c
+     * as well as some newer ones made up by Jamie, Andrew and Peter. */
     { "half balls",
       { LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT,
 	LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT,
 	RIGHT, LEFT, LEFT, LEFT }
-    },
-    { "cat",
-      {  ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, PIN,
-	 ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, ZERO,
-	 ZERO }
     },
     { "zigzag1",
       { RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT,
@@ -51,11 +72,6 @@ struct model_s {
 	LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT,
 	RIGHT, RIGHT, LEFT, LEFT }
     },
-    { "snowflake",
-      { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT,
-	RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT,
-	RIGHT, LEFT, LEFT, LEFT }
-    },
     { "turtle",
       { ZERO, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT,
 	LEFT, RIGHT, LEFT, LEFT, PIN, LEFT, LEFT, LEFT, RIGHT, LEFT,
@@ -75,11 +91,6 @@ struct model_s {
       { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO }
-    },
-    { "propellor",
-      { ZERO, ZERO, ZERO, RIGHT, LEFT, RIGHT, ZERO, LEFT, ZERO, ZERO,
-	ZERO, RIGHT, LEFT, RIGHT, ZERO, LEFT, ZERO, ZERO, ZERO, RIGHT,
-	LEFT, RIGHT, ZERO, LEFT }
     },
     { "hexagon",
       { ZERO, ZERO, ZERO, ZERO, LEFT, ZERO, ZERO, RIGHT, ZERO, ZERO,
