@@ -44,6 +44,8 @@
 #include <libgen.h>
 #include "models.h"
 
+#define NODE_COUNT 24
+
 #define X_MASK	1
 #define Y_MASK	2
 #define Z_MASK	4
@@ -70,12 +72,6 @@
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
-
-/* the id for the window we make */
-int window;
-
-/* the id of the display lists for drawing a node */
-int node_solid, node_wire;
 
 /* the triangular prism what makes up the basic unit */
 #define VOFFSET 0.045
@@ -142,21 +138,96 @@ float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
 			   {-1.0, 0.0, 0.0},
 			   { 0.0, 0.0,-1.0}};
 
-typedef struct {
+struct nodeang {
     float prevAngle;
     float curAngle;
     float destAngle;
-} nodeAng;
+};
 
-int selected = 11;
+/* glsnake state configuration struct
+ * keep all state variables in here */
+struct glsnake_cfg {
+    /* window id */
+    int window;
 
-nodeAng node[24];
+    /* is a morph in progress? */
+    int morphing;
 
-int m;
-int curModel;
+    /* has the model been paused? */
+    int paused;
 
-/* model morphing */
-float morph_angular_velocity = MORPH_ANG_VELOCITY;
+    /* snake metrics */
+    int is_cyclic;
+    int is_legal;
+    int last_turn;
+    int debug;
+
+    /* the shape of the model */
+    struct nodeang node[NODE_COUNT];
+
+    /* currently selected node for interactive mode */
+    int selected;
+
+    /* current model, next model */
+    int curModel;
+    int m;
+
+    /* model morphing */
+    float morph_angular_velocity;
+    int new_morph;
+
+    /* colours */
+    GLfloat colour[2][3];
+    GLfloat colour_prev[2][3];
+
+    /* rotation angles */
+    float rotang1;
+    float rotang2;
+
+    /* timing variables */
+    struct timeb last_iteration;
+    struct timeb last_morph;
+
+    /* window size */
+    int width, height;
+    int old_width, old_height;
+
+    /* field of view for zoom */
+    float zoom;
+
+    /* the id of the display lists for drawing a node */
+    int node_solid, node_wire;
+
+    /* font list number */
+    int font;
+
+    /* explode distance */
+    float explode;
+
+    /* is the model in wireframe mode? */
+    int wireframe;
+
+    /* is the window fullscreen? */
+    int fullscreen;
+
+    /* are we in interactive mode? */
+    int interactive;
+
+    /* are we drawing model names? */
+    int titles;
+
+    /* what colour scheme are we using? */
+    int authentic;
+
+    /* trackball stuff */
+    float cumquat[4], oldquat[4];
+    float rotation[16];
+    /* mouse drag vectors: start and end */
+    float m_s[3], m_e[3];
+    int dragging;
+};
+
+static struct glsnake_cfg * glc = NULL;
 
 typedef float (*morphFunc)(long);
 
@@ -168,14 +239,6 @@ morphFunc morphFuncs[] = {
 	morph_one_at_a_time
 };
 
-int new_morph = 1;
-
-/* snake metrics */
-int is_cyclic = 0;
-int is_legal = 1;
-int last_turn = -1;
-int debug = 0;
-
 /* colour cycling constants */
 GLfloat colour_cyclic[2][3]    = { { 0.4,  0.8, 0.2  },
 				   { 1.0,  1.0, 1.0  } };
@@ -186,48 +249,7 @@ GLfloat colour_invalid[2][3]   = { { 0.5,  0.5, 0.5  },
 GLfloat colour_authentic[2][3] = { { 0.38, 0.0, 0.55 },
 				   { 0.0,  0.5, 0.34 } };
 
-/* colour variables */
-GLfloat colour[2][3];
-GLfloat colour_prev[2][3];
-
 void morph_colour(float percent);
-
-/* rotation angle */
-float rotang1 = 0.0;
-float rotang2 = 0.0;
-
-struct timeb last_iteration;
-struct timeb last_morph;
-
-/* window size */
-int width, height;
-int old_width, old_height;
-
-/* field of view for zoom */
-float zoom = FOV;
-
-/* font list number */
-int font;
-
-char * interactstr = "interactive";
-
-/* option variables */
-float explode = VOFFSET;
-int wireframe = 0;
-int interactive = 0;
-int paused = 0;
-int fullscreen = 0;
-int titles = 1;
-int authentic = 0;
-
-int w = 0;
-
-/* trackball stuff */
-float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,1.0};
-float rotation[16];
-/* mouse drag vectors: start and end */
-float m_s[3], m_e[3];
-int dragging;
 
 /* mmm, quaternion arithmetic */
 void calc_rotation() {
@@ -235,32 +257,66 @@ void calc_rotation() {
     double xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 
     /* this bit ripped from Shoemake's quaternion notes from SIGGRAPH */
-    Nq = cumquat[0] * cumquat[0] + cumquat[1] * cumquat[1] +
-	cumquat[2] * cumquat[2] + cumquat[3] * cumquat[3];
+    Nq = glc->cumquat[0] * glc->cumquat[0] + glc->cumquat[1] * glc->cumquat[1] +
+	glc->cumquat[2] * glc->cumquat[2] + glc->cumquat[3] * glc->cumquat[3];
     s = (Nq > 0.0) ? (2.0 / Nq) : 0.0;
-    xs = cumquat[0] *  s; ys = cumquat[1] *  s; zs = cumquat[2] * s;
-    wx = cumquat[3] * xs; wy = cumquat[3] * ys; wz = cumquat[3] * zs;
-    xx = cumquat[0] * xs; xy = cumquat[0] * ys; xz = cumquat[0] * zs;
-    yy = cumquat[1] * ys; yz = cumquat[1] * zs; zz = cumquat[2] * zs;
+    xs = glc->cumquat[0] *  s; ys = glc->cumquat[1] *  s; zs = glc->cumquat[2] * s;
+    wx = glc->cumquat[3] * xs; wy = glc->cumquat[3] * ys; wz = glc->cumquat[3] * zs;
+    xx = glc->cumquat[0] * xs; xy = glc->cumquat[0] * ys; xz = glc->cumquat[0] * zs;
+    yy = glc->cumquat[1] * ys; yz = glc->cumquat[1] * zs; zz = glc->cumquat[2] * zs;
 
-    rotation[0] = 1.0 - (yy + zz);
-    rotation[1] = xy + wz;
-    rotation[2] = xz - wy;
-    rotation[4] = xy - wz;
-    rotation[5] = 1.0 - (xx + zz);
-    rotation[6] = yz + wx;
-    rotation[8] = xz + wy;
-    rotation[9] = yz - wx;
-    rotation[10] = 1.0 - (xx + yy);
-    rotation[3] = rotation[7] = rotation[11] = 0.0;
-    rotation[12] = rotation[13] = rotation[14] = 0.0;
-    rotation[15] = 1.0;
+    glc->rotation[0] = 1.0 - (yy + zz);
+    glc->rotation[1] = xy + wz;
+    glc->rotation[2] = xz - wy;
+    glc->rotation[4] = xy - wz;
+    glc->rotation[5] = 1.0 - (xx + zz);
+    glc->rotation[6] = yz + wx;
+    glc->rotation[8] = xz + wy;
+    glc->rotation[9] = yz - wx;
+    glc->rotation[10] = 1.0 - (xx + yy);
+    glc->rotation[3] = glc->rotation[7] = glc->rotation[11] = 0.0;
+    glc->rotation[12] = glc->rotation[13] = glc->rotation[14] = 0.0;
+    glc->rotation[15] = 1.0;
 }
 
 /* wot initialises it */
-void init(void) {
+void glsnake_init(void) {
     float light_pos[][3] = {{0.0, 0.0, 20.0}, {0.0, 20.0, 0.0}};
     float light_dir[][3] = {{0.0, 0.0,-20.0}, {0.0,-20.0, 0.0}};
+
+    /* initialise the config struct */
+    glc->selected = 11;
+    glc->morph_angular_velocity = MORPH_ANG_VELOCITY;
+    glc->morphing = 0;
+    glc->new_morph = 1;
+    glc->is_cyclic = 1;
+    glc->is_legal = 1;
+    glc->last_turn = -1;
+    glc->debug = 0;
+
+    glc->curModel = glc->m = 0;
+
+    glc->rotang1 = 0.0;
+    glc->rotang2 = 0.0;
+
+    glc->zoom = FOV;
+    glc->explode = VOFFSET;
+    glc->wireframe = 0;
+    glc->paused = 0;
+    glc->fullscreen = 0;
+    glc->titles = 1;
+    glc->authentic = 0;
+    glc->interactive = 0;
+    glc->dragging = 0;
+
+    glc->cumquat[0] = 0.0;
+    glc->cumquat[1] = 0.0;
+    glc->cumquat[2] = 0.0;
+    glc->cumquat[3] = 0.0;
+    glc->oldquat[0] = 0.0;
+    glc->oldquat[1] = 0.0;
+    glc->oldquat[2] = 0.0;
+    glc->oldquat[3] = 1.0;
     
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glEnable(GL_DEPTH_TEST);
@@ -276,7 +332,7 @@ void init(void) {
     /* set up our camera */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(zoom, width/(float)height, 0.05, 100.0);
+    gluPerspective(glc->zoom, glc->width/(float)glc->height, 0.05, 100.0);
     glMatrixMode(GL_MODELVIEW);
     gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     glLoadIdentity();
@@ -293,8 +349,8 @@ void init(void) {
     glEnable(GL_COLOR_MATERIAL);
     
     /* build a solid display list */
-    node_solid = glGenLists(1);
-    glNewList(node_solid, GL_COMPILE);
+    glc->node_solid = glGenLists(1);
+    glNewList(glc->node_solid, GL_COMPILE);
     /* corners */
     glBegin(GL_TRIANGLES);
     glNormal3fv(solid_prism_n[0]);
@@ -419,8 +475,8 @@ void init(void) {
     glEndList();
     
     /* build wire display list */
-    node_wire = glGenLists(1);
-    glNewList(node_wire, GL_COMPILE);
+    glc->node_wire = glGenLists(1);
+    glNewList(glc->node_wire, GL_COMPILE);
     glBegin(GL_LINE_STRIP);
     glVertex3fv(wire_prism_v[0]);
     glVertex3fv(wire_prism_v[1]);
@@ -455,19 +511,20 @@ void draw_title(void) {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
-    gluOrtho2D(0, width, 0, height);
+    gluOrtho2D(0, glc->width, 0, glc->height);
     glColor3f(1.0, 1.0, 1.0);
     {
+	char interactstr[] = "interactive";
 	char * s;
 	int i = 0;
 	int w;
 	
-	if (interactive)
+	if (glc->interactive)
 	    s = interactstr;
 	else
-	    s = model[curModel].name;
+	    s = model[glc->curModel].name;
 	w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (unsigned char *) s);
-	glRasterPos2f(width - w - 3, 4);
+	glRasterPos2f(glc->width - w - 3, 4);
 	while (s[i] != 0)
 	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
     }
@@ -532,11 +589,11 @@ void display(void) {
     glPushMatrix();
 
     /* apply the mouse drag rotation */
-    glMultMatrixf(rotation);
+    glMultMatrixf(glc->rotation);
     
     /* apply the continuous rotation */
-    glRotatef(rotang1, 0.0, 1.0, 0.0); 
-    glRotatef(rotang2, 0.0, 0.0, 1.0); 
+    glRotatef(glc->rotang1, 0.0, 1.0, 0.0); 
+    glRotatef(glc->rotang2, 0.0, 0.0, 1.0); 
     
     com[0] = 0.0;
     com[1] = 0.0;
@@ -545,11 +602,11 @@ void display(void) {
     for (i = 0; i < 24; i++) {
 	float rotmat[16];
 
-	ang = node[i].curAngle;
+	ang = glc->node[i].curAngle;
 	
 	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
 	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
-	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
+	glTranslatef(1.0 + glc->explode, 0.0, 0.0);	/* move to new pos. */
 	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
 	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
 
@@ -592,46 +649,46 @@ void display(void) {
     glTranslatef(-com[0], -com[1], -com[2]);
 
     /* apply the mouse drag rotation */
-    glMultMatrixf(rotation);
+    glMultMatrixf(glc->rotation);
     
     /* apply the continuous rotation */
-    glRotatef(rotang1, 0.0, 1.0, 0.0); 
-    glRotatef(rotang2, 0.0, 0.0, 1.0); 
+    glRotatef(glc->rotang1, 0.0, 1.0, 0.0); 
+    glRotatef(glc->rotang2, 0.0, 0.0, 1.0); 
 
     /* now draw each node along the snake -- this is quite ugly :p */
     for (i = 0; i < 24; i++) {
 	/* choose a colour for this node */
-	if ((i == selected || i == selected+1) && interactive)
+	if ((i == glc->selected || i == glc->selected+1) && glc->interactive)
 	    /* yellow */
 	    glColor3f(1.0, 1.0, 0.0);
 	else {
-	    if (authentic)
+	    if (glc->authentic)
 		glColor3fv(colour_authentic[(i+1)%2]);
 	    else
-		glColor3fv(colour[(i+1)%2]);
+		glColor3fv(glc->colour[(i+1)%2]);
 	}
 
 	/* draw the node */
-	if (wireframe)
-	    glCallList(node_wire);
+	if (glc->wireframe)
+	    glCallList(glc->node_wire);
 	else
-	    glCallList(node_solid);
+	    glCallList(glc->node_solid);
 
 	/* now work out where to draw the next one */
 	
 	/* Interpolate between models */
-	ang = node[i].curAngle;
+	ang = glc->node[i].curAngle;
 	
 	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
 	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
-	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
+	glTranslatef(1.0 + glc->explode, 0.0, 0.0);	/* move to new pos. */
 	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
 	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
 
     }
     glPopMatrix();
     
-    if (titles)
+    if (glc->titles)
 	draw_title();
     
     glFlush();
@@ -644,11 +701,11 @@ void reshape(int w, int h) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     //gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    gluPerspective(zoom, w/(float)h, 0.05, 100.0);
+    gluPerspective(glc->zoom, w/(float)h, 0.05, 100.0);
     gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     glMatrixMode(GL_MODELVIEW);
-    width = w;
-    height = h;
+    glc->width = w;
+    glc->height = h;
 }
 
 /* Returns the new dst_dir for the given src_dir and dst_dir */
@@ -676,7 +733,7 @@ void calc_snake_metrics() {
     /* zero the grid */
     memset(&grid, 0, sizeof(int) * 25*25*25);
     
-    is_legal = 1;
+    glc->is_legal = 1;
     x = y = z = 12;
     
     /* trace path of snake - and keep record for is_legal */
@@ -687,7 +744,7 @@ void calc_snake_metrics() {
 	y += GETSCALAR(prevDstDir, Y_MASK);
 	z += GETSCALAR(prevDstDir, Z_MASK);
 
-	switch ((int) node[i].destAngle) {
+	switch ((int) glc->node[i].destAngle) {
 	  case (int) (ZERO):
 	    dstDir = -prevSrcDir;
 	    break;
@@ -697,7 +754,7 @@ void calc_snake_metrics() {
 	  case (int) (RIGHT):
 	  case (int) (LEFT):
 	    dstDir = cross_product(prevSrcDir, prevDstDir);
-	    if (node[i].destAngle == (int) (RIGHT))
+	    if (glc->node[i].destAngle == (int) (RIGHT))
 		dstDir = -dstDir;
 	    break;
 	  default:
@@ -713,32 +770,29 @@ void calc_snake_metrics() {
 	else if (grid[x][y][z] + srcDir + dstDir == 0)
 	    grid[x][y][z] = 8;
 	else
-	    is_legal = 0;
+	    glc->is_legal = 0;
 	
 	prevSrcDir = srcDir;
 	prevDstDir = dstDir;
     }	
     
     /* determine if the snake is cyclic */
-    is_cyclic = (dstDir == Y_MASK && x == 12 && y == 11 && z == 12);
+    glc->is_cyclic = (dstDir == Y_MASK && x == 12 && y == 11 && z == 12);
     
     /* determine last_turn */
-    last_turn = -1;
-    if (is_cyclic)
+    glc->last_turn = -1;
+    if (glc->is_cyclic)
 	switch (srcDir) {
-	  case -Z_MASK: last_turn = ZERO; break;
-	  case Z_MASK:  last_turn = PIN; break;
-	  case X_MASK:  last_turn = LEFT; break;
-	  case -X_MASK: last_turn = RIGHT; break;
+	  case -Z_MASK: glc->last_turn = ZERO; break;
+	  case Z_MASK:  glc->last_turn = PIN; break;
+	  case X_MASK:  glc->last_turn = LEFT; break;
+	  case -X_MASK: glc->last_turn = RIGHT; break;
 	}
     
 }
 
-/* Is a morph currently in progress? */
-int morphing = 0;
-
 void start_colour_morph(void) {
-	memcpy(colour_prev, colour, sizeof(colour));
+	memcpy(glc->colour_prev, glc->colour, sizeof(glc->colour));
 	//morph_colour(0.0);
 }
 
@@ -747,15 +801,15 @@ void start_morph(int modelIndex, int immediate) {
     int i;
     float max_angle;
     
-    new_morph = 1;
+    glc->new_morph = 1;
     max_angle = 0.0;
     for (i = 0; i < 23; i++) {
-	node[i].prevAngle = node[i].curAngle;
-	node[i].destAngle = model[modelIndex].node[i];
+	glc->node[i].prevAngle = glc->node[i].curAngle;
+	glc->node[i].destAngle = model[modelIndex].node[i];
 	if (immediate)
-	    node[i].curAngle = model[modelIndex].node[i];
-	if (fabs(node[i].destAngle - node[i].curAngle) > max_angle)
-	    max_angle = fabs(node[i].destAngle - node[i].curAngle);
+	    glc->node[i].curAngle = model[modelIndex].node[i];
+	if (fabs(glc->node[i].destAngle - glc->node[i].curAngle) > max_angle)
+	    max_angle = fabs(glc->node[i].destAngle - glc->node[i].curAngle);
     }
     if (max_angle > 180.0)
 	max_angle = 180.0;
@@ -764,35 +818,35 @@ void start_morph(int modelIndex, int immediate) {
     
     start_colour_morph();
     
-    curModel = modelIndex;
-    morphing = 1;
+    glc->curModel = modelIndex;
+    glc->morphing = 1;
 }
 
 void special(int key, int x, int y) {
     int i;
-    float *destAngle = &(node[selected].destAngle);
+    float *destAngle = &(glc->node[glc->selected].destAngle);
     int unknown_key = 0;
     
-    if (interactive) {
+    if (glc->interactive) {
 	switch (key) {
 	  case GLUT_KEY_UP:
-	    selected = (selected + 22) % 23;
+	    glc->selected = (glc->selected + 22) % 23;
 	    break;
 	  case GLUT_KEY_DOWN:
-	    selected = (selected + 1) % 23;
+	    glc->selected = (glc->selected + 1) % 23;
 	    break;
 	  case GLUT_KEY_LEFT:
 	    *destAngle = fmod(*destAngle+(LEFT), 360);
-	    morphing = new_morph = 1;
+	    glc->morphing = glc->new_morph = 1;
 	    break;
 	  case GLUT_KEY_RIGHT:
 	    *destAngle = fmod(*destAngle+(RIGHT), 360);
-	    morphing = new_morph = 1;
+	    glc->morphing = glc->new_morph = 1;
 	    break;
 	  case GLUT_KEY_HOME:
 	    for (i = 0; i < 24; i++)
-		node[i].destAngle = (ZERO);
-	    morphing = new_morph = 1;
+		glc->node[i].destAngle = (ZERO);
+	    glc->morphing = glc->new_morph = 1;
 	    break;
 	  default:
 	    unknown_key = 1;
@@ -800,7 +854,7 @@ void special(int key, int x, int y) {
 	}
     }
     calc_snake_metrics();
-    //morph_colour(fabs(fmod(node[selected].destAngle - node[selected].curAngle,180))/180.0);
+    //morph_colour(fabs(fmod(node[glc->selected].destAngle - node[glc->selected].curAngle,180))/180.0);
     if (!unknown_key)
 	glutPostRedisplay();
 }
@@ -814,74 +868,74 @@ void keyboard(unsigned char c, int x, int y) {
 	exit(0);
 	break;
       case 'e':
-	explode += EXPLODE_INCREMENT;
+	glc->explode += EXPLODE_INCREMENT;
 	glutPostRedisplay();
 	break;
       case 'E':
-	explode -= EXPLODE_INCREMENT;
-	if (explode < 0.0) explode = 0.0;
+	glc->explode -= EXPLODE_INCREMENT;
+	if (glc->explode < 0.0) glc->explode = 0.0;
 	glutPostRedisplay();
 	break;
       case '.':
 	/* next model */
-	curModel++;
-	curModel %= models;
-	start_morph(curModel , 0);
+	glc->curModel++;
+	glc->curModel %= models;
+	start_morph(glc->curModel , 0);
 	
 	/* Reset last_morph time */
-	ftime(&last_morph);			
+	ftime(&glc->last_morph);			
 	break;
       case ',':
 	/* previous model */
-	curModel = (curModel + models - 1) % models;
-	start_morph(curModel, 0);
+	glc->curModel = (glc->curModel + models - 1) % models;
+	start_morph(glc->curModel, 0);
 	
-	/* Reset last_morph time */
-	ftime(&last_morph);			
+	/* Reset glc->last_morph time */
+	ftime(&glc->last_morph);			
 	break;
       case '+':
-	morph_angular_velocity += MORPH_ANG_ACCEL;
+	glc->morph_angular_velocity += MORPH_ANG_ACCEL;
 	break;
       case '-':
-	if (morph_angular_velocity > MORPH_ANG_ACCEL)
-	    morph_angular_velocity -= MORPH_ANG_ACCEL;
+	if (glc->morph_angular_velocity > MORPH_ANG_ACCEL)
+	    glc->morph_angular_velocity -= MORPH_ANG_ACCEL;
 	break;
       case 'i':
-	if (interactive) {
+	if (glc->interactive) {
 	    /* Reset last_iteration and last_morph time */
-	    ftime(&last_iteration);
-	    ftime(&last_morph);
+	    ftime(&glc->last_iteration);
+	    ftime(&glc->last_morph);
 	}
-	interactive = 1 - interactive;
+	glc->interactive = 1 - glc->interactive;
 	glutPostRedisplay();
 	break;
       case 'w':
-	wireframe = 1 - wireframe;
-	if (wireframe)
+	glc->wireframe = 1 - glc->wireframe;
+	if (glc->wireframe)
 	    glDisable(GL_LIGHTING);
 	else
 	    glEnable(GL_LIGHTING);
 	glutPostRedisplay();
 	break;
       case 'p':
-	if (paused) {
+	if (glc->paused) {
 	    /* unpausing, reset last_iteration and last_morph time */
-	    ftime(&last_iteration);
-	    ftime(&last_morph);
+	    ftime(&glc->last_iteration);
+	    ftime(&glc->last_morph);
 	}
-	paused = 1 - paused;
+	glc->paused = 1 - glc->paused;
 	break;
       case 'd':
 	/* dump the current model so we can add it! */
-	printf("# %s\nnoname:\t", model[curModel].name);
+	printf("# %s\nnoname:\t", model[glc->curModel].name);
 	for (i = 0; i < 24; i++) {
-	    if (node[i].curAngle == ZERO)
+	    if (glc->node[i].curAngle == ZERO)
 		printf("Z");
-	    else if (node[i].curAngle == LEFT)
+	    else if (glc->node[i].curAngle == LEFT)
 		printf("L");
-	    else if (node[i].curAngle == PIN)
+	    else if (glc->node[i].curAngle == PIN)
 		printf("P");
-	    else if (node[i].curAngle == RIGHT)
+	    else if (glc->node[i].curAngle == RIGHT)
 		printf("R");
 	    /*
 	      else
@@ -893,31 +947,31 @@ void keyboard(unsigned char c, int x, int y) {
 	printf("\n");
 	break;
       case 'f':
-	fullscreen = 1 - fullscreen;
-	if (fullscreen) {
-	    old_width = width;
-	    old_height = height;
+	glc->fullscreen = 1 - glc->fullscreen;
+	if (glc->fullscreen) {
+	    glc->old_width = glc->width;
+	    glc->old_height = glc->height;
 	    glutFullScreen();
 	} else {
-	    glutReshapeWindow(old_width, old_height);
+	    glutReshapeWindow(glc->old_width, glc->old_height);
 	    glutPositionWindow(50,50);
 	}
 	break;
       case 't':
-	titles = 1 - titles;
-	if (interactive || paused)
+	glc->titles = 1 - glc->titles;
+	if (glc->interactive || glc->paused)
 	    glutPostRedisplay();
 	break;
       case 'a':
-	authentic = 1 - authentic;
+	glc->authentic = 1 - glc->authentic;
 	break;
       case 'z':
-	zoom += 1.0;
-	reshape(width, height);
+	glc->zoom += 1.0;
+	reshape(glc->width, glc->height);
 	break;
       case 'Z':
-	zoom -= 1.0;
-	reshape(width, height);
+	glc->zoom -= 1.0;
+	reshape(glc->width, glc->height);
 	break;
       default:
 	break;
@@ -928,19 +982,19 @@ void mouse(int button, int state, int x, int y) {
     if (button==0) {
 	switch (state) {
 	  case GLUT_DOWN:
-	    dragging = 1;
-	    m_s[0] = M_SQRT1_2 * 
-		(x - (width / 2.0)) / (width / 2.0);
-	    m_s[1] = M_SQRT1_2 * 
-		((height / 2.0) - y) / (height / 2.0);
-	    m_s[2] = sqrt(1-(m_s[0]*m_s[0]+m_s[1]*m_s[1]));
+	    glc->dragging = 1;
+	    glc->m_s[0] = M_SQRT1_2 * 
+		(x - (glc->width / 2.0)) / (glc->width / 2.0);
+	    glc->m_s[1] = M_SQRT1_2 * 
+		((glc->height / 2.0) - y) / (glc->height / 2.0);
+	    glc->m_s[2] = sqrt(1-(glc->m_s[0]*glc->m_s[0]+glc->m_s[1]*glc->m_s[1]));
 	    break;
 	  case GLUT_UP:
-	    dragging = 0;
-	    oldquat[0] = cumquat[0];
-	    oldquat[1] = cumquat[1];
-	    oldquat[2] = cumquat[2];
-	    oldquat[3] = cumquat[3];
+	    glc->dragging = 0;
+	    glc->oldquat[0] = glc->cumquat[0];
+	    glc->oldquat[1] = glc->cumquat[1];
+	    glc->oldquat[2] = glc->cumquat[2];
+	    glc->oldquat[3] = glc->cumquat[3];
 	    break;
 	  default:
 	    break;
@@ -953,38 +1007,38 @@ void motion(int x, int y) {
     double norm;
     float q[4];
     
-    if (dragging) {
+    if (glc->dragging) {
 	/* construct the motion end vector from the x,y position on the
 	 * window */
-	m_e[0] = (x - (width/ 2.0)) / (width / 2.0);
-	m_e[1] = ((height / 2.0) - y) / (height / 2.0);
+	glc->m_e[0] = (x - (glc->width/ 2.0)) / (glc->width / 2.0);
+	glc->m_e[1] = ((glc->height / 2.0) - y) / (glc->height / 2.0);
 	/* calculate the normal of the vector... */
-	norm = m_e[0] * m_e[0] + m_e[1] * m_e[1];
+	norm = glc->m_e[0] * glc->m_e[0] + glc->m_e[1] * glc->m_e[1];
 	/* check if norm is outside the sphere and wraparound if necessary */
 	if (norm > 1.0) {
-	    m_e[0] = -m_e[0];
-	    m_e[1] = -m_e[1];
-	    m_e[2] = sqrt(norm - 1);
+	    glc->m_e[0] = -glc->m_e[0];
+	    glc->m_e[1] = -glc->m_e[1];
+	    glc->m_e[2] = sqrt(norm - 1);
 	} else {
 	    /* the z value comes from projecting onto an elliptical spheroid */
-	    m_e[2] = sqrt(1 - norm);
+	    glc->m_e[2] = sqrt(1 - norm);
 	}
 
 	/* now here, build a quaternion from m_s and m_e */
-	q[0] = m_s[1] * m_e[2] - m_s[2] * m_e[1];
-	q[1] = m_s[2] * m_e[0] - m_s[0] * m_e[2];
-	q[2] = m_s[0] * m_e[1] - m_s[1] * m_e[0];
-	q[3] = m_s[0] * m_e[0] + m_s[1] * m_e[1] + m_s[2] * m_e[2];
+	q[0] = glc->m_s[1] * glc->m_e[2] - glc->m_s[2] * glc->m_e[1];
+	q[1] = glc->m_s[2] * glc->m_e[0] - glc->m_s[0] * glc->m_e[2];
+	q[2] = glc->m_s[0] * glc->m_e[1] - glc->m_s[1] * glc->m_e[0];
+	q[3] = glc->m_s[0] * glc->m_e[0] + glc->m_s[1] * glc->m_e[1] + glc->m_s[2] * glc->m_e[2];
 
 	/* new rotation is the product of the new one and the old one */
-	cumquat[0] = q[3] * oldquat[0] + q[0] * oldquat[3] + 
-	    q[1] * oldquat[2] - q[2] * oldquat[1];
-	cumquat[1] = q[3] * oldquat[1] + q[1] * oldquat[3] + 
-	    q[2] * oldquat[0] - q[0] * oldquat[2];
-	cumquat[2] = q[3] * oldquat[2] + q[2] * oldquat[3] + 
-	    q[0] * oldquat[1] - q[1] * oldquat[0];
-	cumquat[3] = q[3] * oldquat[3] - q[0] * oldquat[0] - 
-	    q[1] * oldquat[1] - q[2] * oldquat[2];
+	glc->cumquat[0] = q[3] * glc->oldquat[0] + q[0] * glc->oldquat[3] + 
+	    q[1] * glc->oldquat[2] - q[2] * glc->oldquat[1];
+	glc->cumquat[1] = q[3] * glc->oldquat[1] + q[1] * glc->oldquat[3] + 
+	    q[2] * glc->oldquat[0] - q[0] * glc->oldquat[2];
+	glc->cumquat[2] = q[3] * glc->oldquat[2] + q[2] * glc->oldquat[3] + 
+	    q[0] * glc->oldquat[1] - q[1] * glc->oldquat[0];
+	glc->cumquat[3] = q[3] * glc->oldquat[3] - q[0] * glc->oldquat[0] - 
+	    q[1] * glc->oldquat[1] - q[2] * glc->oldquat[2];
 	
 	calc_rotation();
     }
@@ -999,26 +1053,26 @@ float morph(long iter_msec) {
 	float iter_angle_max, largest_diff, largest_progress;
 	int i;
 
-	if (new_morph)
-	    new_morph = 0;
+	if (glc->new_morph)
+	    glc->new_morph = 0;
 	
-	iter_angle_max = 90.0 * (morph_angular_velocity/200.0) * iter_msec;
+	iter_angle_max = 90.0 * (glc->morph_angular_velocity/200.0) * iter_msec;
 	
 	still_morphing = 0;
 	largest_diff = largest_progress = 0.0;
 	for (i = 0; i < 24; i++) {
-		float curAngle = node[i].curAngle;
-		float destAngle = node[i].destAngle;
+		float curAngle = glc->node[i].curAngle;
+		float destAngle = glc->node[i].destAngle;
 		if (curAngle != destAngle) {
 			still_morphing = 1;
 			if (fabs(curAngle-destAngle) <= iter_angle_max)
-				node[i].curAngle = destAngle;
+				glc->node[i].curAngle = destAngle;
 			else if (fmod(curAngle-destAngle+360,360) > 180)
-				node[i].curAngle = fmod(curAngle + iter_angle_max, 360);
+				glc->node[i].curAngle = fmod(curAngle + iter_angle_max, 360);
 			else
-				node[i].curAngle = fmod(curAngle+360 - iter_angle_max, 360);
-			largest_diff = MAX(largest_diff, fabs(destAngle-node[i].curAngle));
-			largest_progress = MAX(largest_diff, fabs(node[i].curAngle - node[i].prevAngle));
+				glc->node[i].curAngle = fmod(curAngle+360 - iter_angle_max, 360);
+			largest_diff = MAX(largest_diff, fabs(destAngle-glc->node[i].curAngle));
+			largest_progress = MAX(largest_diff, fabs(glc->node[i].curAngle - glc->node[i].prevAngle));
 		}
 	}
 	
@@ -1033,16 +1087,16 @@ float morph_one_at_a_time(long iter_msec) {
 	static int done[24-1] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 	static float progress, final;
 
-	if (new_morph) {
+	if (glc->new_morph) {
 		memset(&done, 0, sizeof(done));
-		new_morph = 0;
+		glc->new_morph = 0;
 		progress = final = 0.0;
 		for (i = 0; i < 24; i++) {
-			final += fabs(fmod(node[i].destAngle-node[i].curAngle, 180));
+			final += fabs(fmod(glc->node[i].destAngle-glc->node[i].curAngle, 180));
 		}
 	}
 	
-	iter_angle_max = 90.0 * (morph_angular_velocity/1000.0) * iter_msec;
+	iter_angle_max = 90.0 * (glc->morph_angular_velocity/1000.0) * iter_msec;
 	
 	still_morphing = iter_done = 0;
 	for (i = 0; i < 24; i++) {
@@ -1051,17 +1105,17 @@ float morph_one_at_a_time(long iter_msec) {
 			break;
 		
 		if (!done[i]) {
-			float curAngle = node[i].curAngle;
-			float destAngle = node[i].destAngle;
+			float curAngle = glc->node[i].curAngle;
+			float destAngle = glc->node[i].destAngle;
 			if (curAngle != destAngle) {
 				still_morphing = iter_done = 1;
 				if (fabs(curAngle-destAngle) <= iter_angle_max)
-					node[i].curAngle = destAngle;
+					glc->node[i].curAngle = destAngle;
 				else if (fmod(curAngle-destAngle+360,360) > 180)
-					node[i].curAngle = fmod(curAngle + iter_angle_max, 360);
+					glc->node[i].curAngle = fmod(curAngle + iter_angle_max, 360);
 				else
-					node[i].curAngle = fmod(curAngle+360 - iter_angle_max, 360);
-				progress += fabs(fmod(node[i].curAngle-curAngle, 180));
+					glc->node[i].curAngle = fmod(curAngle+360 - iter_angle_max, 360);
+				progress += fabs(fmod(glc->node[i].curAngle-curAngle, 180));
 			} else {
 				done[i] = 1;
 			}
@@ -1076,22 +1130,22 @@ void morph_colour(float percent) {
 
     compct = 1.0 - percent;
 
-    if (authentic)
+    if (glc->authentic)
 	memcpy(&target, &colour_authentic, sizeof(target));
-    else if (!is_legal)
+    else if (!glc->is_legal)
 	memcpy(&target, &colour_invalid, sizeof(target));
-    else if (is_cyclic)
+    else if (glc->is_cyclic)
 	memcpy(&target, &colour_cyclic, sizeof(target));
     else
 	memcpy(&target, &colour_normal, sizeof(target));
 
-    colour[0][0] = colour_prev[0][0] * compct + target[0][0] * percent;
-    colour[0][1] = colour_prev[0][1] * compct + target[0][1] * percent;
-    colour[0][2] = colour_prev[0][2] * compct + target[0][2] * percent;
+    glc->colour[0][0] = glc->colour_prev[0][0] * compct + target[0][0] * percent;
+    glc->colour[0][1] = glc->colour_prev[0][1] * compct + target[0][1] * percent;
+    glc->colour[0][2] = glc->colour_prev[0][2] * compct + target[0][2] * percent;
 
-    colour[1][0] = colour_prev[1][0] * compct + target[1][0] * percent;
-    colour[1][1] = colour_prev[1][1] * compct + target[1][1] * percent;
-    colour[1][2] = colour_prev[1][2] * compct + target[1][2] * percent;
+    glc->colour[1][0] = glc->colour_prev[1][0] * compct + target[1][0] * percent;
+    glc->colour[1][1] = glc->colour_prev[1][1] * compct + target[1][1] * percent;
+    glc->colour[1][2] = glc->colour_prev[1][2] * compct + target[1][2] * percent;
 }
 
 void restore_idol(int value);
@@ -1108,7 +1162,7 @@ void idol(void) {
     morphFunc transition;
     
     /* Do nothing to the model if we are paused */
-    if (paused) {
+    if (glc->paused) {
 	/* Avoid busy waiting when nothing is changing */
 	quick_sleep();
 	glutSwapBuffers();
@@ -1128,27 +1182,27 @@ void idol(void) {
      * <Jaq> i.e. if current time is exactly equal to last iteration,
      *       then don't do this block
      */
-    iter_msec = (long) current_time.millitm - last_iteration.millitm + 
-	((long) current_time.time - last_iteration.time) * 1000L;
+    iter_msec = (long) current_time.millitm - glc->last_iteration.millitm + 
+	((long) current_time.time - glc->last_iteration.time) * 1000L;
     if (iter_msec) {
 	/* save the current time */
-	memcpy(&last_iteration, &current_time, sizeof(struct timeb));
+	memcpy(&glc->last_iteration, &current_time, sizeof(struct timeb));
 	
 	/* work out if we have to switch models */
-	morf_msec = last_iteration.millitm - last_morph.millitm +
-	    ((long) (last_iteration.time-last_morph.time) * 1000L);
-	if ((morf_msec > MODEL_STATIC_TIME) && !interactive && !morphing) {
+	morf_msec = glc->last_iteration.millitm - glc->last_morph.millitm +
+	    ((long) (glc->last_iteration.time-glc->last_morph.time) * 1000L);
+	if ((morf_msec > MODEL_STATIC_TIME) && !glc->interactive && !glc->morphing) {
 	    start_morph(rand() % models, 0);
 	}
 	
-	if (interactive && !morphing) {
+	if (glc->interactive && !glc->morphing) {
 	    quick_sleep();
 	    return;
 	}
 	
-	if (!dragging && !interactive) {
-	    rotang1 += 360/((1000/ROTATION_RATE1)/iter_msec);
-	    rotang2 += 360/((1000/ROTATION_RATE2)/iter_msec);
+	if (!glc->dragging && !glc->interactive) {
+	    glc->rotang1 += 360/((1000/ROTATION_RATE1)/iter_msec);
+	    glc->rotang2 += 360/((1000/ROTATION_RATE2)/iter_msec);
 	}
 	//	transition = morphFuncs[rand() % (sizeof(morphFuncs)/sizeof(morphFunc))];
 
@@ -1157,8 +1211,8 @@ void idol(void) {
 	morph_progress = MIN(transition(iter_msec), 1.0);
 	
 	if (morph_progress >= 1.0) {
-	    memcpy(&last_morph, &current_time, sizeof(struct timeb));
-	    morphing = 0;
+	    memcpy(&glc->last_morph, &current_time, sizeof(struct timeb));
+	    glc->morphing = 0;
 	}
 	
 	morph_colour(morph_progress);
@@ -1188,31 +1242,34 @@ void quick_sleep(void)
 
 /* stick anything that needs to be shutdown properly here */
 void unmain(void) {
-    glutDestroyWindow(window);
+    glutDestroyWindow(glc->window);
+    free(glc);
 }
 
 int main(int argc, char ** argv) {
     char * basedir;
     int i;
     
-    width = 320;
-    height = 240;
+    glc = malloc(sizeof(struct glsnake_cfg));
+
+    glc->width = 320;
+    glc->height = 240;
     
     glutInit(&argc, argv);
     
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(width, height);
-    window = glutCreateWindow("glsnake");
+    glutInitWindowSize(glc->width, glc->height);
+    glc->window = glutCreateWindow("glsnake");
     
-    ftime(&last_iteration);
-    memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
-    srand((unsigned int)last_iteration.time);
-    memcpy(&colour, &colour_normal, sizeof(colour));
-    memcpy(&colour_prev, &colour_normal, sizeof(colour_prev));
+    ftime(&glc->last_iteration);
+    memcpy(&glc->last_morph, &glc->last_iteration, sizeof(struct timeb));
+    srand((unsigned int)glc->last_iteration.time);
+    memcpy(&glc->colour, &colour_normal, sizeof(glc->colour));
+    memcpy(&glc->colour_prev, &colour_normal, sizeof(glc->colour_prev));
     
-    m = rand() % models;
+    glc->m = rand() % models;
     for (i = 0; i < 24; i++)
-	    node[i].curAngle = 0.0;
+	glc->node[i].curAngle = 0.0;
     start_morph(0, 1);	
     
     glutDisplayFunc(display);
@@ -1222,8 +1279,8 @@ int main(int argc, char ** argv) {
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
     glutIdleFunc(idol);
-    
-    init();
+
+    glsnake_init();
     
     atexit(unmain);
     
