@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.44 2001/12/04 06:55:07 jaq Exp $
+/* $Id: glsnake.c,v 1.45 2001/12/04 07:58:03 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -488,7 +488,7 @@ void display(void) {
 		if ((i == selected || i == selected+1) && interactive)
 			glColor3f(1.0,1.0,0.0);
 		else {
-			// uncomment the commented lines to get authentic colours
+			/* uncomment the commented lines to get authentic colours */
 			if (i % 2) {
 				if (authentic)
 					glColor3f(0.6, 0.0, 0.9);
@@ -1008,7 +1008,13 @@ int main(int argc, char ** argv) {
 
 	glutInit(&argc, argv);
 
+	models = 0;
 	model = load_modelfile("data/models.glsnake", model, &models);
+	model = load_modelfile("data/xericandthomas.glsnake", model, &models);
+	if (models == 0) {
+		fputs("Unable to read any models!  Aborting...\n", stderr);
+		return 1;
+	}
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(width, height);
 	window = glutCreateWindow("glsnake");
