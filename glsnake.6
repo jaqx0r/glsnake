@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH GLSNAKE 6 "December 5, 2001"
+.TH GLSNAKE 6 "December 18, 2001"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -16,23 +16,41 @@
 .\" .sp <n>    insert n+1 empty lines
 .\" for manpage-specific macros, see man(7)
 .SH NAME
-glsnake \- hardware accelerated executive stress toy.
+glsnake \- hardware accelerated executive stress toy
 .SH SYNOPSIS
 .B glsnake
 .RI
 .SH DESCRIPTION
+.PP
 .B glsnake
 is an imitation of Rubiks\' Snake, using OpenGL.
 .PP
+.B glsnake
+has an interactive mode where you can create your own models, colour
+highlighting of different model classes, as well as mouse support.
+.SH COLOURING
+.TP
+.B Green
+cyclic
+.TP
+.B Blue
+acyclic
+.TP
+.B Grey
+invalid
+.br
+The current model intersects itself, and cannot exist in meatspace.
 .SH INTERACTIVE COMMANDS
+.PP
 The right mouse button can be used to drag the object to a new
 orientation.
+.PP
 .TP
 .B ESC q
 Quit.
 .TP
 .B f
-Toggle between full-screen and windowed mode.
+Toggle fullscreen mode.
 .TP
 .B t
 Toggle displaying of model titles.
@@ -41,7 +59,7 @@ Toggle displaying of model titles.
 Toggle wireframe mode on and off.
 .TP
 .B a
-Toggle between two standard colour schemes.
+Toggle between the the colour scheme described above in COLOURING, and a two-tone scheme used by some of Rubik's snakes.
 .TP
 .B e E
 Change the explode distance.
@@ -53,46 +71,51 @@ Change the speed of rotation.
 Change to the next and previous models.
 .TP
 .B i
-Enter interactive mode.
-.br
-In interactive mode, the cursor keys can be used to select a joint and
-rotate it.  The home key resets to the straight snake.
+Toggle interactive mode.  The two nodes around the current joint are coloured yellow.
+.TP 
+.B Home
+(interactive-mode only) Reset the snake to the `straight' model
+.TP
+.B Up Down
+(interactive-mode only) Select a new joint
+.TP
+.B Left Right
+(interactive-mode only) Rotate current joint.
 .TP
 .B d
-Dump the current model.
-.br
-Dumps a description of the current model to stdout, in a format that can
-be easily inserted into glsnake.
+Dump the current model to stdout, in a format that can be used in a glsnake
+model file.
 .SH BUGS
+.PP
 The snake will happily intersect itself while morphing (this is not a bug).
-.br
-.sp 1
+.PP
 Rotating the object with the mouse is only defined whilst the mouse pointer is
 within an ellipse circumscribing the 4 corners of the window.  If you release
 the mouse button whilst dragging out of this window, you may not be able to
 recover the model without quitting.
-.br
-.sp 1
+.PP
+.B glsnake
+isn't an xscreensaver yet.
+.PP
 There are No Flocking Algorithms.
 .SH AUTHOR
+.nh
+.PP
 .B glsnake
-was written by Jamie Wilkinson
-.nh
-<jaq@spacepants.org>,
-.hy
-Andrew Bennetts
-.nh
-<andrew@puzzling.org>
-.hy
-and Peter Aylett
-.nh
-<peter@ylett.com>.
-.hy
-.sp 1
-This manual page was written by Peter Hardy
-.nh
-<peterhardy@pacific.net.au>,
-.hy
-who spent the entire time wondering exactly why he was writing it,
-and Jamie Wilkinson, for the Debian GNU/Linux system (but may be
-used by others).
+was written by Jamie Wilkinson <jaq@spacepants.org>, Andrew Bennetts
+<andrew@puzzling.org>, and Peter Aylett <peter@ylett.com>.
+.PP
+Andrew and Peter wrote the original code for the Allegro graphics library. When Andrew mentioned this program to Jamie, Jamie then removed 90% of the code and replaced it with about 50 lines of OpenGL code, instead of doing 2 graphics assignments that were due.
+Andrew and Peter then added more models to the code than the original had, and fixed up the object morphing code. Mark Assad made it compile under WinDOS.
+.PP
+.RS 4
+"I think a lot of the basis of the open source movement comes from procrastinating students."
+.RS 4
+-- Andrew Tridgell
+.RE
+.RE
+.PP
+This manual page was written by Peter Hardy <peterhardy@pacific.net.au>,
+who spent the entire time wondering exactly why he was writing it, and
+Jamie Wilkinson, for the Debian GNU/Linux system (but may be used by
+others).

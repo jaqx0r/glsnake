@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.48 2001/12/18 03:47:38 jaq Exp $
+/* $Id: glsnake.c,v 1.49 2001/12/18 05:20:16 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -785,23 +785,24 @@ void keyboard(unsigned char c, int x, int y) {
 			break;
 		case 'd':
 			/* dump the current model so we can add it! */
-			printf("    { \"noname\", /* %s */\n        { ",
-			       model[curModel].name);
+			printf("# %s\nnoname:\t", model[curModel].name);
 			for (i = 0; i < 24; i++) {
 				if (node[i].curAngle == ZERO*90.0)
-					printf("ZERO");
+					printf("Z");
 				else if (node[i].curAngle == LEFT*90.0)
-					printf("LEFT");
+					printf("L");
 				else if (node[i].curAngle == PIN*90.0)
-					printf("PIN");
+					printf("P");
 				else if (node[i].curAngle == RIGHT*90.0)
-					printf("RIGHT");
+					printf("R");
+				/*
 				else
 					printf("%f", node[i].curAngle);
+				*/
 				if (i < 23)
-					printf(", ");
+					printf(" ");
 			}
-			printf(" }\n    },\n");
+			printf("\n");
 			break;
 		case 'f':
 			fullscreen = 1 - fullscreen;
