@@ -1,5 +1,5 @@
 VERSION=0.7.1
-LDFLAGS=-L/usr/X11R6/lib -lGL -lGLU -lglut -lm -lXi -lXmu -lX11
+LDFLAGS=-L/home/cs9018/lib-pc.i86.linux -L/usr/X11R6/lib -lGL -lGLU -lglut -lm -lX11 -lXmu -lXi
 CFLAGS=-O2 -Wall -pedantic
 
 all: glsnake
