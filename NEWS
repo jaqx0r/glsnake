@@ -1,6 +1,14 @@
 NEWS for glsnake
 ----------------
 
+Version 0.8.2:
+After fixing up the manpage a bit more, Jaq has decided to make 'd' work as
+expected.
+
+Version 0.8.1:
+glsnake is now usable outside of the source tree again, as it now hunts in a
+few locations for its model data
+
 Version 0.8:
 Jamie has moved the entire source tree to the GNU autotools, which is great
 news for all our users!
