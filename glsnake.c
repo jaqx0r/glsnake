@@ -556,7 +556,7 @@ void matmult_origin(float rotmat[16], float vec[4]) {
 }
 
 /* wot draws it */
-void display(void) {
+void glsnake_display(void) {
     int i;
     float ang;
     float positions[24][4]; /* origin points for each node */
@@ -696,7 +696,7 @@ void display(void) {
 }
 
 /* wot gets called when the winder is resized */
-void reshape(int w, int h) {
+void glsnake_reshape(int w, int h) {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -967,11 +967,11 @@ void keyboard(unsigned char c, int x, int y) {
 	break;
       case 'z':
 	glc->zoom += 1.0;
-	reshape(glc->width, glc->height);
+	glsnake_reshape(glc->width, glc->height);
 	break;
       case 'Z':
 	glc->zoom -= 1.0;
-	reshape(glc->width, glc->height);
+	glsnake_reshape(glc->width, glc->height);
 	break;
       default:
 	break;
@@ -1148,11 +1148,10 @@ void morph_colour(float percent) {
     glc->colour[1][2] = glc->colour_prev[1][2] * compct + target[1][2] * percent;
 }
 
-void restore_idol(int value);
+void restore_idle(int value);
 void quick_sleep(void);
 
-/* "jwz?  no way man, he's my idle" */
-void idol(void) {
+void glsnake_idle(void) {
     /* time since last iteration */
     long iter_msec;
     /* time since the beginning of last morph */
@@ -1226,9 +1225,9 @@ void idol(void) {
     }
 }
 
-void restore_idol(int value)
+void restore_idle(int value)
 {
-    glutIdleFunc(idol);
+    glutIdleFunc(glsnake_idle);
 }
 
 void quick_sleep(void)
@@ -1237,7 +1236,7 @@ void quick_sleep(void)
      * mouse and keyboard events, unlike using something like
      * usleep. */
     glutIdleFunc(NULL);
-    glutTimerFunc(1, restore_idol, 0);
+    glutTimerFunc(1, restore_idle, 0);
 }
 
 /* stick anything that needs to be shutdown properly here */
@@ -1272,13 +1271,13 @@ int main(int argc, char ** argv) {
 	glc->node[i].curAngle = 0.0;
     start_morph(0, 1);	
     
-    glutDisplayFunc(display);
-    glutReshapeFunc(reshape);
+    glutDisplayFunc(glsnake_display);
+    glutReshapeFunc(glsnake_reshape);
     glutKeyboardFunc(keyboard);
     glutSpecialFunc(special);
     glutMouseFunc(mouse);
     glutMotionFunc(motion);
-    glutIdleFunc(idol);
+    glutIdleFunc(glsnake_idle);
 
     glsnake_init();
     
