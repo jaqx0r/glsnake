@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.53 2003/02/22 12:27:50 jaq Exp $
+/* $Id: glsnake.c,v 1.54 2003/02/22 18:05:41 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -56,6 +56,10 @@
 #define MORPH_ANG_VELOCITY	1.0
 #define MORPH_ANG_ACCEL		0.1
 
+/* the connecting string that holds the snake together */
+#define MAGICAL_RED_STRING 1
+
+/* default field of view */
 #define FOV 25.0
 
 #define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
@@ -457,10 +461,31 @@ void draw_title(void) {
 
 #define DOT() { glBegin(GL_POINTS); glVertex3f(0.0, 0.0, 0.0); glEnd(); }
 
+/* apply the matrix to the origin and stick it in vec */
+void matmult_origin(float rotmat[16], float vec[4]) {
+#if 1
+    vec[0] = 0.5 * rotmat[0] + 0.5 * rotmat[4] + 0.5 * rotmat [8] + 1 * rotmat[12];
+    vec[1] = 0.5 * rotmat[1] + 0.5 * rotmat[5] + 0.5 * rotmat [9] + 1 * rotmat[13];
+    vec[2] = 0.5 * rotmat[2] + 0.5 * rotmat[6] + 0.5 * rotmat[10] + 1 * rotmat[14];
+    vec[3] = 0.5 * rotmat[3] + 0.5 * rotmat[7] + 0.5 * rotmat[11] + 1 * rotmat[15];
+#else
+    vec[0] = 0 * rotmat [0] + 0 * rotmat [1] + 0 * rotmat [2] + 1 * rotmat [3];
+    vec[1] = 0 * rotmat [4] + 0 * rotmat [5] + 0 * rotmat [6] + 1 * rotmat [7];
+    vec[2] = 0 * rotmat [8] + 0 * rotmat [9] + 0 * rotmat[10] + 1 * rotmat[11];
+    vec[3] = 0 * rotmat[12] + 0 * rotmat[13] + 0 * rotmat[14] + 1 * rotmat[15];
+#endif
+    vec[0] /= vec[3];
+    vec[1] /= vec[3];
+    vec[2] /= vec[3];
+    vec[3] = 1.0;
+}
+
 /* wot draws it */
 void display(void) {
     int i;
     float ang;
+    float positions[24][4]; /* origin points for each node */
+    float com[4]; /* it's the CENTRE of MASS */
     
     /* clear the buffer */
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -468,25 +493,25 @@ void display(void) {
     /* go into the modelview stack */
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    
-    /*    glShadeModel(GL_SMOOTH);  */
-
-    /* draw the origin */
-    glColor3f(1.0, 1.0, 0.0);
-   
-    /* draw this dang thing */
     
     /* rotate and translate into snake space */
-    /*    glRotatef(45.0, -5.0, 0.0, 1.0); */
     /*
+    glRotatef(45.0, -5.0, 0.0, 1.0);
     glRotatef(45.0, -5.0, 0.0, 1.0);
     glTranslatef(-0.5, 0.0, 0.5);
     */
 
     /* rotate the snake around the centre of the first node */
     /* move to the centre of the first piece */
-    glTranslatef(0.5, 0.0, 0.5);
+    //glTranslatef(0.5, 0.0, 0.5);
+
+    /* move back to origin */
+    //glTranslatef(-0.5, 0.0, -0.5);
+
+    /* get the centre of each node, by moving through the snake and
+     * performing the rotations, then grabbing the matrix at each point
+     * and applying it to the origin */
+    glPushMatrix();
 
     /* apply the mouse drag rotation */
     glMultMatrixf(rotation);
@@ -495,25 +520,92 @@ void display(void) {
     glRotatef(rotang1, 0.0, 1.0, 0.0); 
     glRotatef(rotang2, 0.0, 0.0, 1.0); 
     
-    /* move back to origin */
-    glTranslatef(-0.5, 0.0, -0.5);
+    com[0] = 0.0;
+    com[1] = 0.0;
+    com[2] = 0.0;
+    com[3] = 0.0;
+    for (i = 0; i < 24; i++) {
+	float rotmat[16];
+
+	ang = node[i].curAngle;
+	
+	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
+	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
+	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
+	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
+	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
+
+	glGetFloatv(GL_MODELVIEW_MATRIX, rotmat);
 
 #if 0
-    /* translate centre to middle node */
-    for (i = 11; i >= 0; i--) {
-	ang = node[i].curAngle;
-	glTranslatef(0.5, 0.5, 0.5);
-	glRotatef(180+ang, -1.0, 0.0, 0.0);
-	glTranslatef(-1.0 - explode, 0.0, 0.0);
-	glRotatef(90, 0.0, 0.0, 1.0);
-	glTranslatef(-0.5, -0.5, -0.5);
-    }
+	printf("[ %f, %f, %f, %f ]\n", rotmat[0], rotmat[1], rotmat[2], rotmat[3]);
+	printf("[ %f, %f, %f, %f ]\n", rotmat[4], rotmat[5], rotmat[6], rotmat[7]);
+	printf("[ %f, %f, %f, %f ]\n", rotmat[8], rotmat[9], rotmat[10], rotmat[11]);
+	printf("[ %f, %f, %f, %f ]\n", rotmat[12], rotmat[13], rotmat[14], rotmat[15]);
+
+	printf("\n");
 #endif
+	matmult_origin(rotmat, positions[i]);
+
+	//printf("[ %f, %f, %f, %f ]\n", positions[i][0], positions[i][1], positions[i][2], positions[i][2]);
+	com[0] += positions[i][0];
+	com[1] += positions[i][1];
+	com[2] += positions[i][2];
+	com[3] += positions[i][3];
+    }
+    glPopMatrix();
+    com[0] /= 24;
+    com[1] /= 24;
+    com[2] /= 24;
+    com[3] /= 24;
+
+    com[0] /= com[3];
+    com[1] /= com[3];
+    com[2] /= com[3];
+
+#if 0 /* centre of mass lines */
+    //    glDisable(GL_LIGHTING);
+    glColor3f(0.0, 1.0, 1.0);
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(-com[0], -com[1], -com[2]);
+    glEnd();
+    glColor3f(1.0, 0.0, 1.0);
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3fv(com);
+    glEnd();
+    //    glEnable(GL_LIGHTING);
+#endif
+
+    glPushMatrix();
+    glTranslatef(-com[0], -com[1], -com[2]);
+    //glRotatef(rotang1, 0.0, 1.0, 0.0); 
+
+#ifdef MAGICAL_RED_STRING
+    //glDisable(GL_LIGHTING);
+    glColor3f(1.0, 0.0, 0.0);
+    glBegin(GL_LINE_STRIP);
+    for (i = 0; i < 23; i++) {
+	glVertex3fv(positions[i]);
+    }
+    glEnd();
+    //glEnable(GL_LIGHTING);
+    glPopMatrix();
+#endif
+
+    glPushMatrix();
+    glTranslatef(-com[0], -com[1], -com[2]);
+
+    /* apply the mouse drag rotation */
+    glMultMatrixf(rotation);
+    
+    /* apply the continuous rotation */
+    glRotatef(rotang1, 0.0, 1.0, 0.0); 
+    glRotatef(rotang2, 0.0, 0.0, 1.0); 
 
     /* now draw each node along the snake -- this is quite ugly :p */
     for (i = 0; i < 24; i++) {
-	glPushMatrix();
-	
 	/* choose a colour for this node */
 	if ((i == selected || i == selected+1) && interactive)
 	    /* yellow */
@@ -537,13 +629,12 @@ void display(void) {
 #if 0
 	if (i == 0) glColor3f(0.0, 1.0, 1.0);
 #endif
-	
 	/* draw the node */
 	if (wireframe)
 	    glCallList(node_wire);
 	else
 	    glCallList(node_solid);
-	
+
 	/* now work out where to draw the next one */
 	
 	/* Interpolate between models */
@@ -554,11 +645,9 @@ void display(void) {
 	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
 	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
 	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
+
     }
-    
-    /* clear up the matrix stack */
-    /* for (i = 0; i < 24; i++) */
-	glPopMatrix();
+    glPopMatrix();
     
     if (titles)
 	draw_title();
@@ -572,7 +661,9 @@ void reshape(int w, int h) {
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+    //gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     gluPerspective(zoom, w/(float)h, 0.05, 100.0);
+    gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     glMatrixMode(GL_MODELVIEW);
     width = w;
     height = h;
