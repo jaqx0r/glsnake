@@ -176,12 +176,20 @@ int is_legal = 1;
 int last_turn = -1;
 int debug = 0;
 
-/* colour cycling */
-const float colour_invalid[3] = {0.5, 0.5, 0.5};
-const float colour_cyclic[3] = {0.4, 0.8, 0.2};
-const float colour_normal[3] = {0.3, 0.1, 0.9};
-float colour[3] = {0.0,0.0,1.0};
-float colour_prev[3] = {0.0,0.0,1.0};
+/* colour cycling constants */
+GLfloat colour_cyclic[2][3]    = { { 0.4,  0.8, 0.2  },
+				   { 1.0,  1.0, 1.0  } };
+GLfloat colour_normal[2][3]    = { { 0.3,  0.1, 0.9  },
+				   { 1.0,  1.0, 1.0  } };
+GLfloat colour_invalid[2][3]   = { { 0.5,  0.5, 0.5  },
+				   { 1.0,  1.0, 1.0  } };
+GLfloat colour_authentic[2][3] = { { 0.38, 0.0, 0.55 },
+				   { 0.0,  0.5, 0.34 } };
+
+/* colour variables */
+GLfloat colour[2][3];
+GLfloat colour_prev[2][3];
+
 void morph_colour(float percent);
 
 /* rotation angle */
@@ -621,19 +629,10 @@ void display(void) {
 	    /* yellow */
 	    glColor3f(1.0, 1.0, 0.0);
 	else {
-	    if (i % 2) {
-		if (authentic)
-		    glColor3f(0.38, 0.0, 0.55);
-		    //glColor3f(0.6, 0.0, 0.9);
-		else
-		    glColor3fv(colour);
-	    } else {
-		if (authentic)
-		    glColor3f(0.0, 0.5, 0.34);
-		    //glColor3f(0.2, 0.9, 1.0);
-		else
-		    glColor3f(1.0, 1.0, 1.0);
-	    }
+	    if (authentic)
+		glColor3fv(colour_authentic[(i+1)%2]);
+	    else
+		glColor3fv(colour[(i+1)%2]);
 	}
 
 #if 0
@@ -1101,18 +1100,27 @@ float morph_one_at_a_time(long iter_msec) {
 }
 
 void morph_colour(float percent) {
-	const float *target;
+    GLfloat target[2][3];
+    float compct; /* complement of percentage */
 
-	if (!is_legal) 
-		target = colour_invalid;
-	else if (is_cyclic)
-		target = colour_cyclic;
-	else
-		target = colour_normal;
-	
-	colour[0] = (colour_prev[0] * (1.0-percent) + target[0] * percent);
-	colour[1] = (colour_prev[1] * (1.0-percent) + target[1] * percent);
-	colour[2] = (colour_prev[2] * (1.0-percent) + target[2] * percent);
+    compct = 1.0 - percent;
+
+    if (authentic)
+	memcpy(&target, &colour_authentic, sizeof(target));
+    else if (!is_legal)
+	memcpy(&target, &colour_invalid, sizeof(target));
+    else if (is_cyclic)
+	memcpy(&target, &colour_cyclic, sizeof(target));
+    else
+	memcpy(&target, &colour_normal, sizeof(target));
+
+    colour[0][0] = colour_prev[0][0] * compct + target[0][0] * percent;
+    colour[0][1] = colour_prev[0][1] * compct + target[0][1] * percent;
+    colour[0][2] = colour_prev[0][2] * compct + target[0][2] * percent;
+
+    colour[1][0] = colour_prev[1][0] * compct + target[1][0] * percent;
+    colour[1][1] = colour_prev[1][1] * compct + target[1][1] * percent;
+    colour[1][2] = colour_prev[1][2] * compct + target[1][2] * percent;
 }
 
 void restore_idol(int value);
@@ -1228,6 +1236,8 @@ int main(int argc, char ** argv) {
     ftime(&last_iteration);
     memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
     srand((unsigned int)last_iteration.time);
+    memcpy(&colour, &colour_normal, sizeof(colour));
+    memcpy(&colour_prev, &colour_normal, sizeof(colour_prev));
     
     m = rand() % models;
     for (i = 0; i < 24; i++)
