@@ -555,17 +555,8 @@ void display(void) {
 
 	glGetFloatv(GL_MODELVIEW_MATRIX, rotmat);
 
-#if 0
-	printf("[ %f, %f, %f, %f ]\n", rotmat[0], rotmat[1], rotmat[2], rotmat[3]);
-	printf("[ %f, %f, %f, %f ]\n", rotmat[4], rotmat[5], rotmat[6], rotmat[7]);
-	printf("[ %f, %f, %f, %f ]\n", rotmat[8], rotmat[9], rotmat[10], rotmat[11]);
-	printf("[ %f, %f, %f, %f ]\n", rotmat[12], rotmat[13], rotmat[14], rotmat[15]);
-
-	printf("\n");
-#endif
 	matmult_origin(rotmat, positions[i]);
 
-	//printf("[ %f, %f, %f, %f ]\n", positions[i][0], positions[i][1], positions[i][2], positions[i][2]);
 	com[0] += positions[i][0];
 	com[1] += positions[i][1];
 	com[2] += positions[i][2];
@@ -580,21 +571,6 @@ void display(void) {
     com[0] /= com[3];
     com[1] /= com[3];
     com[2] /= com[3];
-
-#if 0 /* centre of mass lines */
-    //    glDisable(GL_LIGHTING);
-    glColor3f(0.0, 1.0, 1.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(-com[0], -com[1], -com[2]);
-    glEnd();
-    glColor3f(1.0, 0.0, 1.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3fv(com);
-    glEnd();
-    //    glEnable(GL_LIGHTING);
-#endif
 
 #ifdef MAGICAL_RED_STRING
     glPushMatrix();
@@ -635,9 +611,6 @@ void display(void) {
 		glColor3fv(colour[(i+1)%2]);
 	}
 
-#if 0
-	if (i == 0) glColor3f(0.0, 1.0, 1.0);
-#endif
 	/* draw the node */
 	if (wireframe)
 	    glCallList(node_wire);
@@ -1094,8 +1067,6 @@ float morph_one_at_a_time(long iter_msec) {
 			}
 		}
 	}
-
-	printf("progress = %0.3f, final = %0.3f\n", progress, final);
 	return progress/final;
 }
 
