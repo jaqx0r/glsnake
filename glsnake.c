@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.23 2001/10/06 14:47:07 andrew Exp $
+/* $Id: glsnake.c,v 1.24 2001/10/06 14:50:49 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -843,6 +843,7 @@ void set_colours(float max_angle) {
 	colour_i[2] = (colour_t[2] - colour[2]) / max_angle;
 }
 
+/* Is a morph currently in progress? */
 int morphing = 0;
 	
 /* Start morph process to this model */
@@ -890,6 +891,7 @@ void special(int key, int x, int y) {
 			case GLUT_KEY_HOME:
 				for (i = 0; i < 24; i++)
 					node[i].destAngle = ZERO;
+				morphing = 1;
 				break;
 			default:
 				unknown_key = 1;
