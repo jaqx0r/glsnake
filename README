@@ -1,8 +1,12 @@
 glsnake
 -------
 
-If you have just checked this out of CVS, you can generate some extra model
-data by cd'ing into data and running make (assuming you have wget and sed
-installed)
+Notes for CVS:
+
+If you have just checked this out of CVS, make sure you have the GNU autotools
+installed and then run bootstrap in the top level directory.
+
+The first time make is run, you will need a net connection to build the
+ChangeLog and the supplementary model files.
 
  -- Jamie Wilkinson <jaq@spacepants.org>

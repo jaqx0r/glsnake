@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.45 2001/12/04 07:58:03 andrew Exp $
+/* $Id: glsnake.c,v 1.46 2001/12/05 05:53:05 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -51,7 +51,7 @@
 #define MORPH_ANG_VELOCITY	1.0
 #define MORPH_ANG_ACCEL		0.1
 
-#define FOV 45.0
+#define FOV 25.0
 
 #define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
 
@@ -1010,7 +1010,7 @@ int main(int argc, char ** argv) {
 
 	models = 0;
 	model = load_modelfile("data/models.glsnake", model, &models);
-	model = load_modelfile("data/xericandthomas.glsnake", model, &models);
+	model = load_modelfile("data/ericandthomas.glsnake", model, &models);
 	if (models == 0) {
 		fputs("Unable to read any models!  Aborting...\n", stderr);
 		return 1;

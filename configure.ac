@@ -1,0 +1,30 @@
+# Process this file with autoconf to produce a configure script.
+AC_INIT
+AC_PREREQ(2.50)
+AC_CONFIG_AUX_DIR(config)
+AM_INIT_AUTOMAKE(glsnake, 0.8, jaq@spacepants.org)
+AC_CONFIG_SRCDIR(glsnake.c)
+AM_CONFIG_HEADER(config.h)
+
+AM_MAINTAINER_MODE
+
+# Checks for programs.
+AC_PROG_CC
+
+# Checks for libraries.
+AC_CHECK_LIB(glut, glutInit,,AC_MSG_ERROR(GLUT library not found!))
+AC_CHECK_LIB(m, sqrt)
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([stddef.h stdlib.h string.h sys/timeb.h])
+AC_CHECK_HEADERS([GL/glut.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([atexit ftime memset sqrt strdup])
+
+AC_CONFIG_FILES([Makefile data/Makefile tools/Makefile])
+AC_OUTPUT

@@ -2,7 +2,7 @@
 .\" First parameter, NAME, should be all caps
 .\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
 .\" other parameters are allowed: see man(7), man(1)
-.TH GLSNAKE 6 "October 16, 2001"
+.TH GLSNAKE 6 "December 5, 2001"
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .\" Some roff macros, for reference:
@@ -65,8 +65,10 @@ Dumps a description of the current model to stdout, in a format that can
 be easily inserted into glsnake.
 .SH BUGS
 .B glsnake
-will happily intersect itself while morphing.  There Are No Flocking
-Algorithms.
+will happily intersect itself while morphing (this is not a bug).
+Rotating the object with the mouse is only defined within an ellipse
+circubscribing the 4 corners of the window.
+There Are No Flocking Algorithms.
 .SH AUTHOR
 .B glsnake
 was written by Jamie Wilkinson
@@ -85,5 +87,6 @@ This manual page was written by Peter Hardy
 .nh
 <peterhardy@pacific.net.au>,
 .hy
-who spent the entire time wondering exactly why he was writing it, for
-the Debian GNU/Linux system (but may be used by others).
+who spent the entire time wondering exactly why he was writing it,
+and Jamie Wilkinson, for the Debian GNU/Linux system (but may be
+used by others).

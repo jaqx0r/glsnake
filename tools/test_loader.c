@@ -9,7 +9,7 @@ int count = 0;
 int main() {
 	int i, j;
 	
-	models = load_modelfile("glsnake.models", models, &count);
+	models = load_modelfile("../data/models.glsnake", models, &count);
 	fprintf(stderr, "%d models loaded\n", count);
 	
 	for (i = 0; i < count; i++) {
