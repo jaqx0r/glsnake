@@ -93,7 +93,7 @@ struct glsnake_cfg {
     /* currently selected node for interactive mode */
     int selected;
 
-    /* which model? */
+    /* models */
     int prev_model;
     int next_model;
 
@@ -102,8 +102,9 @@ struct glsnake_cfg {
     int new_morph;
 
     /* colours */
-    GLfloat colour[2][3];
-    GLfloat colour_prev[2][3];
+    float colour[2][3];
+    int next_colour;
+    int prev_colour;
 
     /* rotation angles */
     float rotang1;
@@ -148,6 +149,26 @@ struct glsnake_cfg {
 
     /* what colour scheme are we using? */
     int authentic;
+};
+
+#define COLOUR_CYCLIC 0
+#define COLOUR_ACYCLIC 1
+#define COLOUR_INVALID 2
+#define COLOUR_AUTHENTIC 3
+
+float colour[][2][3] = {
+    /* cyclic - green */
+    { { 0.4, 0.8, 0.2 },
+      { 1.0, 1.0, 1.0 } },
+    /* acyclic - blue */
+    { { 0.3, 0.1, 0.9 },
+      { 1.0, 1.0, 1.0 } },
+    /* invalid - grey */
+    { { 0.3, 0.1, 0.9 },
+      { 1.0, 1.0, 1.0 } },
+    /* authentic - purple and green */
+    { { 0.38, 0.0, 0.55 },
+      { 0.0,  0.5, 0.34 } }
 };
 
 struct model_s model[] = {
@@ -1216,16 +1237,6 @@ static struct glsnake_cfg * glc = NULL;
 
 typedef float (*morphFunc)(long);
 
-/* colour cycling constants */
-GLfloat colour_cyclic[2][3]    = { { 0.4,  0.8, 0.2  },
-				   { 1.0,  1.0, 1.0  } };
-GLfloat colour_normal[2][3]    = { { 0.3,  0.1, 0.9  },
-				   { 1.0,  1.0, 1.0  } };
-GLfloat colour_invalid[2][3]   = { { 0.5,  0.5, 0.5  },
-				   { 1.0,  1.0, 1.0  } };
-GLfloat colour_authentic[2][3] = { { 0.38, 0.0, 0.55 },
-				   { 0.0,  0.5, 0.34 } };
-
 #ifdef HAVE_GLUT
 /* forward definitions for GLUT functions */
 void ui_init(int *, char **);
@@ -1233,8 +1244,6 @@ void calc_rotation();
 inline void ui_mousedrag();
 void ui_start();
 #endif
-
-void morph_colour();
 
 /* wot initialises it */
 void glsnake_init(void) {
@@ -1611,12 +1620,8 @@ void glsnake_display(void) {
 	if ((i == glc->selected || i == glc->selected+1) && glc->interactive)
 	    /* yellow */
 	    glColor3f(1.0, 1.0, 0.0);
-	else {
-	    if (glc->authentic)
-		glColor3fv(colour_authentic[(i+1)%2]);
-	    else
-		glColor3fv(glc->colour[(i+1)%2]);
-	}
+	else
+	    glColor3fv(glc->colour[(i+1)%2]);
 
 	/* draw the node */
 	if (glc->wireframe)
@@ -1769,19 +1774,33 @@ float morph_percent() {
 	    if (rot > rot_max) rot_max = rot;
 	    if (ang_diff > ang_diff_max) ang_diff_max = ang_diff;
 	}
-	    
+	
+	/* ang_diff / rot approaches 0, we want the complement */
 	retval = 1.0 - (ang_diff_max / rot_max);
-	printf("morph: %d, retval = %f\n", glc->morphing, retval);
+	/* protect against naan */
+	if (isnan(retval) || isinf(retval)) retval = 1.0;
+	/* printf("morph: %d, retval = %f\n", glc->morphing, retval); */
     }
     return retval;
 }
 
-void start_colour_morph(void) {
-	memcpy(glc->colour_prev, glc->colour, sizeof(glc->colour));
+void morph_colour() {
+    float percent, compct; /* complement of percentage */
+
+    percent = morph_percent();
+    compct = 1.0 - percent;
+
+    glc->colour[0][0] = colour[glc->prev_colour][0][0] * compct + colour[glc->next_colour][0][0] * percent;
+    glc->colour[0][1] = colour[glc->prev_colour][0][1] * compct + colour[glc->next_colour][0][1] * percent;
+    glc->colour[0][2] = colour[glc->prev_colour][0][2] * compct + colour[glc->next_colour][0][2] * percent;
+
+    glc->colour[1][0] = colour[glc->prev_colour][1][0] * compct + colour[glc->next_colour][1][0] * percent;
+    glc->colour[1][1] = colour[glc->prev_colour][1][1] * compct + colour[glc->next_colour][1][1] * percent;
+    glc->colour[1][2] = colour[glc->prev_colour][1][2] * compct + colour[glc->next_colour][1][2] * percent;
 }
 
 /* Start morph process to this model */
-void start_morph(int modelIndex, int immediate) {
+void start_morph(int model_index, int immediate) {
     int i;
 
     /* if immediate, don't bother morphing, go straight to the next model */
@@ -1789,13 +1808,35 @@ void start_morph(int modelIndex, int immediate) {
 	int i;
 
 	for (i = 0; i < NODE_COUNT; i++)
-	    glc->node[i] = model[modelIndex].node[i];
+	    glc->node[i] = model[model_index].node[i];
     }
 
+    glc->prev_model = glc->next_model;
+    glc->next_model = model_index;
+    glc->prev_colour = glc->next_colour;
+
     calc_snake_metrics(glc);
-    morph_colour();
-    glc->next_model = modelIndex;
+    if (!glc->is_legal)
+	glc->next_colour = COLOUR_INVALID;
+    else if (glc->authentic)
+	glc->next_colour = COLOUR_AUTHENTIC;
+    else if (glc->is_cyclic)
+	glc->next_colour = COLOUR_CYCLIC;
+    else
+	glc->next_colour = COLOUR_ACYCLIC;
+    printf ("prev_colour: %d, next_colour: %d\n", glc->prev_colour, glc->next_colour);
+
+    if (immediate) {
+	glc->colour[0][0] = colour[glc->next_colour][0][0];
+	glc->colour[0][1] = colour[glc->next_colour][0][1];
+	glc->colour[0][2] = colour[glc->next_colour][0][2];
+	glc->colour[1][0] = colour[glc->next_colour][1][0];
+	glc->colour[1][1] = colour[glc->next_colour][1][1];
+	glc->colour[1][2] = colour[glc->next_colour][1][2];
+    }
     glc->morphing = 1;
+
+    morph_colour();
 }
 
 /* Returns morph progress */
@@ -1829,31 +1870,6 @@ float morph(long iter_msec) {
     }
 	
     return MIN(largest_diff / largest_progress, 1.0);
-}
-
-void morph_colour() {
-    GLfloat target[2][3];
-    float percent, compct; /* complement of percentage */
-
-    percent = morph_percent();
-    compct = 1.0 - percent;
-
-    if (glc->authentic)
-	memcpy(&target, &colour_authentic, sizeof(target));
-    else if (!glc->is_legal)
-	memcpy(&target, &colour_invalid, sizeof(target));
-    else if (glc->is_cyclic)
-	memcpy(&target, &colour_cyclic, sizeof(target));
-    else
-	memcpy(&target, &colour_normal, sizeof(target));
-
-    glc->colour[0][0] = glc->colour_prev[0][0] * compct + target[0][0] * percent;
-    glc->colour[0][1] = glc->colour_prev[0][1] * compct + target[0][1] * percent;
-    glc->colour[0][2] = glc->colour_prev[0][2] * compct + target[0][2] * percent;
-
-    glc->colour[1][0] = glc->colour_prev[1][0] * compct + target[1][0] * percent;
-    glc->colour[1][1] = glc->colour_prev[1][1] * compct + target[1][1] * percent;
-    glc->colour[1][2] = glc->colour_prev[1][2] * compct + target[1][2] * percent;
 }
 
 void restore_idle(int value);
@@ -2027,12 +2043,11 @@ int main(int argc, char ** argv) {
     }
     memcpy(&glc->last_morph, &glc->last_iteration, sizeof(struct timeval));
 #endif /* !HAVE_GLUT */
-    
-    memcpy(&glc->colour, &colour_normal, sizeof(glc->colour));
-    memcpy(&glc->colour_prev, &colour_normal, sizeof(glc->colour_prev));
-    
-    glc->next_model = glc->prev_model = rand() % models;
-    start_morph(0, 1);	
+
+    glc->prev_colour = glc->next_colour = COLOUR_ACYCLIC;
+    glc->next_model = rand() % models;
+    glc->prev_model = 0;
+    start_morph(glc->prev_model, 1);	
 
     glsnake_init();
     
