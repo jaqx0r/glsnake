@@ -1779,7 +1779,6 @@ float morph_percent() {
 	retval = 1.0 - (ang_diff_max / rot_max);
 	/* protect against naan */
 	if (isnan(retval) || isinf(retval)) retval = 1.0;
-	/* printf("morph: %d, retval = %f\n", glc->morphing, retval); */
     }
     return retval;
 }
@@ -1824,7 +1823,6 @@ void start_morph(int model_index, int immediate) {
 	glc->next_colour = COLOUR_CYCLIC;
     else
 	glc->next_colour = COLOUR_ACYCLIC;
-    printf ("prev_colour: %d, next_colour: %d\n", glc->prev_colour, glc->next_colour);
 
     if (immediate) {
 	glc->colour[0][0] = colour[glc->next_colour][0][0];
