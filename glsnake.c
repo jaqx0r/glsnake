@@ -1,12 +1,12 @@
-/* $Id: glsnake.c,v 1.8 2001/10/04 16:29:48 jaq Exp $
+/* $Id: glsnake.c,v 1.9 2001/10/04 16:32:23 jaq Exp $
  * An OpenGL imitation of Rubik's Snake 
  * by Jamie Wilkinson, Andrew Bennetts and Peter Aylett
  * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
  *
- * Known issues:
- * - Z-fighting occurs in solid mode with the edges drawn
- * - z-fighting occurs when the nodes are close (explode distance == 0.0)
- * - nodes pass through themselves! :)
+ * Jamie rewrote all the drawing code for OpenGL, and the trackball interface
+ * Andrew fixed up the morphing code
+ * Peter added a ton of new models, and the snake metrics
+ * Mark Assad made it compile under Windows
  */
 
 #include <GL/glut.h>
@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 /* angles */
 #define ZERO	0.0
@@ -21,19 +22,20 @@
 #define PIN     180.0
 #define LEFT    90.0
 
+#define ONE_ON_ROOT_2 0.707
+
 #define X_MASK	1
 #define Y_MASK	2
 #define Z_MASK	4
 
-#define ROTATION_RATE1		0.10		/* Rotations per second */
-#define ROTATION_RATE2		0.14		/* Rotations per second */
+#define ROTATION_RATE1		0.10
+#define ROTATION_RATE2		0.14
 #define EXPLODE_INCREMENT	0.05
-#define MORPH_DELAY			3.0			/* Delay in seconds between morphs */
-#define INIT_MORPH_RATE		1.0			/* Morphs per second */
-#define MORPH_RATE_CHANGE	0.1
+/* time in milliseconds between morphs */
+#define MODEL_STATIC_TIME	3000L
+#define MORPH_ANG_VELOCITY	1.0
+#define MORPH_ANG_ACCEL		0.1
 
-#define ABS(x)				((x) > 0 ? (x) : -(x))
-#define FMOD(num,denom)		((num) >= (denom) ? (num) - (denom) : (num))	/* works only in our special case */
 #define GETSCALAR(vec,mask) ((vec) == (mask) ? 1 : ( (vec) == -(mask) ? -1 : 0 ))
 
 /* the id for the window we make */
@@ -80,12 +82,6 @@ float zigzag2[] = { PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN,
 float zigzag3[] = { PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN,
 	LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN };
 
-/* this model sucks */
-/* but try watching a caterpillar do a transition to this! */
-/*
-float zigzag3_wrong[] = { PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN};
-*/
-
 float caterpillar[] = { RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN,
 	LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN,
 	LEFT, LEFT };
@@ -109,12 +105,6 @@ float basket[] = { RIGHT, PIN, ZERO, ZERO, PIN, LEFT, ZERO, LEFT, LEFT, ZERO,
 float thing[] = { PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT,
 	LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT,
 	LEFT, LEFT };
-
-/* Note: this is a 32 node model
-float snowflake32[] = { RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT,
-LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT,
-RIGHT, RIGHT, RIGHT};
-*/
 
 float straight[] = { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
@@ -242,14 +232,29 @@ float duck[] = { LEFT, PIN, LEFT, PIN, ZERO, PIN, PIN, ZERO, PIN,
 	ZERO, LEFT, PIN, RIGHT, ZERO, PIN, ZERO, PIN, PIN, ZERO, ZERO,
 	LEFT, PIN, LEFT };
 
-float * model[] = { straight, stars, thing, caterpillar, zigzag1, zigzag2, zigzag3,	// linear
-	ball, half_balls,													// spherical						
-	tri1, bow, snowflake, propellor, hexagon, triangle,						// triples
-	c3d, saddle, volcano, eagle, square, vee, quad3, em, glasses, quad2, quad1, mountains,		// quads
-	cat, dog, crucifix,													// flat
-	block, flower, turtle, basket, kayak, bird, seal, frog, quavers, fly, puppy, duck }; // models
-	
+float prayer[] = { RIGHT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, ZERO, ZERO,
+	ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, ZERO, RIGHT, RIGHT, LEFT, RIGHT,
+	LEFT, LEFT, LEFT, PIN };
 
+	/* list of the above models */
+
+float * model[] = {
+	/* linear */
+	straight, stars, thing, caterpillar, zigzag1, zigzag2, zigzag3,
+	/* spherical */
+	ball, half_balls,
+	/* three-shapes */
+	tri1, bow, snowflake, propellor, hexagon, triangle,
+	/* quads */
+	c3d, saddle, volcano, eagle, square, vee, quad3, em, glasses, quad2,
+	quad1, mountains,
+	/* flat */
+	cat, dog, crucifix,
+	/* misc */
+	block, flower, turtle, basket, kayak, bird, seal, frog, quavers, fly,
+	puppy, duck, prayer
+};
+	
 typedef struct {
 	float curAngle;
 	float destAngle;
@@ -262,38 +267,75 @@ nodeAng node[24];
 int models = sizeof(model) / sizeof(float *);
 int m;
 int curModel;
-float morph = 0.0;
-float morphRate = INIT_MORPH_RATE;
-int morphComplete = 1;			/* look at this to see if morph is in progress */
+
+/* model morphing */
+float morph_angular_velocity = MORPH_ANG_VELOCITY;
 
 /* snake metrics */
 int is_cyclic = 0;
 int is_legal = 1;
 int debug = 0;
 
+/* colour cycling */
+float colour[3] = {0.0,0.0,1.0};
+float colour_t[3];
+float colour_i[3];
+
 /* rotation angle */
 float rotang1 = 0.0;
 float rotang2 = 0.0;
 
-/* morph ratio (how far between model m and model m_next we are) */
-//float morph = 0.0;
-//float ma_morph = 0.0;
-
 struct timeb last_iteration;
 struct timeb last_morph;
 
+/* window size */
+int width, height;
 
 /* option variables */
-float explode = 0.05;
+float explode = 0.1;
 int wireframe = 0;
-int shiny = 1;
+int shiny = 0;
 int interactive = 0;
+
+/* trackball stuff */
+float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,1.0};
+float rotation[16];
+float m_s[3], m_e[3];
+int dragging;
+
+/* mmm, quaternion arithmetic */
+void calc_rotation() {
+	double Nq, s;
+	double xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
+
+	/* this bit ripped from Shoemake's Quaternion notes from siggraph */
+	Nq = cumquat[0] * cumquat[0] + cumquat[1] * cumquat[1] +
+		cumquat[2] * cumquat[2] + cumquat[3] * cumquat[3];
+	s = (Nq > 0.0) ? (2.0 / Nq) : 0.0;
+	xs = cumquat[0] *  s; ys = cumquat[1] *  s; zs = cumquat[2] * s;
+	wx = cumquat[3] * xs; wy = cumquat[3] * ys; wz = cumquat[3] * zs;
+	xx = cumquat[0] * xs; xy = cumquat[0] * ys; xz = cumquat[0] * zs;
+	yy = cumquat[1] * ys; yz = cumquat[1] * zs; zz = cumquat[2] * zs;
+
+	rotation[0] = 1.0 - (yy + zz);
+	rotation[1] = xy + wz;
+	rotation[2] = xz - wy;
+	rotation[4] = xy - wz;
+	rotation[5] = 1.0 - (xx + zz);
+	rotation[6] = yz + wx;
+	rotation[8] = xz + wy;
+	rotation[9] = yz - wx;
+	rotation[10] = 1.0 - (xx + yy);
+	rotation[3] = rotation[7] = rotation[11] = 0.0;
+	rotation[12] = rotation[13] = rotation[14] = 0.0;
+	rotation[15] = 1.0;
+}
 
 /* wot initialises it */
 void init(void) {
-
 	float light_pos[][3] = {{0.0, 0.0, 20.0}, {0.0, 20.0, 0.0}};
 	float light_dir[][3] = {{0.0, 0.0,-20.0}, {0.0,-20.0, 0.0}};
+	
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
 	
@@ -434,6 +476,9 @@ void init(void) {
 	glVertex3fv(prism_v[3]);
 	glEnd();
 	glEndList();
+
+	/* initialise the rotation */
+	calc_rotation();
 }
 
 /* wot draws it */
@@ -443,84 +488,72 @@ void display(void) {
 	
 	/* clear the buffer */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
 	/* go into the modelview stack */
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	
 	glShadeModel(GL_SMOOTH); 
-	/*glEnable(GL_LINE_SMOOTH); */
-	/*glEnable(GL_POLYGON_SMOOTH );*/ 
 
 	/* draw this dang thing */
 	
-	/* the origin */
-/*	glPointSize(4.0);
-	glBegin(GL_POINTS);
-	glColor3f(1.0,1.0,0.0);
-	glVertex3f(0.0,0.0,0.0);
-	glEnd();
-*/
-
 	/* rotate and translate into snake space */
 	glRotatef(45.0,-5.0,0.0,1.0);
 	glTranslatef(-0.5,0.0,0.5);
 	
 	/* rotate the 0th junction */
 	glTranslatef(0.5,0.0,0.5);
+	glMultMatrixf(rotation);
 	glRotatef(rotang1, 0.0,1.0,0.0); 
 	glRotatef(rotang2, 0.0,0.0,1.0); 
 	glTranslatef(-0.5,0.0,-0.5);
 
-
 	/* translate center to middle node */
 	/* (disgusting hack by peter who knows naught of opengl) */
-
 	for (i = 11; i >= 0; i--) {
 		ang = node[i].curAngle;
 		if (i % 2) {
-			glTranslatef(0.5,0.0,0.5);
+			glTranslatef(0.5, 0.0, 0.5);
 			glRotatef(-ang, 0.0, 1.0, 0.0);
-			glTranslatef(-0.5,0.0,-0.5);
-			glTranslatef(1.0,-explode,0.0);
+			glTranslatef(-0.5, 0.0, -0.5);
+			glTranslatef(1.0, -explode, 0.0);
 		} else {
-			glTranslatef(0.0,0.5,0.5);
+			glTranslatef(0.0, 0.5, 0.5);
 			glRotatef(-ang, 1.0, 0.0, 0.0);
-			glTranslatef(0.0,-0.5,-0.5);
-			glTranslatef(-explode,1.0,0.0);
+			glTranslatef(0.0, -0.5, -0.5);
+			glTranslatef(-explode, 1.0, 0.0);
 		}
-		glRotatef(-180.0, 0.0,0.0,1.0);
+		glRotatef(-180.0, 0.0, 0.0, 1.0);
 	}
 
 	/* now draw each node along the snake -- this is quite ugly :p */
-
 	for (i = 0; i < 24; i++) {
 		glPushMatrix();
-		/* get node */
+		
+		/* choose a colour for this node */
 		if ((i == selected || i == selected+1) && interactive)
-			glColor3f(1.0,1.0,0.0);		// yellow
-		else if (!is_legal)
-			glColor3f(0.5,0.5,0.5);		// grey
-		else if (i % 2)
-			if (is_cyclic)
-				glColor3f(1.0,0.0,0.0);	// red
+			glColor3f(1.0,1.0,0.0);
+		else {
+			if (i % 2)
+				glColor3fv(colour);
 			else
-				glColor3f(0.0,0.0,1.0);	// blue
-		else
-			glColor3f(1.0,1.0,1.0);		// white
+				glColor3f(1.0, 1.0, 1.0);
+		}
 
-		/* get call list */
+		/* draw the node */
 		if (wireframe)
 			glCallList(node_wire);
 		else if (shiny)
 			glCallList(node_shiny);
-		else {
+		else
 			glCallList(node_solid);
-		}
 
+		/* now work out where to draw the next one */
+		
 		/* Interpolate between models */
 		ang = node[i].curAngle;
 		
-		glRotatef(180.0, 0.0,0.0,1.0);
+		glRotatef(180.0, 0.0, 0.0, 1.0);
 		if (i % 2) {
 			glTranslatef(-1.0,explode,0.0);
 			/* rotation of the joint */
@@ -534,13 +567,14 @@ void display(void) {
 			glRotatef(ang, 1.0, 0.0, 0.0);
 			glTranslatef(0.0,-0.5,-0.5);
 		}
-
 	}
+	/* clear up the matrix stack */
 	for (i = 0; i < 24; i++) {
 		glPopMatrix();
 	}
+
 	glFlush();
-	/* glutSwapBuffers(); */
+	glutSwapBuffers();
 }
 
 /* wot gets called when the winder is resized */
@@ -549,58 +583,49 @@ void reshape(int width, int height) {
 	gluPerspective(60.0, width/(float)height, 0.05, 100.0);
 }
 
-/* Instantly set snake to this model */
-void set_model(int modelIndex)
-{
-	int i;
-	for (i=0; i<23; i++)
-		node[i].destAngle = node[i].curAngle = model[modelIndex][i];
-	curModel = modelIndex;
-}
-
 /* calculate snake metrics */
-void snake_metrics() {
+void calc_snake_metrics() {
 	int srcDir, dstDir;
 	int i, x, y, z;
 	int prevSrcDir = -Y_MASK;
 	int prevDstDir = Z_MASK;
 	int grid[25][25][25];
 
-	for (x=0; x<25; x++)
-		for (y=0; y<25; y++)
-			for (z=0; z<25; z++)
+	for (x = 0; x < 25; x++) 
+		for (y = 0; y < 25; y++)
+			for (z = 0; z < 25; z++)
 				grid[x][y][z] = 0;
 
 	is_legal = 1;
 	x = y = z = 12;
 
-	for (i=0; i<23; i++)
-	{
+	for (i = 0; i < 23; i++) {
 		// establish new state vars
 		srcDir = -prevDstDir;
 		x += GETSCALAR(prevDstDir, X_MASK);
 		y += GETSCALAR(prevDstDir, Y_MASK);
 		z += GETSCALAR(prevDstDir, Z_MASK);
 
-		switch ((int)node[i].destAngle)
-		{
-			case (int)(ZERO):
+		switch ((int) node[i].destAngle) {
+			case (int) ZERO:
 				dstDir = -prevSrcDir;
 				break;
-			case (int)(PIN):
+			case (int) PIN:
 				dstDir = prevSrcDir;
 				break;
-			case (int)(RIGHT):
-			case (int)(LEFT):
+			case (int) RIGHT:
+			case (int) LEFT:
 				// think cross product
-				dstDir =	X_MASK * (	GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, Z_MASK) -
-										GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, Y_MASK) ) + 
-							Y_MASK * (	GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, X_MASK) -
-										GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Z_MASK) ) + 
-							Z_MASK * (	GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Y_MASK) -
-										GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, X_MASK) );
-				if (node[i].destAngle == (int)(RIGHT))
+				dstDir = X_MASK * (GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, Z_MASK) -
+					GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, Y_MASK) ) + 
+					Y_MASK * (	GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, X_MASK) -
+					GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Z_MASK) ) + 
+					Z_MASK * (	GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Y_MASK) -
+							GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, X_MASK) );
+				if (node[i].destAngle == (int) RIGHT)
 					dstDir = -dstDir;
+				break;
+			default:
 				break;
 		}
 
@@ -618,39 +643,77 @@ void snake_metrics() {
 	is_cyclic = (dstDir == Y_MASK && x == 12 && y == 11 && z == 12);
 }
 
+void set_colours(float max_angle) {
+	/* set target colour */
+	if (!is_legal) {
+		colour_t[0] = 0.5;
+		colour_t[1] = 0.5;
+		colour_t[2] = 0.5;
+	} else if (is_cyclic) {
+		colour_t[0] = 0.4;
+		colour_t[1] = 0.8;
+		colour_t[2] = 0.2;
+	} else {
+		colour_t[0] = 0.3;
+		colour_t[1] = 0.1;
+		colour_t[2] = 0.9;
+	}
+	/* jamie doesn't know if max_angle is the best thing for this */
+	if (max_angle == 0.0)
+		max_angle = 1.0;
+	colour_i[0] = (colour_t[0] - colour[0]) / max_angle;
+	colour_i[1] = (colour_t[1] - colour[1]) / max_angle;
+	colour_i[2] = (colour_t[2] - colour[2]) / max_angle;
+}
+	
 /* Start morph process to this model */
-void start_morph(int modelIndex)
-{
+void start_morph(int modelIndex, int immediate) {
 	int i;
-	for (i=0; i<23; i++)
+	float max_angle;
+
+	max_angle = 0.0;
+	for (i = 0; i < 23; i++) {
 		node[i].destAngle = model[modelIndex][i];
-	snake_metrics();
+		if (immediate)
+			node[i].curAngle = model[modelIndex][i];
+		if (fabs(node[i].destAngle - node[i].curAngle) > max_angle)
+			max_angle = fabs(node[i].destAngle - node[i].curAngle);
+	}
+
+	calc_snake_metrics();
+
+	set_colours(max_angle);
+
 	curModel = modelIndex;
 }
 
-void keyboard_ex(int key, int x, int y) {
+void special(int key, int x, int y) {
 	int i;
 
-	if (interactive)
+	if (interactive) {
 		switch (key) {
 			case GLUT_KEY_UP:
-				selected = (selected + 22) % 23;
+				selected = (selected - 1) % 23;
 				break;
 			case GLUT_KEY_DOWN:
 				selected = (selected + 1) % 23;
 				break;
 			case GLUT_KEY_LEFT:
-				node[selected].destAngle = FMOD(node[selected].destAngle + 90, 360);
+				node[selected].destAngle = fmod(node[selected].destAngle + LEFT, 360);
 				break;
 			case GLUT_KEY_RIGHT:
-				node[selected].destAngle = FMOD(node[selected].destAngle + 270, 360);
+				node[selected].destAngle = fmod(node[selected].destAngle + RIGHT, 360);
 				break;
 			case GLUT_KEY_HOME:
-				for (i=0; i<24; i++)
-					node[i].destAngle = 0;
+				for (i = 0; i < 24; i++)
+					node[i].destAngle = ZERO;
+				break;
+			default:
 				break;
 		}
-	snake_metrics();
+	}
+	calc_snake_metrics();
+	set_colours(fabs(node[selected].destAngle - node[selected].curAngle));
 }
 
 void keyboard(unsigned char c, int x, int y) {
@@ -665,29 +728,27 @@ void keyboard(unsigned char c, int x, int y) {
 			explode -= EXPLODE_INCREMENT;
 			if (explode < 0.0) explode = 0.0;
 			break;
-		case '.':	// think right arrow
-			/* Guard against changing models during a morph - no longer necessary*/
+		case '.': /* next model */
 			curModel++;
 			curModel %= models;
-			start_morph( curModel );
+			start_morph(curModel , 0);
 
 			/* Reset last_morph time */
 			ftime(&last_morph);			
 			break;
-		case ',':	// think left arrow
-			/* Guard against changing models during a morph - no longer necessary*/
+		case ',': /* previous model */
 			curModel = (curModel + models - 1) % models;
-			start_morph( curModel );
+			start_morph(curModel, 0);
 
 			/* Reset last_morph time */
 			ftime(&last_morph);			
 			break;
 		case '+':
-			morphRate += MORPH_RATE_CHANGE;
+			morph_angular_velocity += MORPH_ANG_ACCEL;
 			break;
 		case '-':
-			if (morphRate > MORPH_RATE_CHANGE)
-				morphRate -= MORPH_RATE_CHANGE;
+			if (morph_angular_velocity > MORPH_ANG_ACCEL)
+				morph_angular_velocity -= MORPH_ANG_ACCEL;
 			break;
 		case 'i':
 			interactive = 1 - interactive;
@@ -713,59 +774,132 @@ void keyboard(unsigned char c, int x, int y) {
 	}
 }
 
-/* "jwz?  no way man, he's my idle" -- me, 2001.  I forget the context :( */
-void idol(void) {
-        long i_sec, i_usec;             /* used for tracking how far through an iteration we are */
-        long m_sec, m_usec;
-		float maxmorph;
-		int i;
-		struct timeb current_time;
-
-        ftime(&current_time);
-		if (memcmp(&current_time, &last_iteration,sizeof(struct timeb))) {
-			i_sec = (long)-last_iteration.time;
-			i_usec = -last_iteration.millitm;
-			memcpy(&last_iteration, &current_time, sizeof(struct timeb));
-			i_sec += (long)last_iteration.time;
-			i_usec += last_iteration.millitm;
-			i_usec += i_sec*1000;
-
-			rotang1 += 360/((1000/ROTATION_RATE1)/i_usec);
-			rotang2 += 360/((1000/ROTATION_RATE2)/i_usec);
-
-			maxmorph = 90/((1000/morphRate)/i_usec);
-
-			morphComplete = 1;
-			for (i=0; i<24; i++) {
-				if (node[i].curAngle != node[i].destAngle) {
-					morphComplete = 0;
-					if (ABS(node[i].curAngle - node[i].destAngle) <= maxmorph)
-						node[i].curAngle = node[i].destAngle;
-					else if (FMOD(node[i].curAngle - node[i].destAngle + 360, 360) > 180)
-						node[i].curAngle = FMOD(node[i].curAngle + maxmorph, 360);
-					else
-						node[i].curAngle = FMOD(node[i].curAngle + 360 - maxmorph, 360);
-				}
+void mouse(int button, int state, int x, int y) {
+	switch (button) {
+		case 0:
+			switch (state) {
+				case GLUT_DOWN:
+					dragging = 1;
+					m_s[0] = ONE_ON_ROOT_2 * (x - (width/ 2.0)) / (width / 2.0);
+					m_s[1] = ONE_ON_ROOT_2 * ((height / 2.0) - y) / (height / 2.0);
+					m_s[2] = sqrt(1 - (m_s[0] * m_s[0] + m_s[1] * m_s[1]));
+					break;
+				case GLUT_UP:
+					dragging = 0;
+					oldquat[0] = cumquat[0];
+					oldquat[1] = cumquat[1];
+					oldquat[2] = cumquat[2];
+					oldquat[3] = cumquat[3];
+					break;
+				default:
+					break;
 			}
+		default:
+			break;
+	}
+	glutPostRedisplay();
+}
 
-			/* do the morphing stuff here */
-			m_sec = (long)(last_iteration.time - last_morph.time);
-			m_usec = last_iteration.millitm - last_morph.millitm;
-			m_usec += m_sec*1000;
-			if (m_usec > (long)(MORPH_DELAY*1000)) {
-					morph = (m_usec - MORPH_DELAY*1000) * (morphRate/1000);
-					if (morph > 1.0) {
-							morph = 0.0;
-							memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
-							if (!interactive)
-								start_morph( rand() % models );
-					}
-			}
+void motion(int x, int y) {
+	double norm;
+	float q[4];
+
+	if (dragging) {
+		m_e[0] = ONE_ON_ROOT_2 * (x - (width/ 2.0)) / (width / 2.0);
+		m_e[1] = ONE_ON_ROOT_2 * ((height / 2.0) - y) / (height / 2.0);
+		norm = m_e[0] * m_e[0] + m_e[1] * m_e[1];
+		m_e[2] = sqrt(1 - (m_e[0] * m_e[0] + m_e[1] * m_e[1]));
+		
+		/* now here, build a quaternion from m_s and m_e */
+		q[0] = m_s[1] * m_e[2] - m_s[2] * m_e[1];
+		q[1] = m_s[2] * m_e[0] - m_s[0] * m_e[2];
+		q[2] = m_s[0] * m_e[1] - m_s[1] * m_e[0];
+		q[3] = m_s[0] * m_e[0] + m_s[1] * m_e[1] + m_s[2] * m_e[2];
+
+		/* new rotation is the product of the new one and the old one */
+		cumquat[0] = q[3] * oldquat[0] + q[0] * oldquat[3] + q[1] * oldquat[2] - q[2] * oldquat[1];
+		cumquat[1] = q[3] * oldquat[1] + q[1] * oldquat[3] + q[2] * oldquat[0] - q[0] * oldquat[2];
+		cumquat[2] = q[3] * oldquat[2] + q[2] * oldquat[3] + q[0] * oldquat[1] - q[1] * oldquat[0];
+		cumquat[3] = q[3] * oldquat[3] - q[0] * oldquat[0] - q[1] * oldquat[1] - q[2] * oldquat[2];
+		
+		calc_rotation();
+	}
 	
+	glutPostRedisplay();
+}
 
-			glutSwapBuffers();
-			glutPostRedisplay();
+/* "jwz?  no way man, he's my idle" -- Jamie, 2001.
+ * I forget the context :( */
+void idol(void) {
+	/* time since last iteration */
+	long iter_msec;
+	/* time since the beginning of last morph */
+	long morf_msec;
+	float iter_angle_max;
+	int i;
+	struct timeb current_time;
+
+	/* ftime is winDOS compatible */
+	ftime(&current_time);
+	/* <spiv> Well, ftime gives time with millisecond resolution.
+	 * <Jaq> if current time is exactly equal to last iteration, 
+	 *       then don't do this block
+	 * <spiv> (or worse, perhaps... who knows what the OS will do)
+	 * <spiv> So if no discernable amount of time has passed:
+	 * <spiv>   a) There's no point updating the screen, because
+	 *             it would be the same
+	 * <spiv>   b) The code will divide by zero
+	 */
+	iter_msec = (long) current_time.millitm - last_iteration.millitm + 
+			((long) current_time.time - last_iteration.time) * 1000L;
+	if (iter_msec) {
+		/* save the current time */
+		memcpy(&last_iteration, &current_time, sizeof(struct timeb));
+		
+		/* work out if we have to switch models */
+		morf_msec = last_iteration.millitm - last_morph.millitm +
+			((long) (last_iteration.time - last_morph.time) * 1000L);
+		if ((morf_msec > MODEL_STATIC_TIME) && !interactive) {
+			memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
+			start_morph(rand() % models, 0);
 		}
+
+		if (!dragging && !interactive) {
+			rotang1 += 360/((1000/ROTATION_RATE1)/iter_msec);
+			rotang2 += 360/((1000/ROTATION_RATE2)/iter_msec);
+		}
+
+		/* work out the maximum angle for this iteration */
+		iter_angle_max = 90.0 * (morph_angular_velocity/1000.0) * iter_msec;
+
+		for (i = 0; i < 24; i++) {
+			if (node[i].curAngle != node[i].destAngle) {
+				if (fabs(node[i].curAngle - node[i].destAngle) <= iter_angle_max)
+					node[i].curAngle = node[i].destAngle;
+				else if (fmod(node[i].curAngle - node[i].destAngle + 360, 360) > 180)
+					node[i].curAngle = fmod(node[i].curAngle + iter_angle_max, 360);
+				else
+					node[i].curAngle = fmod(node[i].curAngle + 360 - iter_angle_max, 360);
+			}
+		}
+
+		/* colour cycling */
+		if (fabs(colour[0] - colour_t[0]) <= fabs(colour_i[0]))
+			colour[0] = colour_t[0];
+		else
+			colour[0] += colour_i[0];
+		if (fabs(colour[1] - colour_t[1]) <= fabs(colour_i[1]))
+			colour[1] = colour_t[1];
+		else
+			colour[1] += colour_i[1];
+		if (fabs(colour[2] - colour_t[2]) <= fabs(colour_i[2]))
+			colour[2] = colour_t[2];
+		else
+			colour[2] += colour_i[2];
+
+		glutSwapBuffers();
+		glutPostRedisplay();
+	}
 }
 
 /* stick anything that needs to be shutdown properly here */
@@ -774,28 +908,37 @@ void unmain(void) {
 }
 
 int main(int argc, char ** argv) {
+	width = 640;
+	height = 480;
+	
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowSize(800,600);
+	glutInitWindowSize(width, height);
 	window = glutCreateWindow("glsnake");
+	
     ftime(&last_iteration);
     memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
     srand((unsigned int)last_iteration.time);
 
 	m = rand() % models;
-	set_model(0);	
+	start_morph(0, 1);	
 	
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(keyboard_ex);
+	glutSpecialFunc(special);
+	glutMouseFunc(mouse);
+	glutMotionFunc(motion);
 	glutIdleFunc(idol);
-	/*glutMotionFunc(exit); */
-	/*glutPassiveMotionFunc(exit);*/ 
+	
 	init();
-	glutFullScreen();
+	
+	/* glutFullScreen(); */
+	
 	atexit(unmain);
+	
 	glutSwapBuffers();
 	glutMainLoop();
+
 	return 0;
 }
