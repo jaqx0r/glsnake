@@ -1,0 +1,49 @@
+# These models were taken from Andrew and Peter's original snake.c
+# as well as some newer ones made up by Jamie, Andrew and Peter.
+
+ball:	R R L L R L R R L R L L R R L L R L R R L R L 
+half balls:	L L R L R R L R L L L L L L R L R R L R L L L 
+cat:	Z P P Z P P Z R Z P P Z P P Z P P Z Z Z Z Z Z 
+zigzag1:	R R R L L L R R R L L L R R R L L L R R R L L 
+zigzag2:	P Z P Z P Z P Z P Z P Z P Z P Z P Z P Z P Z P 
+zigzag3:	P L P L P L P L P L P L P L P L P L P L P L P 
+caterpillar:	R R P L L P R R P L L P R R P L L P R R P L L 
+bow:	R L R R R L L L R L R R R L L L R L R R R L L 
+snowflake:	R R R R L L L L R R R R L L L L R R R R L L L 
+turtle:	Z R L Z Z R L P R R L R L L P L L L R L R R R 
+basket:	R P Z Z P L Z L L Z L P Z Z P R P L P Z Z P L 
+thing:	P R L R R L P L R L L R P R L R R L P L R L L 
+straight:	Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z Z 
+propellor:	Z Z Z R L R Z L Z Z Z R L R Z L Z Z Z R L R Z L 
+hexagon:	Z Z Z Z L Z Z R Z Z Z Z L Z Z R Z Z Z Z L Z Z R 
+tri1:	Z Z L R Z L Z R Z Z L R Z L Z R Z Z L R Z L Z R 
+triangle:	Z Z Z Z Z Z L R Z Z Z Z Z Z L R Z Z Z Z Z Z L R 
+flower:	Z L P R R P Z L P R R P Z L P R R P Z L P R R P 
+crucifix:	Z P P Z P Z P P Z P Z P P Z P Z Z Z P P Z Z Z P 
+kayak:	P R L P L P Z Z R P L Z Z Z Z Z Z R P L Z Z P R 
+bird:	Z Z Z Z R R Z L P R Z R Z R Z R P L Z R L Z P 
+seal:	R L L P R L Z P P Z L Z L P R Z L L L P R R L 
+dog:	Z Z Z Z P P Z P Z Z P Z P P Z Z Z P Z P P Z P 
+frog:	R R L L R P R P L P R Z L Z L P R Z L L R L L 
+quavers:	L L R L R R Z Z Z R Z Z L R Z Z Z L L R L R R 
+fly:	L L R L R R Z P Z Z L P R Z Z P Z L L R L R R 
+puppy:	Z P Z P P Z P P Z Z Z R R P R L P L R P R L 
+stars:	L R P R L P L R P R Z Z Z R P R L P L R P R L 
+mountains:	R P R P R P L P L P L P R P R P R P L P L P L P 
+quad1:	R P R R R P L L L P L P R P R R R P L L L P L P 
+quad2:	Z P R R R P L L L P Z P Z P R R R P L L L P Z P 
+glasses:	Z P Z R R P L L Z P Z P Z P Z R R P L L Z P Z P 
+em:	Z P Z Z R P L Z Z P Z P Z P Z Z R P L Z Z P Z P 
+quad3:	Z R Z Z R P L Z Z L Z P Z R Z Z R P L Z Z L Z P 
+vee:	Z Z Z Z R P L Z Z Z Z P Z Z Z Z R P L Z Z Z Z P 
+square:	Z Z Z R R P L L Z Z Z P Z Z Z R R P L L Z Z Z P 
+eagle:	R Z Z R R P L L Z Z L P R Z Z R R P L L Z Z L P 
+volcano:	R Z L R R P L L R Z L P R Z L R R P L L R Z L P 
+saddle:	R Z L Z R P L Z R Z L P R Z L Z R P L Z R Z L P 
+c3d:	Z Z R Z Z P Z Z L Z Z P Z Z R Z Z P Z Z L Z Z P 
+block:	Z Z P P Z R P L P R P R P L P R Z Z P Z Z L P R 
+duck:	L P L P Z P P Z P Z L P R Z P Z P P Z Z L P L 
+prayer:	R R R L R L L Z Z Z R P L Z Z Z R R L R L L L P 
+giraffe:	Z Z Z R P L Z Z Z R R R P L R Z P Z L R P L L L 
+tie fighter:	P L R L L P R Z R L Z P L L R R R P L Z L R Z 
+Strong Arms:		 P P Z Z P Z Z R Z		 R R P R R Z R Z		 Z P Z Z P P Z 	 
