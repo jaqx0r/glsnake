@@ -1,7 +1,6 @@
 # Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_PREREQ(2.50)
-AC_REVISION($Revision: 1.5 $)
 
 AM_INIT_AUTOMAKE(glsnake, 0.8.9, jaq@spacepants.org)
 AC_CONFIG_SRCDIR(glsnake.c)

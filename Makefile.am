@@ -10,10 +10,4 @@ man_MANS = glsnake.6
 
 SUBDIRS = . tools data pixmaps
 
-EXTRA_DIST = config/install-sh config/missing config/mkinstalldirs \
-			 glsnake.6
-
-ChangeLog:
-	cvs2cl -S --no-wrap
-
-.PHONY: ChangeLog
+EXTRA_DIST = glsnake.6

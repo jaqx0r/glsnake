@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: getmodels.sh,v 1.1 2001/12/04 06:55:07 jaq Exp $
+#
 # this script downloads the model descriptions and converts them to the
 # model format used by glsnake.  Jamie Wilkinson's fault^Wcode.
 

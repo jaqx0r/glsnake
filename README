@@ -14,13 +14,4 @@ make
 make install
 thing to get this up and running.
 
-Notes for CVS:
-
-If you have just checked this out of CVS, make sure you have the GNU autotools
-installed and then run bootstrap in the top level directory.
-
-The first time make is run, you will need a net connection to build the
-ChangeLog and the supplementary model files -- distributed tarballs should
-already come with these files; if not, please let us know.
-
  -- Jamie Wilkinson <jaq@spacepants.org>
