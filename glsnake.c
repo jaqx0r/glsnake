@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.54 2003/02/22 18:05:41 jaq Exp $
+/* $Id: glsnake.c,v 1.55 2003/02/22 19:12:37 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -57,7 +57,7 @@
 #define MORPH_ANG_ACCEL		0.1
 
 /* the connecting string that holds the snake together */
-#define MAGICAL_RED_STRING 1
+#define MAGICAL_RED_STRING 0
 
 /* default field of view */
 #define FOV 25.0
@@ -578,11 +578,11 @@ void display(void) {
     //    glEnable(GL_LIGHTING);
 #endif
 
+#ifdef MAGICAL_RED_STRING
     glPushMatrix();
     glTranslatef(-com[0], -com[1], -com[2]);
     //glRotatef(rotang1, 0.0, 1.0, 0.0); 
 
-#ifdef MAGICAL_RED_STRING
     //glDisable(GL_LIGHTING);
     glColor3f(1.0, 0.0, 0.0);
     glBegin(GL_LINE_STRIP);
