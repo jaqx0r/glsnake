@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.7 2001/10/04 16:27:17 jaq Exp $
+/* $Id: glsnake.c,v 1.8 2001/10/04 16:29:48 jaq Exp $
  * An OpenGL imitation of Rubik's Snake 
  * by Jamie Wilkinson, Andrew Bennetts and Peter Aylett
  * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
@@ -21,16 +21,20 @@
 #define PIN     180.0
 #define LEFT    90.0
 
-#define ROTATION_RATE1		0.10	/* Rotations per second */
-#define ROTATION_RATE2		0.14	/* Rotations per second */
+#define X_MASK	1
+#define Y_MASK	2
+#define Z_MASK	4
+
+#define ROTATION_RATE1		0.10		/* Rotations per second */
+#define ROTATION_RATE2		0.14		/* Rotations per second */
 #define EXPLODE_INCREMENT	0.05
-#define MORPH_DELAY		3.0	/* Delay in seconds between morphs */
-#define INIT_MORPH_RATE		1.0	/* Morphs per second */
+#define MORPH_DELAY			3.0			/* Delay in seconds between morphs */
+#define INIT_MORPH_RATE		1.0			/* Morphs per second */
 #define MORPH_RATE_CHANGE	0.1
 
 #define ABS(x)				((x) > 0 ? (x) : -(x))
-/* Simple mod (%) that works for floats, but only for simple cases */
-#define FMOD(num,denom)		((num) > (denom) ? (num) - (denom) : (num))
+#define FMOD(num,denom)		((num) >= (denom) ? (num) - (denom) : (num))	/* works only in our special case */
+#define GETSCALAR(vec,mask) ((vec) == (mask) ? 1 : ( (vec) == -(mask) ? -1 : 0 ))
 
 /* the id for the window we make */
 int window;
@@ -124,6 +128,10 @@ float hexagon[] = { ZERO, ZERO, ZERO, ZERO, LEFT, ZERO, ZERO, RIGHT, ZERO,
 	ZERO, ZERO, ZERO, LEFT, ZERO, ZERO, RIGHT, ZERO, ZERO, ZERO, ZERO,
 	LEFT, ZERO, ZERO, RIGHT };
 
+float tri1[] = { ZERO, ZERO, LEFT, RIGHT, ZERO, LEFT, ZERO, RIGHT,
+	ZERO, ZERO, LEFT, RIGHT, ZERO, LEFT, ZERO, RIGHT,
+	ZERO, ZERO, LEFT, RIGHT, ZERO, LEFT, ZERO, RIGHT };
+
 float triangle[] = {ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, LEFT, RIGHT, ZERO,
 	ZERO, ZERO, ZERO, ZERO, ZERO, LEFT, RIGHT, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO, LEFT, RIGHT };
@@ -167,85 +175,79 @@ float puppy[] = { ZERO,PIN,ZERO,PIN,PIN,ZERO,PIN,PIN,ZERO,ZERO,ZERO,RIGHT,
 float stars[] = {LEFT, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, 
 	ZERO, ZERO, ZERO, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, LEFT };
 
-
-/* These next few models form a sequence based upon a special form
- * of snake we call "quads"... watch these morph into one another
- * in order and you will see what I mean. */
 float mountains[] = { RIGHT,PIN,RIGHT,PIN,RIGHT,PIN,
-			LEFT,PIN,LEFT,PIN,LEFT,PIN,
-			RIGHT,PIN,RIGHT,PIN,RIGHT,PIN,
-			LEFT,PIN,LEFT,PIN,LEFT,PIN };
+					LEFT,PIN,LEFT,PIN,LEFT,PIN,
+					RIGHT,PIN,RIGHT,PIN,RIGHT,PIN,
+					LEFT,PIN,LEFT,PIN,LEFT,PIN };
 
 float quad1[] = { RIGHT,PIN,RIGHT,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,LEFT,PIN,LEFT,PIN,
-			RIGHT,PIN,RIGHT,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,LEFT,PIN,LEFT,PIN };
+					LEFT,LEFT,LEFT,PIN,LEFT,PIN,
+					RIGHT,PIN,RIGHT,RIGHT,RIGHT,PIN,
+					LEFT,LEFT,LEFT,PIN,LEFT,PIN };
 
 float quad2[] = { ZERO,PIN,RIGHT,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,LEFT,PIN,ZERO,PIN,
-			ZERO,PIN,RIGHT,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,LEFT,PIN,ZERO,PIN };
+					LEFT,LEFT,LEFT,PIN,ZERO,PIN,
+					ZERO,PIN,RIGHT,RIGHT,RIGHT,PIN,
+					LEFT,LEFT,LEFT,PIN,ZERO,PIN };
 
 float glasses[] = { ZERO,PIN,ZERO,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,ZERO,PIN,ZERO,PIN,
-			ZERO,PIN,ZERO,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,ZERO,PIN,ZERO,PIN };
+					LEFT,LEFT,ZERO,PIN,ZERO,PIN,
+					ZERO,PIN,ZERO,RIGHT,RIGHT,PIN,
+					LEFT,LEFT,ZERO,PIN,ZERO,PIN };
 
 float em[] = { ZERO,PIN,ZERO,ZERO,RIGHT,PIN,
-			LEFT,ZERO,ZERO,PIN,ZERO,PIN,
-			ZERO,PIN,ZERO,ZERO,RIGHT,PIN,
-			LEFT,ZERO,ZERO,PIN,ZERO,PIN };
+					LEFT,ZERO,ZERO,PIN,ZERO,PIN,
+					ZERO,PIN,ZERO,ZERO,RIGHT,PIN,
+					LEFT,ZERO,ZERO,PIN,ZERO,PIN };
 
 float quad3[] = { ZERO,RIGHT,ZERO,ZERO,RIGHT,PIN,
-			LEFT,ZERO,ZERO,LEFT,ZERO,PIN,
-			ZERO,RIGHT,ZERO,ZERO,RIGHT,PIN,
-			LEFT,ZERO,ZERO,LEFT,ZERO,PIN };
+					LEFT,ZERO,ZERO,LEFT,ZERO,PIN,
+					ZERO,RIGHT,ZERO,ZERO,RIGHT,PIN,
+					LEFT,ZERO,ZERO,LEFT,ZERO,PIN };
 
 float vee[] = { ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,
-			LEFT,ZERO,ZERO,ZERO,ZERO,PIN,
-			ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,
-			LEFT,ZERO,ZERO,ZERO,ZERO,PIN };
+					LEFT,ZERO,ZERO,ZERO,ZERO,PIN,
+					ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,
+					LEFT,ZERO,ZERO,ZERO,ZERO,PIN };
 
 float square[] = { ZERO,ZERO,ZERO,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,ZERO,ZERO,ZERO,PIN,
-			ZERO,ZERO,ZERO,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,ZERO,ZERO,ZERO,PIN };
+					LEFT,LEFT,ZERO,ZERO,ZERO,PIN,
+					ZERO,ZERO,ZERO,RIGHT,RIGHT,PIN,
+					LEFT,LEFT,ZERO,ZERO,ZERO,PIN };
 
 float eagle[] = { RIGHT,ZERO,ZERO,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,ZERO,ZERO,LEFT,PIN,
-			RIGHT,ZERO,ZERO,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,ZERO,ZERO,LEFT,PIN };
+					LEFT,LEFT,ZERO,ZERO,LEFT,PIN,
+					RIGHT,ZERO,ZERO,RIGHT,RIGHT,PIN,
+					LEFT,LEFT,ZERO,ZERO,LEFT,PIN };
 
 float volcano[] = { RIGHT,ZERO,LEFT,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,RIGHT,ZERO,LEFT,PIN,
-			RIGHT,ZERO,LEFT,RIGHT,RIGHT,PIN,
-			LEFT,LEFT,RIGHT,ZERO,LEFT,PIN };
+					LEFT,LEFT,RIGHT,ZERO,LEFT,PIN,
+					RIGHT,ZERO,LEFT,RIGHT,RIGHT,PIN,
+					LEFT,LEFT,RIGHT,ZERO,LEFT,PIN };
 
 float saddle[] = { RIGHT,ZERO,LEFT,ZERO,RIGHT,PIN,
-			LEFT,ZERO,RIGHT,ZERO,LEFT,PIN,
-			RIGHT,ZERO,LEFT,ZERO,RIGHT,PIN,
-			LEFT,ZERO,RIGHT,ZERO,LEFT,PIN };
-/* End of quad sequence */
+					LEFT,ZERO,RIGHT,ZERO,LEFT,PIN,
+					RIGHT,ZERO,LEFT,ZERO,RIGHT,PIN,
+					LEFT,ZERO,RIGHT,ZERO,LEFT,PIN };
 
 float c3d[] = { ZERO,ZERO,RIGHT,ZERO,ZERO,PIN,
 				ZERO,ZERO,LEFT,ZERO,ZERO,PIN,
 				ZERO,ZERO,RIGHT,ZERO,ZERO,PIN,
 				ZERO,ZERO,LEFT,ZERO,ZERO,PIN };
 
+float block[] = { ZERO,ZERO,PIN,PIN,ZERO,RIGHT,PIN,LEFT,PIN,RIGHT,PIN,
+RIGHT,PIN,LEFT,PIN,RIGHT,ZERO,ZERO,PIN,ZERO,ZERO,LEFT,PIN,RIGHT };
+
 float duck[] = { LEFT, PIN, LEFT, PIN, ZERO, PIN, PIN, ZERO, PIN, 
 	ZERO, LEFT, PIN, RIGHT, ZERO, PIN, ZERO, PIN, PIN, ZERO, ZERO,
 	LEFT, PIN, LEFT };
 
-float * model[] = { straight, stars, thing, 		/* linear */
-	caterpillar, zigzag1, zigzag2, zigzag3,		/* zigzags */
-	ball, half_balls,				/* spherical */
-	bow, snowflake, propellor, hexagon, triangle,	/* triples */
-	c3d, saddle, volcano, eagle, square, vee, 	/* quads */
-	quad3, em, glasses, quad2, quad1, mountains,	/* more quads */
-	cat, dog, crucifix,				/* flat */
-	flower, turtle, basket, kayak, bird, seal, 	/* shapes */
-	frog, quavers, fly, puppy, duck 		/* more shapes */
-}; 
+float * model[] = { straight, stars, thing, caterpillar, zigzag1, zigzag2, zigzag3,	// linear
+	ball, half_balls,													// spherical						
+	tri1, bow, snowflake, propellor, hexagon, triangle,						// triples
+	c3d, saddle, volcano, eagle, square, vee, quad3, em, glasses, quad2, quad1, mountains,		// quads
+	cat, dog, crucifix,													// flat
+	block, flower, turtle, basket, kayak, bird, seal, frog, quavers, fly, puppy, duck }; // models
 	
 
 typedef struct {
@@ -264,17 +266,27 @@ float morph = 0.0;
 float morphRate = INIT_MORPH_RATE;
 int morphComplete = 1;			/* look at this to see if morph is in progress */
 
+/* snake metrics */
+int is_cyclic = 0;
+int is_legal = 1;
+int debug = 0;
+
 /* rotation angle */
 float rotang1 = 0.0;
 float rotang2 = 0.0;
 
+/* morph ratio (how far between model m and model m_next we are) */
+//float morph = 0.0;
+//float ma_morph = 0.0;
+
 struct timeb last_iteration;
 struct timeb last_morph;
+
 
 /* option variables */
 float explode = 0.05;
 int wireframe = 0;
-int shiny = 0;			/* shiny means Mark's wacky normals */
+int shiny = 1;
 int interactive = 0;
 
 /* wot initialises it */
@@ -485,11 +497,16 @@ void display(void) {
 		glPushMatrix();
 		/* get node */
 		if ((i == selected || i == selected+1) && interactive)
-			glColor3f(1.0,1.0,0.0);
+			glColor3f(1.0,1.0,0.0);		// yellow
+		else if (!is_legal)
+			glColor3f(0.5,0.5,0.5);		// grey
 		else if (i % 2)
-			glColor3f(0.0,0.0,1.0);
+			if (is_cyclic)
+				glColor3f(1.0,0.0,0.0);	// red
+			else
+				glColor3f(0.0,0.0,1.0);	// blue
 		else
-			glColor3f(1.0,1.0,1.0);
+			glColor3f(1.0,1.0,1.0);		// white
 
 		/* get call list */
 		if (wireframe)
@@ -523,8 +540,8 @@ void display(void) {
 		glPopMatrix();
 	}
 	glFlush();
+	/* glutSwapBuffers(); */
 }
-
 
 /* wot gets called when the winder is resized */
 void reshape(int width, int height) {
@@ -541,36 +558,99 @@ void set_model(int modelIndex)
 	curModel = modelIndex;
 }
 
+/* calculate snake metrics */
+void snake_metrics() {
+	int srcDir, dstDir;
+	int i, x, y, z;
+	int prevSrcDir = -Y_MASK;
+	int prevDstDir = Z_MASK;
+	int grid[25][25][25];
+
+	for (x=0; x<25; x++)
+		for (y=0; y<25; y++)
+			for (z=0; z<25; z++)
+				grid[x][y][z] = 0;
+
+	is_legal = 1;
+	x = y = z = 12;
+
+	for (i=0; i<23; i++)
+	{
+		// establish new state vars
+		srcDir = -prevDstDir;
+		x += GETSCALAR(prevDstDir, X_MASK);
+		y += GETSCALAR(prevDstDir, Y_MASK);
+		z += GETSCALAR(prevDstDir, Z_MASK);
+
+		switch ((int)node[i].destAngle)
+		{
+			case (int)(ZERO):
+				dstDir = -prevSrcDir;
+				break;
+			case (int)(PIN):
+				dstDir = prevSrcDir;
+				break;
+			case (int)(RIGHT):
+			case (int)(LEFT):
+				// think cross product
+				dstDir =	X_MASK * (	GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, Z_MASK) -
+										GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, Y_MASK) ) + 
+							Y_MASK * (	GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, X_MASK) -
+										GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Z_MASK) ) + 
+							Z_MASK * (	GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Y_MASK) -
+										GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, X_MASK) );
+				if (node[i].destAngle == (int)(RIGHT))
+					dstDir = -dstDir;
+				break;
+		}
+
+		if (grid[x][y][z] == 0)
+			grid[x][y][z] = srcDir + dstDir;
+		else if (grid[x][y][z] + srcDir + dstDir == 0)
+			grid[x][y][z] = 8;
+		else
+			is_legal = 0;
+
+		prevSrcDir = srcDir;
+		prevDstDir = dstDir;
+	}
+	
+	is_cyclic = (dstDir == Y_MASK && x == 12 && y == 11 && z == 12);
+}
+
 /* Start morph process to this model */
 void start_morph(int modelIndex)
 {
 	int i;
 	for (i=0; i<23; i++)
 		node[i].destAngle = model[modelIndex][i];
+	snake_metrics();
 	curModel = modelIndex;
 }
 
 void keyboard_ex(int key, int x, int y) {
-	if (!interactive)
-		return;
+	int i;
 
-	switch (key) {
-		case GLUT_KEY_UP:		/* Highlight next segment */
-			selected = (selected + 22) % 23;
-			break;
-		case GLUT_KEY_DOWN:		/* Highlight prev segment */
-			selected = (selected + 1) % 23;
-			break;
-		case GLUT_KEY_LEFT:		/* Rotate left */
-			node[selected].destAngle = FMOD(node[selected].destAngle + LEFT, 360);
-			break;
-		case GLUT_KEY_RIGHT:		/* Rotate right */
-			node[selected].destAngle = FMOD(node[selected].destAngle + RIGHT, 360);
-			break;
-		case GLUT_KEY_HOME:		/* Set to straight */
-			start_morph(0);
-			break;
-	}
+	if (interactive)
+		switch (key) {
+			case GLUT_KEY_UP:
+				selected = (selected + 22) % 23;
+				break;
+			case GLUT_KEY_DOWN:
+				selected = (selected + 1) % 23;
+				break;
+			case GLUT_KEY_LEFT:
+				node[selected].destAngle = FMOD(node[selected].destAngle + 90, 360);
+				break;
+			case GLUT_KEY_RIGHT:
+				node[selected].destAngle = FMOD(node[selected].destAngle + 270, 360);
+				break;
+			case GLUT_KEY_HOME:
+				for (i=0; i<24; i++)
+					node[i].destAngle = 0;
+				break;
+		}
+	snake_metrics();
 }
 
 void keyboard(unsigned char c, int x, int y) {
@@ -585,8 +665,8 @@ void keyboard(unsigned char c, int x, int y) {
 			explode -= EXPLODE_INCREMENT;
 			if (explode < 0.0) explode = 0.0;
 			break;
-		case 'n':
-		case '.':	/* think right arrow */
+		case '.':	// think right arrow
+			/* Guard against changing models during a morph - no longer necessary*/
 			curModel++;
 			curModel %= models;
 			start_morph( curModel );
@@ -594,7 +674,8 @@ void keyboard(unsigned char c, int x, int y) {
 			/* Reset last_morph time */
 			ftime(&last_morph);			
 			break;
-		case ',':	/* think left arrow */
+		case ',':	// think left arrow
+			/* Guard against changing models during a morph - no longer necessary*/
 			curModel = (curModel + models - 1) % models;
 			start_morph( curModel );
 
@@ -624,6 +705,9 @@ void keyboard(unsigned char c, int x, int y) {
 			else
 				glEnable(GL_LIGHTING);
 			break;
+		case 'd':
+			debug = 1 - debug;
+			break;
 		default:
 			break;
 	}
@@ -633,62 +717,55 @@ void keyboard(unsigned char c, int x, int y) {
 void idol(void) {
         long i_sec, i_usec;             /* used for tracking how far through an iteration we are */
         long m_sec, m_usec;
-	float maxmorph;
-	int i;
-	struct timeb current_time;
+		float maxmorph;
+		int i;
+		struct timeb current_time;
 
         ftime(&current_time);
+		if (memcmp(&current_time, &last_iteration,sizeof(struct timeb))) {
+			i_sec = (long)-last_iteration.time;
+			i_usec = -last_iteration.millitm;
+			memcpy(&last_iteration, &current_time, sizeof(struct timeb));
+			i_sec += (long)last_iteration.time;
+			i_usec += last_iteration.millitm;
+			i_usec += i_sec*1000;
 
-	/* If we are looping faster than one loop per millisecond, then
-	 * it will seem as if no time has passed, and we would divide by
-	 * zero, so just return instead/ */
-	if (!memcmp(&current_time, &last_iteration,sizeof(struct timeb)))
-		return;
+			rotang1 += 360/((1000/ROTATION_RATE1)/i_usec);
+			rotang2 += 360/((1000/ROTATION_RATE2)/i_usec);
 
-	/* Find the time since the last iteration in milliseconds */
-	i_sec = (long)-last_iteration.time;
-	i_usec = -last_iteration.millitm;
-	memcpy(&last_iteration, &current_time, sizeof(struct timeb));
-	i_sec += (long)last_iteration.time;
-	i_usec += last_iteration.millitm;
-	i_usec += i_sec*1000;
+			maxmorph = 90/((1000/morphRate)/i_usec);
 
-	/* Rotate view according to the amount of time that has passed */
-	rotang1 += 360/((1000/ROTATION_RATE1)/i_usec);
-	rotang2 += 360/((1000/ROTATION_RATE2)/i_usec);
+			morphComplete = 1;
+			for (i=0; i<24; i++) {
+				if (node[i].curAngle != node[i].destAngle) {
+					morphComplete = 0;
+					if (ABS(node[i].curAngle - node[i].destAngle) <= maxmorph)
+						node[i].curAngle = node[i].destAngle;
+					else if (FMOD(node[i].curAngle - node[i].destAngle + 360, 360) > 180)
+						node[i].curAngle = FMOD(node[i].curAngle + maxmorph, 360);
+					else
+						node[i].curAngle = FMOD(node[i].curAngle + 360 - maxmorph, 360);
+				}
+			}
 
-	/* do the morphing stuff here */
-	maxmorph = 90/((1000/morphRate)/i_usec);
+			/* do the morphing stuff here */
+			m_sec = (long)(last_iteration.time - last_morph.time);
+			m_usec = last_iteration.millitm - last_morph.millitm;
+			m_usec += m_sec*1000;
+			if (m_usec > (long)(MORPH_DELAY*1000)) {
+					morph = (m_usec - MORPH_DELAY*1000) * (morphRate/1000);
+					if (morph > 1.0) {
+							morph = 0.0;
+							memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
+							if (!interactive)
+								start_morph( rand() % models );
+					}
+			}
+	
 
-	morphComplete = 1;
-	for (i=0; i<24; i++) {
-		if (node[i].curAngle != node[i].destAngle) {
-			morphComplete = 0;
-			if (ABS(node[i].curAngle - node[i].destAngle) <= maxmorph)
-				node[i].curAngle = node[i].destAngle;
-			else if (FMOD(node[i].curAngle - node[i].destAngle + 360, 360) > 180)
-				node[i].curAngle = FMOD(node[i].curAngle + maxmorph, 360);
-			else
-				node[i].curAngle = FMOD(node[i].curAngle + 360 - maxmorph, 360);
+			glutSwapBuffers();
+			glutPostRedisplay();
 		}
-	}
-
-	m_sec = (long)(last_iteration.time - last_morph.time);
-	m_usec = last_iteration.millitm - last_morph.millitm;
-	m_usec += m_sec*1000;
-	if (m_usec > (long)(MORPH_DELAY*1000)) {
-		morph = (m_usec - MORPH_DELAY*1000) * (morphRate/1000);
-		if (morph > 1.0) {
-			morph = 0.0;
-			memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
-			if (!interactive)
-				start_morph( rand() % models );
-		}
-	}
-
-
-	glutSwapBuffers();
-	glutPostRedisplay();
 }
 
 /* stick anything that needs to be shutdown properly here */
@@ -701,9 +778,9 @@ int main(int argc, char ** argv) {
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(800,600);
 	window = glutCreateWindow("glsnake");
-	ftime(&last_iteration);
-	memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
-	srand((unsigned int)last_iteration.time);
+    ftime(&last_iteration);
+    memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
+    srand((unsigned int)last_iteration.time);
 
 	m = rand() % models;
 	set_model(0);	
