@@ -1,5 +1,5 @@
 VERSION=0.7.1
-LDFLAGS=-lGL -lGLU -lglut -lm
+LDFLAGS=-L/usr/X11R6/lib -lGL -lGLU -lglut -lm -lXi -lXmu -lX11
 CFLAGS=-O2 -Wall -pedantic
 
 all: glsnake

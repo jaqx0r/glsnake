@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.40 2001/10/16 04:58:36 jaq Exp $
+/* $Id: glsnake.c,v 1.41 2001/10/17 03:40:56 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -315,7 +315,12 @@ model_t model[] = {
         { PIN, LEFT, RIGHT, LEFT, LEFT, PIN, RIGHT, ZERO, RIGHT,
           LEFT, ZERO, PIN, LEFT, LEFT, RIGHT, RIGHT, RIGHT, PIN,
           LEFT, ZERO, LEFT, RIGHT, ZERO }
-    }, 
+    },
+	{ "Strong Arms",
+		{ PIN, PIN, ZERO, ZERO, PIN, ZERO, ZERO, RIGHT, ZERO,
+		  RIGHT, RIGHT, PIN, RIGHT, RIGHT, ZERO, RIGHT, ZERO,
+		  ZERO, PIN, ZERO, ZERO, PIN, PIN, ZERO }
+	},
 
     /* these models from http://home.t-online.de/home/thlet.wolter/ */
 
