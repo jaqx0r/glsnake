@@ -10,7 +10,7 @@ dirs_right = {'2': 'PIN', '1': 'RIGHT', '3': 'LEFT', '0': 'ZERO'}
 dirs_left = {'2': 'PIN', '1': 'LEFT', '3': 'RIGHT', '0': 'ZERO'}
 
 def magic(title, data):
-    model = ['ZERO'] * 22
+    model = ['ZERO'] * 23
 
     for twist in data.split('-'):
         if len(twist) == 3:
@@ -24,12 +24,20 @@ def magic(title, data):
         else:
             index = node * 2 - 3
 
+	print (node, side, dir, index)
         
         if side=='R':
             model[index] = dirs_right[dir]
         else:
             model[index] = dirs_left[dir]
 
-    print "float %s[] = { %s };" % (title.lower().replace(' ', '_'),
+    return "float %s[] = { %s };" % (title.lower().replace(' ', '_'),
                                     ', '.join(model))
+
+if __name__ == '__main__':
+	import sys
+	while 1:
+		line = sys.stdin.readline()
+		if not line: break
+		print magic('unnamed', line)
 
