@@ -1,3 +1,9 @@
+glsnake (0.7.6-1) unstable; urgency=low
+
+  * New upstream, hopefully fixes warping on wide screen displays
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Sat, 27 Oct 2001 20:04:15 +1000
+
 glsnake (0.7.5-2) unstable; urgency=low
 
   * An up-to-date ChangeLog 

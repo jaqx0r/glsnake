@@ -34,8 +34,14 @@ Quit.
 .B f
 Toggle between full-screen and windowed mode.
 .TP
-.B s
-Toggle sane normals agains some weird normals.
+.B t
+Toggle displaying of model titles.
+.TP
+.B w
+Toggle wireframe mode on and off.
+.TP
+.B a
+Toggle between normal colours, and Jaq's funky colour scheme.
 .TP
 .B e, E
 Change the explode distance.
@@ -43,15 +49,41 @@ Change the explode distance.
 .B +, -
 Change the speed of rotation.
 .TP
+.B . ,
+Change to the next, and previous models.
+.TP
 .B i
 Enter interactive mode.
+.br
 In interactive mode, the cursor keys can be used to select a joint and
 rotate it.  The home key resets to the straight snake.
+.TP
+.B d
+Dump the current model.
+.br
+Dumps a description of the current model to stdout, in a format that can
+be easily inserted into glsnake.
 .SH BUGS
 .B glsnake
 will happily intersect itself while morphing.  There Are No Flocking
 Algorithms.
 .SH AUTHOR
-This manual page was written by Peter Hardy <peterhardy@pacific.net.au>,
+.B glsnake
+was written by Jamie Wilkinson
+.nh
+<jaq@spacepants.org>,
+.hy
+Andrew Bennetts
+.nh
+<andrew@puzzling.org>
+.hy
+and Peter Aylett
+.nh
+<peter@ylett.com>.
+.hy
+This manual page was written by Peter Hardy
+.nh
+<peterhardy@pacific.net.au>,
+.hy
 who spent the entire time wondering exactly why he was writing it, for
 the Debian GNU/Linux system (but may be used by others).
