@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.22 2001/10/06 01:32:07 jaq Exp $
+/* $Id: glsnake.c,v 1.23 2001/10/06 14:47:07 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -842,6 +842,8 @@ void set_colours(float max_angle) {
 	colour_i[1] = (colour_t[1] - colour[1]) / max_angle;
 	colour_i[2] = (colour_t[2] - colour[2]) / max_angle;
 }
+
+int morphing = 0;
 	
 /* Start morph process to this model */
 void start_morph(int modelIndex, int immediate) {
@@ -862,10 +864,12 @@ void start_morph(int modelIndex, int immediate) {
 	set_colours(max_angle);
 
 	curModel = modelIndex;
+	morphing = 1;
 }
 
 void special(int key, int x, int y) {
 	int i;
+	int unknown_key = 0;
 
 	if (interactive) {
 		switch (key) {
@@ -877,20 +881,25 @@ void special(int key, int x, int y) {
 				break;
 			case GLUT_KEY_LEFT:
 				node[selected].destAngle = fmod(node[selected].destAngle + LEFT, 360);
+				morphing = 1;
 				break;
 			case GLUT_KEY_RIGHT:
 				node[selected].destAngle = fmod(node[selected].destAngle + RIGHT, 360);
+				morphing = 1;
 				break;
 			case GLUT_KEY_HOME:
 				for (i = 0; i < 24; i++)
 					node[i].destAngle = ZERO;
 				break;
 			default:
+				unknown_key = 1;
 				break;
 		}
 	}
 	calc_snake_metrics();
 	set_colours(fabs(node[selected].destAngle - node[selected].curAngle));
+	if (!unknown_key)
+		glutPostRedisplay();
 }
 
 void keyboard(unsigned char c, int x, int y) {
@@ -936,6 +945,7 @@ void keyboard(unsigned char c, int x, int y) {
 			break;
 		case 'i':
 			interactive = 1 - interactive;
+			glutPostRedisplay();
 			break;
 		case 's':
 			if (wireframe)
@@ -1060,6 +1070,7 @@ void idol(void) {
 	float iter_angle_max;
 	int i;
 	struct timeb current_time;
+	int still_morphing;
 
 	/* Do nothing to the model if we are paused */
 	if (paused) {
@@ -1093,6 +1104,11 @@ void idol(void) {
 			start_morph(rand() % models, 0);
 		}
 
+		if (interactive && !morphing) {
+			quick_sleep();
+			return;
+		}
+
 		if (!dragging && !interactive) {
 			rotang1 += 360/((1000/ROTATION_RATE1)/iter_msec);
 			rotang2 += 360/((1000/ROTATION_RATE2)/iter_msec);
@@ -1101,8 +1117,10 @@ void idol(void) {
 		/* work out the maximum angle for this iteration */
 		iter_angle_max = 90.0 * (morph_angular_velocity/1000.0) * iter_msec;
 
+		still_morphing = 0;
 		for (i = 0; i < 24; i++) {
 			if (node[i].curAngle != node[i].destAngle) {
+				still_morphing = 1;
 				if (fabs(node[i].curAngle - node[i].destAngle) <= iter_angle_max)
 					node[i].curAngle = node[i].destAngle;
 				else if (fmod(node[i].curAngle - node[i].destAngle + 360, 360) > 180)
@@ -1111,6 +1129,9 @@ void idol(void) {
 					node[i].curAngle = fmod(node[i].curAngle + 360 - iter_angle_max, 360);
 			}
 		}
+
+		if (!still_morphing)
+			morphing = 0;
 
 		/* colour cycling */
 		if (fabs(colour[0] - colour_t[0]) <= fabs(colour_i[0]))
