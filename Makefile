@@ -1,5 +1,5 @@
 LDFLAGS=-lGL -lGLU -lglut -lm
-CFLAGS=-Wall -pedantic
+CFLAGS=-O2 -Wall -pedantic
 
 all: glsnake
 
