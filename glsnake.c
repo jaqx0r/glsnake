@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.18 2001/10/05 08:41:35 andrew Exp $
+/* $Id: glsnake.c,v 1.19 2001/10/05 10:39:50 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -183,59 +183,59 @@ float stars[] = {LEFT, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT,
 	ZERO, ZERO, ZERO, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, LEFT };
 
 float mountains[] = { RIGHT,PIN,RIGHT,PIN,RIGHT,PIN,
-					LEFT,PIN,LEFT,PIN,LEFT,PIN,
-					RIGHT,PIN,RIGHT,PIN,RIGHT,PIN,
-					LEFT,PIN,LEFT,PIN,LEFT,PIN };
+			LEFT,PIN,LEFT,PIN,LEFT,PIN,
+			RIGHT,PIN,RIGHT,PIN,RIGHT,PIN,
+			LEFT,PIN,LEFT,PIN,LEFT,PIN };
 
 float quad1[] = { RIGHT,PIN,RIGHT,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,LEFT,PIN,LEFT,PIN,
-					RIGHT,PIN,RIGHT,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,LEFT,PIN,LEFT,PIN };
+			LEFT,LEFT,LEFT,PIN,LEFT,PIN,
+			RIGHT,PIN,RIGHT,RIGHT,RIGHT,PIN,
+			LEFT,LEFT,LEFT,PIN,LEFT,PIN };
 
 float quad2[] = { ZERO,PIN,RIGHT,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,LEFT,PIN,ZERO,PIN,
-					ZERO,PIN,RIGHT,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,LEFT,PIN,ZERO,PIN };
+			LEFT,LEFT,LEFT,PIN,ZERO,PIN,
+			ZERO,PIN,RIGHT,RIGHT,RIGHT,PIN,
+			LEFT,LEFT,LEFT,PIN,ZERO,PIN };
 
 float glasses[] = { ZERO,PIN,ZERO,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,ZERO,PIN,ZERO,PIN,
-					ZERO,PIN,ZERO,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,ZERO,PIN,ZERO,PIN };
+			LEFT,LEFT,ZERO,PIN,ZERO,PIN,
+			ZERO,PIN,ZERO,RIGHT,RIGHT,PIN,
+			LEFT,LEFT,ZERO,PIN,ZERO,PIN };
 
 float em[] = { ZERO,PIN,ZERO,ZERO,RIGHT,PIN,
-					LEFT,ZERO,ZERO,PIN,ZERO,PIN,
-					ZERO,PIN,ZERO,ZERO,RIGHT,PIN,
-					LEFT,ZERO,ZERO,PIN,ZERO,PIN };
+			LEFT,ZERO,ZERO,PIN,ZERO,PIN,
+			ZERO,PIN,ZERO,ZERO,RIGHT,PIN,
+			LEFT,ZERO,ZERO,PIN,ZERO,PIN };
 
 float quad3[] = { ZERO,RIGHT,ZERO,ZERO,RIGHT,PIN,
-					LEFT,ZERO,ZERO,LEFT,ZERO,PIN,
-					ZERO,RIGHT,ZERO,ZERO,RIGHT,PIN,
-					LEFT,ZERO,ZERO,LEFT,ZERO,PIN };
+			LEFT,ZERO,ZERO,LEFT,ZERO,PIN,
+			ZERO,RIGHT,ZERO,ZERO,RIGHT,PIN,
+			LEFT,ZERO,ZERO,LEFT,ZERO,PIN };
 
 float vee[] = { ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,
-					LEFT,ZERO,ZERO,ZERO,ZERO,PIN,
-					ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,
-					LEFT,ZERO,ZERO,ZERO,ZERO,PIN };
+			LEFT,ZERO,ZERO,ZERO,ZERO,PIN,
+			ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,
+			LEFT,ZERO,ZERO,ZERO,ZERO,PIN };
 
 float square[] = { ZERO,ZERO,ZERO,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,ZERO,ZERO,ZERO,PIN,
-					ZERO,ZERO,ZERO,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,ZERO,ZERO,ZERO,PIN };
+			LEFT,LEFT,ZERO,ZERO,ZERO,PIN,
+			ZERO,ZERO,ZERO,RIGHT,RIGHT,PIN,
+			LEFT,LEFT,ZERO,ZERO,ZERO,PIN };
 
 float eagle[] = { RIGHT,ZERO,ZERO,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,ZERO,ZERO,LEFT,PIN,
-					RIGHT,ZERO,ZERO,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,ZERO,ZERO,LEFT,PIN };
+			LEFT,LEFT,ZERO,ZERO,LEFT,PIN,
+			RIGHT,ZERO,ZERO,RIGHT,RIGHT,PIN,
+			LEFT,LEFT,ZERO,ZERO,LEFT,PIN };
 
 float volcano[] = { RIGHT,ZERO,LEFT,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,RIGHT,ZERO,LEFT,PIN,
-					RIGHT,ZERO,LEFT,RIGHT,RIGHT,PIN,
-					LEFT,LEFT,RIGHT,ZERO,LEFT,PIN };
+			LEFT,LEFT,RIGHT,ZERO,LEFT,PIN,
+			RIGHT,ZERO,LEFT,RIGHT,RIGHT,PIN,
+			LEFT,LEFT,RIGHT,ZERO,LEFT,PIN };
 
 float saddle[] = { RIGHT,ZERO,LEFT,ZERO,RIGHT,PIN,
-					LEFT,ZERO,RIGHT,ZERO,LEFT,PIN,
-					RIGHT,ZERO,LEFT,ZERO,RIGHT,PIN,
-					LEFT,ZERO,RIGHT,ZERO,LEFT,PIN };
+			LEFT,ZERO,RIGHT,ZERO,LEFT,PIN,
+			RIGHT,ZERO,LEFT,ZERO,RIGHT,PIN,
+			LEFT,ZERO,RIGHT,ZERO,LEFT,PIN };
 
 float c3d[] = { ZERO,ZERO,RIGHT,ZERO,ZERO,PIN,
 				ZERO,ZERO,LEFT,ZERO,ZERO,PIN,
@@ -387,6 +387,10 @@ float twins[] = { ZERO, PIN, ZERO, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, PIN, ZERO
 
 float frog2[] = { LEFT, ZERO, LEFT, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO, ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, LEFT, RIGHT, PIN, LEFT, LEFT, RIGHT, ZERO, RIGHT, ZERO };
 
+float tie_fighter[] = { PIN, LEFT, RIGHT, LEFT, LEFT, PIN, RIGHT, ZERO, RIGHT,
+	LEFT, ZERO, PIN, LEFT, LEFT, RIGHT, RIGHT, RIGHT, PIN, LEFT, ZERO,
+	LEFT, RIGHT, ZERO };
+
 	/* list of the above models */
 
 float * model[] = {
@@ -403,7 +407,7 @@ float * model[] = {
 	cat, dog, crucifix,
 	/* misc */
 	block, flower, turtle, basket, kayak, bird, seal, frog, quavers, fly,
-	puppy, duck, prayer,
+	puppy, duck, prayer, tie_fighter,
 	/* eric & thomas' easy models */
 	wolf, pitti, leaf, doubled, symmetry, ostrich, ribbon, roofed, furby,
 	mushroom, taperingturned, viaduct, window2world, platform, heart,
@@ -1139,9 +1143,9 @@ int main(int argc, char ** argv) {
 	glutInitWindowSize(width, height);
 	window = glutCreateWindow("glsnake");
 	
-    ftime(&last_iteration);
-    memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
-    srand((unsigned int)last_iteration.time);
+	ftime(&last_iteration);
+	memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
+	srand((unsigned int)last_iteration.time);
 
 	m = rand() % models;
 	start_morph(0, 1);	
