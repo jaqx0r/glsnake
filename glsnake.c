@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.42 2001/10/18 16:04:32 jaq Exp $
+/* $Id: glsnake.c,v 1.43 2001/10/27 10:01:09 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -56,6 +56,8 @@
 #define MORPH_ANG_VELOCITY	1.0
 #define MORPH_ANG_ACCEL		0.1
 
+#define FOV 45.0
+
 #define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
 
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant */
@@ -70,7 +72,6 @@ int node_solid, node_wire;
 
 /* the triangular prism what makes up the basic unit */
 #define VOFFSET 0.045
-#define MODEL_TEST 0
 float solid_prism_v[][3] = {
                       /* first corner, bottom left front */
                       { VOFFSET, VOFFSET, 1.0 },
@@ -1475,13 +1476,10 @@ void init(void) {
 	/* set up our camera */
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-#if MODEL_TEST
-	gluPerspective(10.0, 640/480.0, 0.05, 100.0);
-#else
-	gluPerspective(30.0, 640/480.0, 0.05, 100.0);
-#endif
-	gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	gluPerspective(FOV, width/(float)height, 0.05, 100.0);
 	glMatrixMode(GL_MODELVIEW);
+	gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	glLoadIdentity();
 	
 	/* set up lighting */
 	glColor3f(1.0, 1.0, 1.0);
@@ -1498,9 +1496,6 @@ void init(void) {
 	node_solid = glGenLists(1);
 	glNewList(node_solid, GL_COMPILE);
 	/* corners */
-#if !!MODEL_TEST
-	glColor3f(1.0, 0.0, 0.0);
-#endif
 	glBegin(GL_TRIANGLES);
 	glNormal3fv(solid_prism_n[0]);
 	glVertex3fv(solid_prism_v[0]);
@@ -1533,9 +1528,6 @@ void init(void) {
 	glVertex3fv(solid_prism_v[17]);
 	glEnd();
 	/* edges */
-#if !!MODEL_TEST
-	glColor3f(0.0, 1.0, 0.0);
-#endif
 	glBegin(GL_QUADS);
 	glNormal3fv(solid_prism_n[6]);
 	glVertex3fv(solid_prism_v[0]);
@@ -1593,9 +1585,6 @@ void init(void) {
 	glEnd();
 	
 	/* faces */
-#if !!MODEL_TEST
-	glColor3f(0.0, 0.0, 1.0);
-#endif
 	glBegin(GL_TRIANGLES);
 	glNormal3fv(solid_prism_n[15]);
 	glVertex3fv(solid_prism_v[0]);
@@ -1690,10 +1679,8 @@ void draw_title(void) {
 
 /* wot draws it */
 void display(void) {
-#if !MODEL_TEST
 	int i;
 	float ang;
-#endif
 	
 	/* clear the buffer */
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1701,21 +1688,19 @@ void display(void) {
 	/* go into the modelview stack */
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	
 	glShadeModel(GL_SMOOTH); 
 
 	/* draw this dang thing */
 	
-#if !MODEL_TEST
 	/* rotate and translate into snake space */
 	glRotatef(45.0,-5.0,0.0,1.0);
 	glTranslatef(-0.5,0.0,0.5);
-#endif
 	
 	/* rotate the 0th junction */
 	glTranslatef(0.5,0.0,0.5);
 	glMultMatrixf(rotation);
-#if !MODEL_TEST
 	glRotatef(rotang1, 0.0,1.0,0.0); 
 	glRotatef(rotang2, 0.0,0.0,1.0); 
 	glTranslatef(-0.5,0.0,-0.5);
@@ -1745,12 +1730,10 @@ void display(void) {
 				else
 					glColor3fv(colour);
 			} else {
-#endif
 				if (authentic)
 					glColor3f(0.2, 0.9, 1.0);
 				else
 					glColor3f(1.0, 1.0, 1.0);
-#if !MODEL_TEST
 			}
 		}
 
@@ -1758,9 +1741,7 @@ void display(void) {
 		if (wireframe)
 			glCallList(node_wire);
 		else
-#endif
 			glCallList(node_solid);
-#if !MODEL_TEST
 
 		/* now work out where to draw the next one */
 		
@@ -1777,8 +1758,6 @@ void display(void) {
 	/* clear up the matrix stack */
 	for (i = 0; i < 24; i++)
 		glPopMatrix();
-#endif
-	
 
 	if (titles)
 		draw_title();
@@ -1790,7 +1769,10 @@ void display(void) {
 /* wot gets called when the winder is resized */
 void reshape(int w, int h) {
 	glViewport(0, 0, w, h);
-	gluPerspective(60.0, w/(float)h, 0.05, 100.0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(FOV, w/(float)h, 0.05, 100.0);
+	glMatrixMode(GL_MODELVIEW);
 	width = w;
 	height = h;
 }
