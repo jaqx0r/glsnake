@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.35 2001/10/10 16:11:30 jaq Exp $
+/* $Id: glsnake.c,v 1.36 2001/10/11 08:57:14 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -56,7 +56,7 @@
 #define MORPH_ANG_VELOCITY	1.0
 #define MORPH_ANG_ACCEL		0.1
 
-#define GETSCALAR(vec,mask) ((vec) == (mask) ? 1 : ( (vec) == -(mask) ? -1 : 0 ))
+#define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
 
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant */
 #define M_SQRT1_2 0.70710678118654752440084436210485
@@ -1539,6 +1539,36 @@ void init(void) {
 
 }
 
+void draw_title(void) {
+	/* draw some text */
+	glPushAttrib(GL_TRANSFORM_BIT | GL_ENABLE_BIT);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_DEPTH_TEST);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	gluOrtho2D(0, width, 0, height);
+	glColor3f(1.0, 1.0, 0.0);
+	{
+		char * s;
+		int i = 0;
+		if (interactive)
+			s = interactstr;
+		else
+			s = model[curModel].name;
+		glRasterPos2f(0, height - 12);
+		while (s[i] != 0)
+			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
+	}
+	glPopMatrix();
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glPopAttrib();
+}
+
 /* wot draws it */
 void display(void) {
 	int i;
@@ -1603,11 +1633,11 @@ void display(void) {
 		/* Interpolate between models */
 		ang = node[i].curAngle;
 
-		glTranslatef(0.5,0.5,0.5);				/* move to center */
-		glRotatef(90, 0.0, 0.0, -1.0);			/* reorient  */
-		glTranslatef(1.0 + explode, 0.0, 0.0);	/* shift to new location */
+		glTranslatef(0.5,0.5,0.5);		/* move to center */
+		glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
+		glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
 		glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
-		glTranslatef(-0.5,-0.5,-0.5);			/* return from center */
+		glTranslatef(-0.5,-0.5,-0.5);		/* return from center */
 	}
 
 	/* clear up the matrix stack */
@@ -1615,35 +1645,8 @@ void display(void) {
 		glPopMatrix();
 	
 
-	if (titles) {
-		/* draw some text */
-		glPushAttrib(GL_TRANSFORM_BIT | GL_ENABLE_BIT);
-		glDisable(GL_LIGHTING);
-		glDisable(GL_DEPTH_TEST);
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-		glLoadIdentity();
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-		gluOrtho2D(0, width, 0, height);
-		glColor3f(1.0, 1.0, 0.0);
-		{
-			char * s;
-			int i = 0;
-			if (interactive)
-				s = interactstr;
-			else
-				s = model[curModel].name;
-			glRasterPos2f(0, height - 12);
-			while (s[i] != 0)
-				glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
-		}
-		glPopMatrix();
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glPopAttrib();
-	}
+	if (titles)
+		draw_title();
 
 	glFlush();
 	glutSwapBuffers();
@@ -1655,6 +1658,16 @@ void reshape(int w, int h) {
 	gluPerspective(60.0, w/(float)h, 0.05, 100.0);
 	width = w;
 	height = h;
+}
+
+/* Returns the new dst_dir for the given src_dir and dst_dir */
+int cross_product(src_dir, dst_dir) {
+	return 	X_MASK*(GETSCALAR(src_dir,Y_MASK) * GETSCALAR(dst_dir,Z_MASK) -
+			GETSCALAR(src_dir,Z_MASK) * GETSCALAR(dst_dir,Y_MASK))+ 
+		Y_MASK*(GETSCALAR(src_dir,Z_MASK) * GETSCALAR(dst_dir,X_MASK) -
+			GETSCALAR(src_dir,X_MASK) * GETSCALAR(dst_dir,Z_MASK))+ 
+		Z_MASK*(GETSCALAR(src_dir,X_MASK) * GETSCALAR(dst_dir,Y_MASK) -
+			GETSCALAR(src_dir,Y_MASK) * GETSCALAR(dst_dir,X_MASK));
 }
 
 /* calculate orthogonal snake metrics
@@ -1692,13 +1705,7 @@ void calc_snake_metrics() {
 				break;
 			case (int) RIGHT:
 			case (int) LEFT:
-				/* think cross product */
-				dstDir = X_MASK * (GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, Z_MASK) -
-					GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, Y_MASK) ) + 
-					Y_MASK * (	GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, X_MASK) -
-					GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Z_MASK) ) + 
-					Z_MASK * (	GETSCALAR(prevSrcDir, X_MASK) * GETSCALAR(prevDstDir, Y_MASK) -
-							GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, X_MASK) );
+				dstDir = cross_product(prevSrcDir, prevDstDir);
 				if (node[i].destAngle == (int) RIGHT)
 					dstDir = -dstDir;
 				break;
@@ -1786,6 +1793,7 @@ void start_morph(int modelIndex, int immediate) {
 
 void special(int key, int x, int y) {
 	int i;
+	float tmp;
 	int unknown_key = 0;
 
 	if (interactive) {
@@ -1797,11 +1805,13 @@ void special(int key, int x, int y) {
 				selected = (selected + 1) % 23;
 				break;
 			case GLUT_KEY_LEFT:
-				node[selected].destAngle = fmod(node[selected].destAngle + LEFT, 360);
+				tmp = fmod(node[selected].destAngle+LEFT,360);
+				node[selected].destAngle = tmp;
 				morphing = 1;
 				break;
 			case GLUT_KEY_RIGHT:
-				node[selected].destAngle = fmod(node[selected].destAngle + RIGHT, 360);
+				tmp = fmod(node[selected].destAngle+RIGHT,360);
+				node[selected].destAngle = tmp;
 				morphing = 1;
 				break;
 			case GLUT_KEY_HOME:
@@ -1890,7 +1900,8 @@ void keyboard(unsigned char c, int x, int y) {
 			break;
 		case 'd':
 			/* dump the current model so we can add it! */
-			printf("    { \"noname\", /* %s */\n        { ", model[curModel].name);
+			printf("    { \"noname\", /* %s */\n        { ",
+			       model[curModel].name);
 			for (i = 0; i < 24; i++) {
 				if (node[i].curAngle == ZERO)
 					printf("ZERO");
@@ -1929,27 +1940,26 @@ void keyboard(unsigned char c, int x, int y) {
 }
 
 void mouse(int button, int state, int x, int y) {
-	switch (button) {
-		case 0:
-			switch (state) {
-				case GLUT_DOWN:
-					dragging = 1;
-					m_s[0] = M_SQRT1_2 * (x - (width/ 2.0)) / (width / 2.0);
-					m_s[1] = M_SQRT1_2 * ((height / 2.0) - y) / (height / 2.0);
-					m_s[2] = sqrt(1 - (m_s[0] * m_s[0] + m_s[1] * m_s[1]));
-					break;
-				case GLUT_UP:
-					dragging = 0;
-					oldquat[0] = cumquat[0];
-					oldquat[1] = cumquat[1];
-					oldquat[2] = cumquat[2];
-					oldquat[3] = cumquat[3];
-					break;
-				default:
-					break;
-			}
-		default:
-			break;
+	if (button==0) {
+		switch (state) {
+			case GLUT_DOWN:
+				dragging = 1;
+				m_s[0] = M_SQRT1_2 * 
+					 (x - (width / 2.0)) / (width / 2.0);
+				m_s[1] = M_SQRT1_2 * 
+					 ((height / 2.0) - y) / (height / 2.0);
+				m_s[2] = sqrt(1-(m_s[0]*m_s[0]+m_s[1]*m_s[1]));
+				break;
+			case GLUT_UP:
+				dragging = 0;
+				oldquat[0] = cumquat[0];
+				oldquat[1] = cumquat[1];
+				oldquat[2] = cumquat[2];
+				oldquat[3] = cumquat[3];
+				break;
+			default:
+				break;
+		}
 	}
 	glutPostRedisplay();
 }
@@ -1971,10 +1981,14 @@ void motion(int x, int y) {
 		q[3] = m_s[0] * m_e[0] + m_s[1] * m_e[1] + m_s[2] * m_e[2];
 
 		/* new rotation is the product of the new one and the old one */
-		cumquat[0] = q[3] * oldquat[0] + q[0] * oldquat[3] + q[1] * oldquat[2] - q[2] * oldquat[1];
-		cumquat[1] = q[3] * oldquat[1] + q[1] * oldquat[3] + q[2] * oldquat[0] - q[0] * oldquat[2];
-		cumquat[2] = q[3] * oldquat[2] + q[2] * oldquat[3] + q[0] * oldquat[1] - q[1] * oldquat[0];
-		cumquat[3] = q[3] * oldquat[3] - q[0] * oldquat[0] - q[1] * oldquat[1] - q[2] * oldquat[2];
+		cumquat[0] = q[3] * oldquat[0] + q[0] * oldquat[3] + 
+			     q[1] * oldquat[2] - q[2] * oldquat[1];
+		cumquat[1] = q[3] * oldquat[1] + q[1] * oldquat[3] + 
+			     q[2] * oldquat[0] - q[0] * oldquat[2];
+		cumquat[2] = q[3] * oldquat[2] + q[2] * oldquat[3] + 
+			     q[0] * oldquat[1] - q[1] * oldquat[0];
+		cumquat[3] = q[3] * oldquat[3] - q[0] * oldquat[0] - 
+			     q[1] * oldquat[1] - q[2] * oldquat[2];
 		
 		calc_rotation();
 	}
@@ -2016,16 +2030,17 @@ void idol(void) {
 	 * <spiv>   b) The code will divide by zero
 	 */
 	iter_msec = (long) current_time.millitm - last_iteration.millitm + 
-			((long) current_time.time - last_iteration.time) * 1000L;
+		    ((long) current_time.time - last_iteration.time) * 1000L;
 	if (iter_msec) {
 		/* save the current time */
 		memcpy(&last_iteration, &current_time, sizeof(struct timeb));
 		
 		/* work out if we have to switch models */
 		morf_msec = last_iteration.millitm - last_morph.millitm +
-			((long) (last_iteration.time - last_morph.time) * 1000L);
+			((long) (last_iteration.time-last_morph.time) * 1000L);
 		if ((morf_msec > MODEL_STATIC_TIME) && !interactive) {
-			memcpy(&last_morph, &last_iteration, sizeof(struct timeb));
+			memcpy(&last_morph, &last_iteration, 
+				sizeof(struct timeb));
 			start_morph(rand() % models, 0);
 		}
 
@@ -2044,14 +2059,18 @@ void idol(void) {
 
 		still_morphing = 0;
 		for (i = 0; i < 24; i++) {
-			if (node[i].curAngle != node[i].destAngle) {
+			float curAngle = node[i].curAngle;
+			float destAngle = node[i].destAngle;
+			if (curAngle != destAngle) {
 				still_morphing = 1;
-				if (fabs(node[i].curAngle - node[i].destAngle) <= iter_angle_max)
-					node[i].curAngle = node[i].destAngle;
-				else if (fmod(node[i].curAngle - node[i].destAngle + 360, 360) > 180)
-					node[i].curAngle = fmod(node[i].curAngle + iter_angle_max, 360);
+				if (fabs(curAngle-destAngle) <= iter_angle_max)
+					curAngle = destAngle;
+				else if (fmod(curAngle-destAngle+360,360) > 180)
+					curAngle = fmod(curAngle + 
+							iter_angle_max, 360);
 				else
-					node[i].curAngle = fmod(node[i].curAngle + 360 - iter_angle_max, 360);
+					curAngle = fmod(curAngle + 360 - 
+							iter_angle_max, 360);
 			}
 		}
 
