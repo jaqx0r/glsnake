@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.21 2001/10/05 14:31:51 andrew Exp $
+/* $Id: glsnake.c,v 1.22 2001/10/06 01:32:07 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -49,7 +49,7 @@
 #define ROTATION_RATE2		0.14
 #define EXPLODE_INCREMENT	0.05
 /* time in milliseconds between morphs */
-#define MODEL_STATIC_TIME	3000L
+#define MODEL_STATIC_TIME	5000L
 #define MORPH_ANG_VELOCITY	1.0
 #define MORPH_ANG_ACCEL		0.1
 
