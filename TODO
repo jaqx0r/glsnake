@@ -3,4 +3,3 @@ TODO for glsnake
 - random morph methods
 - fingerprints and scratch texture mapping
 - clean up models (remove duplicates, fix names)
-- make dist target work properly
