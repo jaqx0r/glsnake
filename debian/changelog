@@ -1,3 +1,9 @@
+glsnake (0.8.2-3) unstable; urgency=low
+
+  * glsnake icon is now in /usr/share/glsnake/pixmaps, not /u/s/p/g 
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Fri, 21 Dec 2001 18:58:14 +1100
+
 glsnake (0.8.2-2) unstable; urgency=low
 
   * Cosmetic changes to debian/control

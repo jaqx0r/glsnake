@@ -1,4 +1,4 @@
-/* $Id: loader.c,v 1.6 2001/12/18 03:47:38 jaq Exp $
+/* $Id: loader.c,v 1.7 2002/01/09 17:18:09 jaq Exp $
  * loads a glsnake modelfile
  *
  * Lines beginning with '#' are comments and are ignored
@@ -37,7 +37,7 @@ model_t * add_model(model_t * models, char * name, int * rotations, int * count)
  */
 //model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count) {
 model_t * load_modelfile(char * filename, model_t * models, int * count) {
-	char c;
+	int c;
 	FILE * f;
 	char buffy[256];
 	int rotations[24];
