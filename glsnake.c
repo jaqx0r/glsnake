@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.27 2001/10/08 12:06:24 andrew Exp $
+/* $Id: glsnake.c,v 1.28 2001/10/09 02:08:53 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -57,6 +57,10 @@
 #define MORPH_ANG_ACCEL		0.1
 
 #define GETSCALAR(vec,mask) ((vec) == (mask) ? 1 : ( (vec) == -(mask) ? -1 : 0 ))
+
+#ifndef M_SQRT1_2	/* Win32 doesn't have this constant */
+#define M_SQRT1_2 0.70710678118654752440084436210485
+#endif
 
 /* the id for the window we make */
 int window;
@@ -392,7 +396,7 @@ float rocket[] = { RIGHT, ZERO, LEFT, PIN, RIGHT, ZERO, RIGHT, ZERO, LEFT, ZERO,
 
 float cross[] = { ZERO, PIN, ZERO, PIN, PIN, ZERO, PIN, ZERO, ZERO, ZERO, PIN, PIN, ZERO, ZERO, ZERO, PIN, ZERO, PIN, PIN, ZERO, PIN, ZERO, PIN, ZERO };
 
-float infinity[] = { LEFT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, ZERO };
+float infinity_sign[] = { LEFT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, ZERO };
 
 float twins[] = { ZERO, PIN, ZERO, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, PIN, ZERO, ZERO, PIN, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, ZERO, PIN, ZERO, ZERO, ZERO };
 
@@ -428,7 +432,7 @@ float * model[] = {
 	threelegged, shelter, kink, dogface, symbol, wingnut, chains, smallship,
 	compact2, rowhouses, doubled3, slide, upanddown, windwheelfromdown,
 	speedboat2, top, tapering, waterfall, ra, mountain, grotto, squarehole,
-	compact4, cactus, rocket, cross, infinity, twins, frog2
+	compact4, cactus, rocket, cross, infinity_sign, twins, frog2
 };
 	
 typedef struct {
