@@ -1,0 +1,8 @@
+glsnake
+-------
+
+If you have just checked this out of CVS, you can generate some extra model
+data by cd'ing into data and running make (assuming you have wget and sed
+installed)
+
+ -- Jamie Wilkinson <jaq@spacepants.org>

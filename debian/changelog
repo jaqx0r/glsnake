@@ -1,3 +1,9 @@
+glsnake (0.7.6-2) unstable; urgency=low
+
+  * Added Peter's new manpage 
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Mon, 12 Nov 2001 23:06:48 +1100
+
 glsnake (0.7.6-1) unstable; urgency=low
 
   * New upstream, hopefully fixes warping on wide screen displays
