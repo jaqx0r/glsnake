@@ -149,6 +149,36 @@ if test "x$HAVE_GLUT" != "xyes" ; then
 	CPPFLAGS="$save_CPPFLAGS"
 fi
 
+# check for xscreensaver source if not building with GLUT
+HAVE_XSCREENSAVER=no
+AC_ARG_WITH(xscreensaver,
+	AC_HELP_STRING([--with-xscreensaver=DIR],
+		[use xscreensaver source found in DIR]),
+	dnl argument was given, check for --without
+	if test "x${with_xscreensaver}" != "xno" ; then
+		ac_with_xscreensaver=yes
+	else
+		ac_with_xscreensaver=no
+	fi,
+	ac_with_xscreensaver=no
+)
+if test "x$HAVE_GLUT" != "xyes" ; then
+	if test "x${ac_with_xscreensaver}" != "xno" ; then
+		if test "x$withval" = "xyes" ; then
+				AC_MSG_ERROR([
+*** You have explicitly asked for xscreensaver support but no source
+*** directory was given.  You need to specify the directory containing
+*** the xscreensaver source in order to build glsnake as an xscreensaver
+*** hack.])
+		else
+			# --with-xscreensaver was explicitly given, so check
+			# for source in that dir
+			XSCREENSAVER_CFLAGS="$XSCREENSAVER_CFLAGS -I$withval/hacks -I$withval/utils"
+		fi
+	fi
+fi
+AC_SUBST(XSCREENSAVER_CFLAGS)
+
 AC_CHECK_LIB(m, sqrt)
 
 # Checks for header files.
@@ -181,7 +211,7 @@ if test "$ac_gettimeofday_args" = 1 ; then
 	AC_MSG_RESULT(one argument)
 elif test "$ac_gettimeofday_args" = 2 ; then
 	AC_DEFINE(HAVE_GETTIMEOFDAY, 1, [Define this if your system has the gettimeofday function])
-	AC_DEFINE(HAVE_GETTIMEOFDAY_TWO_ARGS, 1, [Define this if your system's gettimeofday takes two arguments])
+	AC_DEFINE(GETTIMEOFDAY_TWO_ARGS, 1, [Define this if your system's gettimeofday takes two arguments])
 	AC_MSG_RESULT(two arguments)
 else
 	AC_MSG_RESULT(unknown)

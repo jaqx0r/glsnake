@@ -3,7 +3,7 @@
 bin_PROGRAMS = glsnake
 
 glsnake_SOURCES = glsnake.c
-glsnake_CFLAGS = @GLUT_CFLAGS@ @OPENGL_CFLAGS@
+glsnake_CFLAGS = @GLUT_CFLAGS@ @OPENGL_CFLAGS@ @XSCREENSAVER_CFLAGS@
 glsnake_LDADD = @GLUT_LIBS@ @OPENGL_LIBS@
 
 man_MANS = glsnake.6

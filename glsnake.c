@@ -44,27 +44,152 @@
 #define PIN    	180.0
 #define RIGHT   270.0
 
-/* Can't use ftime in xscreensaver */
-#ifdef HAVE_GLUT
-# include <sys/timeb.h>
-#else
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef GETTIMEOFDAY_TWO_ARGS
 # include <sys/time.h>
+# include <time.h>
+  typedef struct timeval snaketime;
+# define GETSECS(t) ((t).tv_sec)
+# define GETMSECS(t) ((t).tv_usec/1000)
+#else /* GETTIMEOFDAY_TWO_ARGS */
+# include <sys/time.h>
+# include <time.h>
+  typedef struct timeval snaketime;
+# define GETSECS(t) ((t).tv_sec)
+# define GETMSECS(t) ((t).tv_usec/1000)
 #endif
+#else /* HAVE_GETTIMEOFDAY */
+#ifdef HAVE_FTIME
+# include <sys/timeb.h>
+  typedef struct timeb snaketime;
+# define GETSECS(t) ((long)(t).time)
+# define GETMSECS(t) ((t).millitm/1000)
+#endif /* HAVE_FTIME */
+#endif /* HAVE_GETTIMEOFDAY */
 
 #include <math.h>
+
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant  */
 #define M_SQRT1_2 0.70710678118654752440084436210485
 #endif
 
 #define NODE_COUNT 24
 
-#define DEF_YSPIN               0.10
-#define DEF_ZSPIN               0.14
-#define DEF_EXPLODE             0.03
-#define DEF_VELOCITY            1.0
-#define DEF_ACCEL               0.1
-#define DEF_FOV                25.0
-#define DEF_STATICTIME       5000L
+#ifdef HAVE_GLUT
+#define DEF_YANGVEL     0.10
+#define DEF_ZANGVEL     0.14
+#define DEF_EXPLODE     0.03
+#define DEF_ANGVEL      1.0
+#define DEF_ACCEL       0.1
+#define DEF_STATICTIME  5000
+#define DEF_ALTCOLOUR   0
+#define DEF_TITLES      1
+#define DEF_INTERACTIVE 0
+#define DEF_ZOOM        25.0
+#define DEF_WIREFRAME   0
+#else
+/* xscreensaver options doobies prefer strings */
+#define DEF_YANGVEL     "0.10"
+#define DEF_ZANGVEL     "0.14"
+#define DEF_EXPLODE     "0.03"
+#define DEF_ANGVEL      "1.0"
+#define DEF_ACCEL       "0.1"
+#define DEF_STATICTIME  "5000"
+#define DEF_ALTCOLOUR   "False"
+#define DEF_TITLES      "True"
+#define DEF_INTERACTIVE "False"
+#define DEF_ZOOM        "25.0"
+#define DEF_WIREFRAME   "False"
+#endif
+
+/* static variables */
+#ifndef HAVE_GLUT
+# include <X11/Intrinsic.h>
+#else
+/* xscreensaver boolean type */
+# define Bool int
+#endif
+
+static GLfloat explode;
+static GLfloat accel;
+static long statictime;
+static GLfloat yspin = 0;
+static GLfloat zspin = 0;
+static GLfloat yangvel;
+static GLfloat zangvel;
+static Bool altcolour;
+static Bool titles;
+static Bool interactive;
+static Bool wireframe;
+static GLfloat zoom;
+static GLfloat angvel;
+
+#ifndef HAVE_GLUT
+/* xscreensaver setup */
+extern XtAppContext app;
+
+#define PROGCLASS "glsnake"
+#define HACK_INIT glsnake_init
+#define HACK_DRAW glsnake_display
+#define HACK_RESHAPE glsnake_reshape
+#define sws_opts xlockmore_opts
+
+
+/* xscreensaver defaults */
+#define DEFAULTS "*delay:          30000                      \n" \
+                 "*count:          30                         \n" \
+                 "*showFPS:        False                      \n" \
+                 "*wireframe:      False                      \n" \
+                 "*explode:      " DEF_EXPLODE              " \n" \
+                 "*angvel:       " DEF_ANGVEL               " \n" \
+                 "*accel:        " DEF_ACCEL                " \n" \
+                 "*statictime:   " DEF_STATICTIME           " \n" \
+                 "*yangvel:      " DEF_YANGVEL              " \n" \
+                 "*zangvel:      " DEF_ZANGVEL              " \n" \
+                 "*altcolour:    " DEF_ALTCOLOUR            " \n" \
+                 "*titles:         True                       \n" \
+                 "*labelfont: -helvetica-medium-r-*-*-*-120-* \n" \
+                 "*zoom:         " DEF_ZOOM                 " \n" \
+
+
+
+#undef countof
+#define countof(x) (sizeof((x))/sizeof((*x)))
+
+#include "xlockmore.h"
+
+static XrmOptionDescRec opts[] = {
+    { "-explode", ".explode", XrmoptionSepArg, DEF_EXPLODE },
+    { "-angvel", ".angvel", XrmoptionSepArg, DEF_ANGVEL },
+    { "-accel", ".accel", XrmoptionSepArg, DEF_ACCEL },
+    { "-statictime", ".statictime", XrmoptionSepArg, DEF_STATICTIME },
+    { "-yangvel", ".yangvel", XrmoptionSepArg, DEF_YANGVEL },
+    { "-zangvel", ".zangvel", XrmoptionSepArg, DEF_ZANGVEL },
+    { "-altcolour", ".altcolour", XrmoptionNoArg, (caddr_t) "True" },
+    { "-no-altcolour", ".altcolour", XrmoptionNoArg, (caddr_t) "False" },
+    { "-titles", ".titles", XrmoptionNoArg, (caddr_t) "True" },
+    { "-no-titles", ".titles", XrmoptionNoArg, (caddr_t) "False" },
+    { "-zoom", ".zoom", XrmoptionSepArg, DEF_ZOOM },
+    { "-wireframe", ".wireframe", XrmoptionNoArg, (caddr_t) "true" },
+    { "-no-wireframe", ".wireframe", XrmoptionNoArg, (caddr_t) "false" },
+};
+
+static argtype vars[] = {
+    {(caddr_t *) &explode, "explode", "Explode", DEF_EXPLODE, t_Float},
+    {(caddr_t *) &angvel, "angvel", "Angular Velocity", DEF_ANGVEL, t_Float},
+    {(caddr_t *) &accel, "accel", "Acceleration", DEF_ACCEL, t_Float},
+    {(caddr_t *) &statictime, "statictime", "Static Time", DEF_STATICTIME, t_Int},
+    {(caddr_t *) &yangvel, "yangvel", "Angular Velocity about Y axis", DEF_YANGVEL, t_Float},
+    {(caddr_t *) &zangvel, "zangvel", "Angular Velocity about X axis", DEF_ZANGVEL, t_Float},
+    {(caddr_t *) &interactive, "interactive", "Interactive", DEF_INTERACTIVE, t_Bool},
+    {(caddr_t *) &altcolour, "altcolour", "Alternate Colour Scheme", DEF_ALTCOLOUR, t_Bool},
+    {(caddr_t *) &titles, "titles", "Titles", DEF_TITLES, t_Bool},
+    {(caddr_t *) &zoom, "zoom", "Zoom", DEF_ZOOM, t_Float},
+    {(caddr_t *) &wireframe, "wireframe", "Wireframe", DEF_WIREFRAME, t_Bool},
+};
+
+ModeSpecOpt sws_opts = {countof(opts), opts, countof(vars), vars, NULL};
+#endif
 
 struct model_s {
     char * name;
@@ -72,6 +197,15 @@ struct model_s {
 };
 
 struct glsnake_cfg {
+#ifndef HAVE_GLUT
+    GLXContext * glx_context;
+    XFontStruct * font;
+    GLuint font_list;
+#else
+    /* font list number */
+    int font;
+#endif
+
     /* window id */
     int window;
 
@@ -98,7 +232,6 @@ struct glsnake_cfg {
     int next_model;
 
     /* model morphing */
-    float morph_angular_velocity;
     int new_morph;
 
     /* colours */
@@ -106,49 +239,19 @@ struct glsnake_cfg {
     int next_colour;
     int prev_colour;
 
-    /* rotation angles */
-    float rotang1;
-    float rotang2;
-
     /* timing variables */
-#ifdef HAVE_GLUT
-    struct timeb last_iteration;
-    struct timeb last_morph;
-#else
-    struct timeval last_iteration;
-    struct timeval last_morph;
-#endif
+    snaketime last_iteration;
+    snaketime last_morph;
 
     /* window size */
     int width, height;
     int old_width, old_height;
 
-    /* field of view for zoom */
-    float zoom;
-
     /* the id of the display lists for drawing a node */
     int node_solid, node_wire;
 
-    /* font list number */
-    int font;
-
-    /* explode distance */
-    float explode;
-
-    /* is the model in wireframe mode? */
-    int wireframe;
-
     /* is the window fullscreen? */
     int fullscreen;
-
-    /* are we in interactive mode? */
-    int interactive;
-
-    /* are we drawing model names? */
-    int titles;
-
-    /* what colour scheme are we using? */
-    int authentic;
 };
 
 #define COLOUR_CYCLIC 0
@@ -172,7 +275,14 @@ float colour[][2][3] = {
 };
 
 struct model_s model[] = {
+#define STRAIGHT_MODEL 0
+    { "straight",
+      { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
+	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
+	ZERO, ZERO }
+    },
     /* the models in the Rubik's snake manual */
+#define START_MODEL 1
     { "ball",
       { RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT,
 	RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT,
@@ -247,11 +357,6 @@ struct model_s model[] = {
       { PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT,
 	LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT,
 	RIGHT, LEFT, LEFT }
-    },
-    { "straight",
-      { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
-	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
-	ZERO, ZERO }
     },
     { "hexagon",
       { ZERO, ZERO, ZERO, ZERO, LEFT, ZERO, ZERO, RIGHT, ZERO, ZERO,
@@ -454,8 +559,7 @@ struct model_s model[] = {
 	ZERO, PIN, ZERO, ZERO, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, ZERO,
 	ZERO, PIN, ZERO }
     },
-    /* benno's model, inspired jaq for the next 2 */
-    { "erect penis",
+    { "erect penis",     /* thanks benno */
       { PIN, ZERO, PIN, PIN, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, PIN,
 	PIN, ZERO, ZERO, ZERO, RIGHT, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO }
@@ -1166,8 +1270,15 @@ int models = (sizeof(model) / sizeof(struct model_s));
 
 #define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
 
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
+#ifndef MAX
+# define MAX(x, y) ((x) > (y) ? (x) : (y))
+#endif
+#ifndef MIN
+# define MIN(x, y) ((x) < (y) ? (x) : (y))
+#endif
+
+#define RAND(n) ((random() & 0x7fffffff) % ((long) (n)))
+#define RANDSIGN() ((random() & 1) ? 1 : -1)
 
 /* the triangular prism what makes up the basic unit */
 float solid_prism_v[][3] = {
@@ -1234,73 +1345,143 @@ float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
 			   { 0.0, 0.0,-1.0}};
 
 static struct glsnake_cfg * glc = NULL;
+#ifdef HAVE_GLUT
+# define bp glc
+#endif
 
 typedef float (*morphFunc)(long);
 
 #ifdef HAVE_GLUT
 /* forward definitions for GLUT functions */
-void ui_init(int *, char **);
 void calc_rotation();
 inline void ui_mousedrag();
-void ui_start();
 #endif
 
-/* wot initialises it */
-void glsnake_init(void) {
+void gl_init(
+#ifndef HAVE_GLUT
+	     ModeInfo * mi
+#endif
+	     ) {
     float light_pos[][3] = {{0.0, 0.0, 20.0}, {0.0, 20.0, 0.0}};
     float light_dir[][3] = {{0.0, 0.0,-20.0}, {0.0,-20.0, 0.0}};
 
-    /* initialise the config struct */
-    glc->selected = 11;
-    glc->morph_angular_velocity = DEF_VELOCITY;
-    glc->morphing = 0;
-    glc->new_morph = 1;
-    glc->is_cyclic = 1;
-    glc->is_legal = 1;
-    glc->last_turn = -1;
-    glc->debug = 0;
-
-    glc->rotang1 = 0.0;
-    glc->rotang2 = 0.0;
-
-    glc->zoom = DEF_FOV;
-    glc->explode = VOFFSET;
-    glc->wireframe = 0;
-    glc->paused = 0;
-    glc->fullscreen = 0;
-    glc->titles = 1;
-    glc->authentic = 0;
-    glc->interactive = 0;
-    
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glEnable(GL_DEPTH_TEST);
-    
-    /* gouraud shadin' */
     glShadeModel(GL_SMOOTH);
-	
-    /* enable backface culling */
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
     glEnable(GL_NORMALIZE);
-	
-    /* set up our camera */
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(glc->zoom, glc->width/(float)glc->height, 0.05, 100.0);
-    glMatrixMode(GL_MODELVIEW);
-    gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    glLoadIdentity();
-    
-    /* set up lighting */
-    glColor3f(1.0, 1.0, 1.0);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_pos[0]);
-    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_dir[0]);
-    glLightfv(GL_LIGHT1, GL_POSITION, light_pos[1]);
-    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir[1]);
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_LIGHT1);
-    glEnable(GL_COLOR_MATERIAL);
+
+    if (!wireframe) {
+	glColor3f(1.0, 1.0, 1.0);
+	glLightfv(GL_LIGHT0, GL_POSITION, light_pos[0]);
+	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_dir[0]);
+	glLightfv(GL_LIGHT1, GL_POSITION, light_pos[1]);
+	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir[1]);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
+	glEnable(GL_COLOR_MATERIAL);
+    }
+}
+
+void gettime(snaketime *t)
+{
+#ifdef HAVE_GETTIMEOFDAY
+#ifdef GETTIMEOFDAY_TWO_ARGS
+	struct timezone tzp;
+	gettimeofday(t, &tzp);
+#else /* !GETTIMEOFDAY_TWO_ARGS */
+	gettimeofday(t);
+#endif /* !GETTIMEOFDAY_TWO_ARGS */
+#else /* !HAVE_GETTIMEOFDAY */
+#ifdef HAVE_FTIME
+	ftime(t);
+#endif /* HAVE_FTIME */
+#endif /* !HAVE_GETTIMEOFDAY */
+}
+
+#ifndef HAVE_GLUT
+static void load_font(ModeInfo * mi, char * res, XFontStruct ** fontp, GLuint * dlistp) {
+    const char * font = get_string_resource(res, "Font");
+    XFontStruct * f;
+    Font id;
+    int first, last;
+
+    if (!font)
+	font = "-*-helvetica-medium-r-*-*-*-120-*";
+
+    f = XLoadQueryFont(mi->dpy, font);
+    if (!f)
+	f = XLoadQueryFont(mi->dpy, "fixed");
+
+    id = f->fid;
+    first = f->min_char_or_byte2;
+    last = f->max_char_or_byte2;
+
+    clear_gl_error();
+    *dlistp = glGenLists((GLuint) last + 1);
+    check_gl_error("glGenLists");
+    glXUseXFont(id, first, last - first + 1, *dlistp + first);
+    check_gl_error("glXUseXFont");
+
+    *fontp = f;
+}
+#endif
+
+void start_morph(int model_index, int immediate);
+
+/* wot initialises it */
+void glsnake_init(
+#ifndef HAVE_GLUT
+ModeInfo * mi
+#endif
+) {
+#ifndef HAVE_GLUT
+    struct glsnake_cfg * bp;
+
+    /* set up the conf struct and glx contexts */
+    if (!glc) {
+	glc = (struct glsnake_cfg *) calloc(MI_NUM_SCREENS(mi), sizeof(struct glsnake_cfg));
+	if (!glc) {
+	    fprintf(stderr, "%s: out of memory\n", progname);
+	    exit(1);
+	}
+    }
+    bp = &glc[MI_SCREEN(mi)];
+
+    if ((bp->glx_context = init_GL(mi)) != NULL) {
+	gl_init(mi);
+	glsnake_reshape(mi, MI_WIDTH(mi), MI_HEIGHT(mi));
+    }
+#else
+    gl_init();
+#endif
+
+    /* initialise conf struct */
+    memset(&bp->node, 0, sizeof(float) * NODE_COUNT);
+
+    bp->selected = 11;
+    bp->is_cyclic = 0;
+    bp->is_legal = 1;
+    bp->last_turn = -1;
+    bp->morphing = 0;
+    bp->paused = 0;
+    bp->new_morph = 0;
+
+    gettime(&bp->last_iteration);
+    memcpy(&bp->last_morph, &bp->last_iteration, sizeof(bp->last_morph));
+
+    bp->prev_colour = bp->next_colour = COLOUR_ACYCLIC;
+    bp->next_model = RAND(models);
+    bp->prev_model = START_MODEL;
+    start_morph(bp->prev_model, 1);
+
+    /* set up a font for the labels */
+#ifndef HAVE_GLUT
+    if (titles)
+	load_font(mi, "labelfont", &bp->font, &bp->font_list);
+#endif
     
     /* build a solid display list */
     glc->node_solid = glGenLists(1);
@@ -1455,7 +1636,15 @@ void glsnake_init(void) {
 #endif
 }
 
-void draw_title(void) {
+void draw_title(
+#ifndef HAVE_GLUT
+		ModeInfo * mi
+#endif
+		) {
+#ifndef HAVE_GLUT
+    struct glsnake_cfg * bp = &glc[MI_SCREEN(mi)];
+#endif
+
     /* draw some text */
     glPushAttrib(GL_TRANSFORM_BIT | GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
@@ -1466,23 +1655,33 @@ void draw_title(void) {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     glLoadIdentity();
+#ifdef HAVE_GLUT
     gluOrtho2D(0, glc->width, 0, glc->height);
+#else
+    gluOrtho2D(0, mi->xgwa.width, 0, mi->xgwa.height);
+#endif
     glColor3f(1.0, 1.0, 1.0);
     {
 	char interactstr[] = "interactive";
 	char * s;
 	int i = 0;
+#ifdef HAVE_GLUT
 	int w;
+#endif
 	
-	if (glc->interactive)
+	if (interactive)
 	    s = interactstr;
 	else
 	    s = model[glc->next_model].name;
 #ifdef HAVE_GLUT
 	w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (unsigned char *) s);
 	glRasterPos2f(glc->width - w - 3, 4);
-	while (s[i] != 0)
+	while (s[i] != '\0')
 	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
+#else
+	glRasterPos2f(10, mi->xgwa.height - 10 - (bp->font->ascent + bp->font->descent));
+	while (s[i] != '\0')
+	    glCallList(bp->font_list + (int)s[i++]);
 #endif
     }
     glPopMatrix();
@@ -1510,163 +1709,28 @@ void matmult_origin(float rotmat[16], float vec[4]) {
     vec[3] = 1.0;
 }
 
-/* wot draws it */
-void glsnake_display(void) {
-    int i;
-    float ang;
-    float positions[NODE_COUNT][4]; /* origin points for each node */
-    float com[4]; /* it's the CENTRE of MASS */
-    
-    /* clear the buffer */
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    
-    /* go into the modelview stack */
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    
-    /* rotate and translate into snake space */
-    /*
-    glRotatef(45.0, -5.0, 0.0, 1.0);
-    glRotatef(45.0, -5.0, 0.0, 1.0);
-    glTranslatef(-0.5, 0.0, 0.5);
-    */
-
-    /* rotate the snake around the centre of the first node */
-    /* move to the centre of the first piece */
-    //glTranslatef(0.5, 0.0, 0.5);
-
-    /* move back to origin */
-    //glTranslatef(-0.5, 0.0, -0.5);
-
-    /* get the centre of each node, by moving through the snake and
-     * performing the rotations, then grabbing the matrix at each point
-     * and applying it to the origin */
-    glPushMatrix();
-
-#ifdef HAVE_GLUT
-    /* apply the mouse drag rotation */
-    ui_mousedrag();
-#endif
-    
-    /* apply the continuous rotation */
-    glRotatef(glc->rotang1, 0.0, 1.0, 0.0); 
-    glRotatef(glc->rotang2, 0.0, 0.0, 1.0); 
-    
-    com[0] = 0.0;
-    com[1] = 0.0;
-    com[2] = 0.0;
-    com[3] = 0.0;
-    for (i = 0; i < NODE_COUNT; i++) {
-	float rotmat[16];
-
-	ang = glc->node[i];
-	
-	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
-	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
-	glTranslatef(1.0 + glc->explode, 0.0, 0.0);	/* move to new pos. */
-	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
-	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
-
-	glGetFloatv(GL_MODELVIEW_MATRIX, rotmat);
-
-	matmult_origin(rotmat, positions[i]);
-
-	com[0] += positions[i][0];
-	com[1] += positions[i][1];
-	com[2] += positions[i][2];
-	com[3] += positions[i][3];
-    }
-    glPopMatrix();
-    com[0] /= NODE_COUNT;
-    com[1] /= NODE_COUNT;
-    com[2] /= NODE_COUNT;
-    com[3] /= NODE_COUNT;
-
-    com[0] /= com[3];
-    com[1] /= com[3];
-    com[2] /= com[3];
-
-#ifdef MAGICAL_RED_STRING
-    glPushMatrix();
-    glTranslatef(-com[0], -com[1], -com[2]);
-    //glRotatef(rotang1, 0.0, 1.0, 0.0); 
-
-    //glDisable(GL_LIGHTING);
-    glColor3f(1.0, 0.0, 0.0);
-    glBegin(GL_LINE_STRIP);
-    for (i = 0; i < NODE_COUNT - 1; i++) {
-	glVertex3fv(positions[i]);
-    }
-    glEnd();
-    //glEnable(GL_LIGHTING);
-    glPopMatrix();
-#endif
-
-    glPushMatrix();
-    glTranslatef(-com[0], -com[1], -com[2]);
-
-#ifdef HAVE_GLUT
-    /* apply the mouse drag rotation */
-    ui_mousedrag();
-#endif
-    
-    /* apply the continuous rotation */
-    glRotatef(glc->rotang1, 0.0, 1.0, 0.0); 
-    glRotatef(glc->rotang2, 0.0, 0.0, 1.0); 
-
-    /* now draw each node along the snake -- this is quite ugly :p */
-    for (i = 0; i < NODE_COUNT; i++) {
-	/* choose a colour for this node */
-	if ((i == glc->selected || i == glc->selected+1) && glc->interactive)
-	    /* yellow */
-	    glColor3f(1.0, 1.0, 0.0);
-	else
-	    glColor3fv(glc->colour[(i+1)%2]);
-
-	/* draw the node */
-	if (glc->wireframe)
-	    glCallList(glc->node_wire);
-	else
-	    glCallList(glc->node_solid);
-
-	/* now work out where to draw the next one */
-	
-	/* Interpolate between models */
-	ang = glc->node[i];
-	
-	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
-	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
-	glTranslatef(1.0 + glc->explode, 0.0, 0.0);	/* move to new pos. */
-	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
-	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
-
-    }
-    glPopMatrix();
-    
-    if (glc->titles)
-	draw_title();
-    
-    glFlush();
-#ifdef HAVE_GLUT
-    glutSwapBuffers();
-#endif
-}
-
 /* wot gets called when the winder is resized */
-void glsnake_reshape(int w, int h) {
-    glViewport(0, 0, w, h);
+void glsnake_reshape(
+#ifndef HAVE_GLUT
+		     ModeInfo * mi,
+#endif
+		     int w, int h) {
+    glViewport(0, 0, (GLint) w, (GLint) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    //gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-    gluPerspective(glc->zoom, w/(float)h, 0.05, 100.0);
+    gluPerspective(zoom, w/(GLfloat)h, 0.05, 100.0);
     gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     glMatrixMode(GL_MODELVIEW);
+    /*gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);*/
+    glLoadIdentity();
+#ifdef HAVE_GLUT
     glc->width = w;
     glc->height = h;
+#endif
 }
 
 /* Returns the new dst_dir for the given src_dir and dst_dir */
-int cross_product(src_dir, dst_dir) {
+int cross_product(int src_dir, int dst_dir) {
     return X_MASK*(GETSCALAR(src_dir,Y_MASK) * GETSCALAR(dst_dir,Z_MASK) -
 		   GETSCALAR(src_dir,Z_MASK) * GETSCALAR(dst_dir,Y_MASK))+ 
 	Y_MASK*(GETSCALAR(src_dir,Z_MASK) * GETSCALAR(dst_dir,X_MASK) -
@@ -1680,7 +1744,7 @@ int cross_product(src_dir, dst_dir) {
  *  is_cyclic = true if last node connects back to first node
  *  last_turn = for cyclic snakes, specifes what the 24th turn would be
  */
-void calc_snake_metrics() {
+void calc_snake_metrics(void) {
     int srcDir, dstDir;
     int i, x, y, z;
     int prevSrcDir = -Y_MASK;
@@ -1695,6 +1759,7 @@ void calc_snake_metrics() {
     
     /* trace path of snake - and keep record for is_legal */
     for (i = 0; i < NODE_COUNT - 1; i++) {
+	/*int ang_card;*/ /* cardinal direction of node angle */
 	/* establish new state vars */
 	srcDir = -prevDstDir;
 	x += GETSCALAR(prevDstDir, X_MASK);
@@ -1748,7 +1813,7 @@ void calc_snake_metrics() {
 }
 
 /* work out how far through the current morph we are */
-float morph_percent() {
+float morph_percent(void) {
     float retval;
     int i;
 
@@ -1786,10 +1851,11 @@ float morph_percent() {
 	/* protect against naan */
 	if (isnan(retval) || isinf(retval)) retval = 1.0;
     }
+    /*printf("morph_pct = %f\n", retval);*/
     return retval;
 }
 
-void morph_colour() {
+void morph_colour(void) {
     float percent, compct; /* complement of percentage */
 
     percent = morph_percent();
@@ -1806,8 +1872,6 @@ void morph_colour() {
 
 /* Start morph process to this model */
 void start_morph(int model_index, int immediate) {
-    int i;
-
     /* if immediate, don't bother morphing, go straight to the next model */
     if (immediate) {
 	int i;
@@ -1820,10 +1884,10 @@ void start_morph(int model_index, int immediate) {
     glc->next_model = model_index;
     glc->prev_colour = glc->next_colour;
 
-    calc_snake_metrics(glc);
+    calc_snake_metrics();
     if (!glc->is_legal)
 	glc->next_colour = COLOUR_INVALID;
-    else if (glc->authentic)
+    else if (altcolour)
 	glc->next_colour = COLOUR_AUTHENTIC;
     else if (glc->is_cyclic)
 	glc->next_colour = COLOUR_CYCLIC;
@@ -1853,7 +1917,7 @@ float morph(long iter_msec) {
     if (glc->new_morph)
 	glc->new_morph = 0;
 	
-    iter_angle_max = 90.0 * (DEF_VELOCITY/1000.0) * iter_msec;
+    iter_angle_max = 90.0 * (angvel/1000.0) * iter_msec;
 	
     still_morphing = 0;
     largest_diff = largest_progress = 0.0;
@@ -1876,21 +1940,40 @@ float morph(long iter_msec) {
     return MIN(largest_diff / largest_progress, 1.0);
 }
 
-void restore_idle(int value);
-void quick_sleep(void);
+#ifdef HAVE_GLUT
+void glsnake_idle();
 
-void glsnake_idle(void) {
+void restore_idle(int value)
+{
+    glutIdleFunc(glsnake_idle);
+}
+#endif
+
+void quick_sleep(void)
+{
+#ifdef HAVE_GLUT
+    /* By using glutTimerFunc we can keep responding to 
+     * mouse and keyboard events, unlike using something like
+     * usleep. */
+    glutIdleFunc(NULL);
+    glutTimerFunc(1, restore_idle, 0);
+#else
+    usleep(1);
+#endif
+}
+
+void glsnake_idle(
+#ifndef HAVE_GLUT
+		  struct glsnake_cfg * bp
+#endif
+		  ) {
     /* time since last iteration */
     long iter_msec;
     /* time since the beginning of last morph */
     long morf_msec;
     float iter_angle_max;
-#ifdef HAVE_GLUT
-    struct timeb current_time;
-#else
-    struct timeval current_time;
-#endif
-    morphFunc transition;
+    snaketime current_time;
+    /*    morphFunc transition; */
     int still_morphing;
     int i;
     
@@ -1911,60 +1994,48 @@ void glsnake_idle(void) {
      * <spiv>   a) There's no point updating the screen, because
      *             it would be the same
      * <spiv>   b) The code will divide by zero
-     * <Jaq> i.e. if current time is exactly equal to last iteration,
-     *       then don't do this block
      */
-#ifdef HAVE_GLUT
-    /* ftime is winDOS compatible */
-    ftime(&current_time);
+    gettime(&current_time);
     
-    iter_msec = (long) current_time.millitm - glc->last_iteration.millitm + 
-	((long) current_time.time - glc->last_iteration.time) * 1000L;
-#else /* !HAVE_GLUT */
-    {
-# ifdef GETTIMEOFDAY_TWO_ARGS
-	struct timezone tzp;
-	gettimeofday(&current_time, &tzp);
-# else
-	gettimeofday(&current_time);
-#endif
-    }
-    iter_msec = ((long) current_time.tv_usec - glc->last_iteration.tv_usec)/1000L + ((long) current_time.tv_sec - glc->last_iteration.tv_sec) * 1000L;
-#endif /* !HAVE_GLUT */
+    iter_msec = (long) GETMSECS(current_time) - GETMSECS(glc->last_iteration) + 
+	((long) GETSECS(current_time) - GETSECS(glc->last_iteration)) * 1000L;
 
     if (iter_msec) {
 	/* save the current time */
-#ifdef HAVE_GLUT
-	memcpy(&glc->last_iteration, &current_time, sizeof(struct timeb));
-#else
-	memcpy(&glc->last_iteration, &current_time, sizeof(struct timeval));
-#endif
+	memcpy(&glc->last_iteration, &current_time, sizeof(snaketime));
 	
 	/* work out if we have to switch models */
-#ifdef HAVE_GLUT
-	morf_msec = glc->last_iteration.millitm - glc->last_morph.millitm +
-	    ((long) (glc->last_iteration.time-glc->last_morph.time) * 1000L);
-#else 
-	morf_msec = (glc->last_iteration.tv_usec - glc->last_morph.tv_usec)/1000L + ((long) (glc->last_iteration.tv_sec - glc->last_morph.tv_sec) * 1000L);
-#endif
+	morf_msec = GETMSECS(glc->last_iteration) - GETMSECS(glc->last_morph) +
+	    ((long) (GETSECS(glc->last_iteration)-GETSECS(glc->last_morph)) * 1000L);
 
-	if ((morf_msec > DEF_STATICTIME) && !glc->interactive && !glc->morphing) {
+	if ((morf_msec > statictime) && !interactive && !glc->morphing) {
+	    /*printf("starting morph\n");*/
 	    memcpy(&glc->last_morph, &(glc->last_iteration), sizeof(glc->last_morph));
-	    start_morph(rand() % models, 0);
+	    start_morph(RAND(models), 0);
 	}
 	
-	if (glc->interactive && !glc->morphing) {
+	if (interactive && !glc->morphing) {
 	    quick_sleep();
 	    return;
 	}
 	
 	/*	if (!glc->dragging && !glc->interactive) { */
-	if (!glc->interactive) {
-	    glc->rotang1 += 360/((1000/DEF_YSPIN)/iter_msec);
-	    glc->rotang2 += 360/((1000/DEF_ZSPIN)/iter_msec);
+	if (!interactive) {
+	    
+	    yspin += 360/((1000/yangvel)/iter_msec);
+	    zspin += 360/((1000/zangvel)/iter_msec);
+	    /*
+	    yspin += 360 * (yangvel/1000.0) * iter_msec;
+	    zspin += 360 * (zangvel/1000.0) * iter_msec;
+	    */
+	    
+	    /*printf("yspin: %f, zspin: %f\n", yspin, zspin);*/
+
 	}
 
-	iter_angle_max = 90.0 * (DEF_VELOCITY/1000.0) * iter_msec;
+	/* work out the maximum angle we could turn this node in this
+	 * timeslice, iter_msec milliseconds long */
+	iter_angle_max = 90.0 * (angvel/1000.0) * iter_msec;
 
 	still_morphing = 0;
 	for (i = 0; i < NODE_COUNT; i++) {
@@ -1998,77 +2069,207 @@ void glsnake_idle(void) {
     }
 }
 
-void restore_idle(int value)
-{
+/* wot draws it */
+void glsnake_display(
+#ifndef HAVE_GLUT
+		     ModeInfo * mi
+#endif
+		     ) {
+#ifndef HAVE_GLUT
+    struct glsnake_cfg * bp = &glc[MI_SCREEN(mi)];
+    Display * dpy = MI_DISPLAY(mi);
+    Window window = MI_WINDOW(mi);
+#endif
+
+    int i;
+    float ang;
+    float positions[NODE_COUNT][4]; /* origin points for each node */
+    float com[4]; /* it's the CENTRE of MASS */
+
+#ifndef HAVE_GLUT
+    if (!bp->glx_context)
+	return;
+#endif
+    
+    /* clear the buffer */
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    /* go into the modelview stack */
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
+    /* get the centre of each node, by moving through the snake and
+     * performing the rotations, then grabbing the matrix at each point
+     * and applying it to the origin */
+    glPushMatrix();
+
 #ifdef HAVE_GLUT
-    glutIdleFunc(glsnake_idle);
+    /* apply the mouse drag rotation */
+    ui_mousedrag();
+#endif
+    
+    /* apply the continuous rotation */
+    glRotatef(yspin, 0.0, 1.0, 0.0); 
+    glRotatef(zspin, 0.0, 0.0, 1.0); 
+    
+    com[0] = 0.0;
+    com[1] = 0.0;
+    com[2] = 0.0;
+    com[3] = 0.0;
+    for (i = 0; i < NODE_COUNT; i++) {
+	float rotmat[16];
+
+	ang = glc->node[i];
+
+	/*printf("ang = %f\n", ang);*/
+	
+	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
+	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
+	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
+	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
+	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
+
+	glGetFloatv(GL_MODELVIEW_MATRIX, rotmat);
+
+	matmult_origin(rotmat, positions[i]);
+
+	/*printf("positions %f %f %f %f\n", positions[i][0], positions[i][1], positions[i][2], positions[i][3]);*/
+
+	com[0] += positions[i][0];
+	com[1] += positions[i][1];
+	com[2] += positions[i][2];
+	com[3] += positions[i][3];
+    }
+    glPopMatrix();
+    com[0] /= NODE_COUNT;
+    com[1] /= NODE_COUNT;
+    com[2] /= NODE_COUNT;
+    com[3] /= NODE_COUNT;
+
+    com[0] /= com[3];
+    com[1] /= com[3];
+    com[2] /= com[3];
+
+    /*printf("com: %f, %f, %f, %f\n", com[0], com[1], com[2], com[3]);*/
+
+#if MAGICAL_RED_STRING
+    glPushMatrix();
+    glTranslatef(-com[0], -com[1], -com[2]);
+
+    glDisable(GL_LIGHTING);
+    glColor3f(1.0, 0.0, 0.0);
+    glBegin(GL_LINE_STRIP);
+    for (i = 0; i < NODE_COUNT - 1; i++) {
+	glVertex3fv(positions[i]);
+    }
+    glEnd();
+    glEnable(GL_LIGHTING);
+    /*glTranslatef(com[0], com[1], com[2]);*/
+    glPopMatrix();
+#endif
+
+    glPushMatrix();
+    glTranslatef(-com[0], -com[1], -com[2]);
+
+#ifdef HAVE_GLUT
+    /* apply the mouse drag rotation */
+    ui_mousedrag();
+#endif
+    
+    /* apply the continuous rotation */
+    glRotatef(yspin, 0.0, 1.0, 0.0); 
+    glRotatef(zspin, 0.0, 0.0, 1.0); 
+
+    /* now draw each node along the snake -- this is quite ugly :p */
+    for (i = 0; i < NODE_COUNT; i++) {
+	/* choose a colour for this node */
+	if ((i == glc->selected || i == glc->selected+1) && interactive)
+	    /* yellow */
+	    glColor3f(1.0, 1.0, 0.0);
+	else
+	    glColor3fv(glc->colour[(i+1)%2]);
+
+	/* draw the node */
+	if (wireframe)
+	    glCallList(glc->node_wire);
+	else
+	    glCallList(glc->node_solid);
+
+	/* now work out where to draw the next one */
+	
+	/* Interpolate between models */
+	ang = glc->node[i];
+	
+	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
+	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
+	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
+	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
+	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
+    }
+
+    glPopMatrix();
+    
+    if (titles)
+#ifdef HAVE_GLUT
+	draw_title();
+#else
+	draw_title(mi);
+#endif
+
+#ifndef HAVE_GLUT
+	glsnake_idle(bp);
+#endif
+    
+    glFlush();
+#ifdef HAVE_GLUT
+    glutSwapBuffers();
+#else
+    glXSwapBuffers(dpy, window);
 #endif
 }
 
-void quick_sleep(void)
-{
-    /* By using glutTimerFunc we can keep responding to 
-     * mouse and keyboard events, unlike using something like
-     * usleep. */
 #ifdef HAVE_GLUT
-    glutIdleFunc(NULL);
-    glutTimerFunc(1, restore_idle, 0);
-#else
-    usleep(1);
-#endif
+/* anything that needs to be cleaned up goes here */
+void unmain() {
+    glutDestroyWindow(glc->window);
+    free(glc);
 }
+
+void ui_init(int *, char **);
 
 int main(int argc, char ** argv) {
-    char * basedir;
-    int i;
-    
     glc = malloc(sizeof(struct glsnake_cfg));
     memset(glc, 0, sizeof(struct glsnake_cfg));
 
     glc->width = 320;
     glc->height = 240;
     
-#ifdef HAVE_GLUT
     ui_init(&argc, argv);
-#endif
 
-#ifdef HAVE_GLUT
-    ftime(&glc->last_iteration);
-    memcpy(&glc->last_morph, &glc->last_iteration, sizeof(struct timeb));
-    srand((unsigned int)glc->last_iteration.time);
-#else /* !HAVE_GLUT */
-    {
-# ifdef GETTIMEOFDAY_TWO_ARGS
-	struct timezone tzp;
-	gettimeofday(&glc->last_iteration, &tzp);
-# else
-	gettimeofday(&glc->last_iteration);
-# endif
-    }
-    memcpy(&glc->last_morph, &glc->last_iteration, sizeof(struct timeval));
-#endif /* !HAVE_GLUT */
+    gettime(&glc->last_iteration);
+    memcpy(&glc->last_morph, &glc->last_iteration, sizeof(snaketime));
+    srand((unsigned int)GETSECS(glc->last_iteration));
 
     glc->prev_colour = glc->next_colour = COLOUR_ACYCLIC;
-    glc->next_model = rand() % models;
+    glc->next_model = RAND(models);
     glc->prev_model = 0;
     start_morph(glc->prev_model, 1);	
 
     glsnake_init();
     
-#ifdef HAVE_GLUT
-    ui_start();
-#endif
+    atexit(unmain);
+    glutSwapBuffers();
+    glutMainLoop();
     
     return 0;
 }
+#endif
 
 /*
  * GLUT FUNCTIONS
  */
 
 #ifdef HAVE_GLUT
-
-#include <GL/glut.h>
 
 /* trackball quaternions */
 float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,0.1};
@@ -2124,12 +2325,12 @@ void ui_keyboard(unsigned char c, int x, int y) {
 	exit(0);
 	break;
       case 'e':
-	glc->explode += DEF_EXPLODE;
+	explode += DEF_EXPLODE;
 	glutPostRedisplay();
 	break;
       case 'E':
-	glc->explode -= DEF_EXPLODE;
-	if (glc->explode < 0.0) glc->explode = 0.0;
+	explode -= DEF_EXPLODE;
+	if (explode < 0.0) explode = 0.0;
 	glutPostRedisplay();
 	break;
       case '.':
@@ -2139,7 +2340,7 @@ void ui_keyboard(unsigned char c, int x, int y) {
 	start_morph(glc->next_model, 0);
 	
 	/* Reset last_morph time */
-	ftime(&glc->last_morph);			
+	gettime(&glc->last_morph);			
 	break;
       case ',':
 	/* previous model */
@@ -2147,27 +2348,27 @@ void ui_keyboard(unsigned char c, int x, int y) {
 	start_morph(glc->next_model, 0);
 	
 	/* Reset glc->last_morph time */
-	ftime(&glc->last_morph);			
+	gettime(&glc->last_morph);			
 	break;
       case '+':
-	glc->morph_angular_velocity += DEF_ACCEL;
+	angvel += DEF_ACCEL;
 	break;
       case '-':
-	if (glc->morph_angular_velocity > DEF_ACCEL)
-	    glc->morph_angular_velocity -= DEF_ACCEL;
+	if (angvel > DEF_ACCEL)
+	    angvel -= DEF_ACCEL;
 	break;
       case 'i':
-	if (glc->interactive) {
+	if (interactive) {
 	    /* Reset last_iteration and last_morph time */
-	    ftime(&glc->last_iteration);
-	    ftime(&glc->last_morph);
+	    gettime(&glc->last_iteration);
+	    gettime(&glc->last_morph);
 	}
-	glc->interactive = 1 - glc->interactive;
+	interactive = 1 - interactive;
 	glutPostRedisplay();
 	break;
       case 'w':
-	glc->wireframe = 1 - glc->wireframe;
-	if (glc->wireframe)
+	wireframe = 1 - wireframe;
+	if (wireframe)
 	    glDisable(GL_LIGHTING);
 	else
 	    glEnable(GL_LIGHTING);
@@ -2176,8 +2377,8 @@ void ui_keyboard(unsigned char c, int x, int y) {
       case 'p':
 	if (glc->paused) {
 	    /* unpausing, reset last_iteration and last_morph time */
-	    ftime(&glc->last_iteration);
-	    ftime(&glc->last_morph);
+	    gettime(&glc->last_iteration);
+	    gettime(&glc->last_morph);
 	}
 	glc->paused = 1 - glc->paused;
 	break;
@@ -2214,19 +2415,19 @@ void ui_keyboard(unsigned char c, int x, int y) {
 	}
 	break;
       case 't':
-	glc->titles = 1 - glc->titles;
-	if (glc->interactive || glc->paused)
+	titles = 1 - titles;
+	if (interactive || glc->paused)
 	    glutPostRedisplay();
 	break;
       case 'a':
-	glc->authentic = 1 - glc->authentic;
+	altcolour = 1 - altcolour;
 	break;
       case 'z':
-	glc->zoom += 1.0;
+	zoom += 1.0;
 	glsnake_reshape(glc->width, glc->height);
 	break;
       case 'Z':
-	glc->zoom -= 1.0;
+	zoom -= 1.0;
 	glsnake_reshape(glc->width, glc->height);
 	break;
       default:
@@ -2239,7 +2440,7 @@ void ui_special(int key, int x, int y) {
     float *destAngle = &(model[glc->next_model].node[glc->selected]);
     int unknown_key = 0;
 
-    if (glc->interactive) {
+    if (interactive) {
 	switch (key) {
 	  case GLUT_KEY_UP:
 	    glc->selected = (glc->selected + (NODE_COUNT - 2)) % (NODE_COUNT - 1);
@@ -2256,9 +2457,7 @@ void ui_special(int key, int x, int y) {
 	    glc->morphing = glc->new_morph = 1;
 	    break;
 	  case GLUT_KEY_HOME:
-	    for (i = 0; i < NODE_COUNT; i++)
-		glc->node[i] = ZERO;
-	    glc->morphing = glc->new_morph = 1;
+	    start_morph(STRAIGHT_MODEL, 0);
 	    break;
 	  default:
 	    unknown_key = 1;
@@ -2351,17 +2550,16 @@ void ui_init(int * argc, char ** argv) {
     glutSpecialFunc(ui_special);
     glutMouseFunc(ui_mouse);
     glutMotionFunc(ui_motion);
-}
 
-/* anything that needs to be cleaned up goes here */
-void ui_unmain() {
-    glutDestroyWindow(glc->window);
-    free(glc);
-}
-
-void ui_start() {
-    atexit(ui_unmain);
-    glutSwapBuffers();
-    glutMainLoop();
+    yangvel = DEF_YANGVEL;
+    zangvel = DEF_ZANGVEL;
+    explode = DEF_EXPLODE;
+    angvel = DEF_ANGVEL;
+    statictime = DEF_STATICTIME;
+    altcolour = DEF_ALTCOLOUR;
+    titles = DEF_TITLES;
+    interactive = DEF_INTERACTIVE;
+    zoom = DEF_ZOOM;
+    wireframe = DEF_WIREFRAME;
 }
 #endif /* HAVE_GLUT */
