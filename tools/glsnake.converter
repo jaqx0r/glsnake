@@ -1,0 +1,13 @@
+#!/bin/sh
+
+while read line; do
+    if test `echo $line | cut -c1` = '#'; then
+	echo $line
+	continue
+    fi
+	name=`echo $line | cut -f1 -d:`
+	nodes=`echo $line | cut -f2 -d: | sed -e 's/ /, /g' -e 's/R/RIGHT/g' -e 's/L/LEFT/g' -e 's/Z/ZERO/g' -e 's/P/PIN/g' -e 's/,$//g'`
+	echo "{ \"$name\","
+	echo "    { $nodes }" | sed 's/ ,/ /' | fmt -c -w 72
+	echo "},"
+done
