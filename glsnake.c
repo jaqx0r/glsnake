@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.37 2001/10/11 09:06:52 andrew Exp $
+/* $Id: glsnake.c,v 1.38 2001/10/11 09:42:33 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -1350,7 +1350,7 @@ struct timeb last_morph;
 int width, height;
 int old_width, old_height;
 
-/* font lsit number */
+/* font list number */
 int font;
 
 char * interactstr = "interactive";
@@ -1782,7 +1782,9 @@ void start_morph(int modelIndex, int immediate) {
 		if (fabs(node[i].destAngle - node[i].curAngle) > max_angle)
 			max_angle = fabs(node[i].destAngle - node[i].curAngle);
 	}
-
+	if (max_angle > 180.0)
+		max_angle = 180.0;
+	
 	calc_snake_metrics();
 
 	set_colours(max_angle);
@@ -1823,7 +1825,7 @@ void special(int key, int x, int y) {
 		}
 	}
 	calc_snake_metrics();
-	set_colours(fabs(node[selected].destAngle - node[selected].curAngle));
+	set_colours(fabs(fmod(node[selected].destAngle - node[selected].curAngle,180)));
 	if (!unknown_key)
 		glutPostRedisplay();
 }
@@ -2120,7 +2122,7 @@ void unmain(void) {
 int main(int argc, char ** argv) {
 	width = 640;
 	height = 480;
-	
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(width, height);
