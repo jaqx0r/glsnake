@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.3 2001/10/04 16:18:21 jaq Exp $
+/* $Id: glsnake.c,v 1.4 2001/10/04 16:21:50 jaq Exp $
  * An OpenGL imitation of Rubik's Snake 
  * by Jamie Wilkinson and Andrew Bennetts
  * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
@@ -10,7 +10,7 @@
  */
 
 #include <GL/glut.h>
-#include <sys/time.h>
+#include <time.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,8 +21,8 @@
 #define PIN     180.0
 #define LEFT    90.0
 
-#define ROTATION_RATE 0.25	  /* Rotations per second */
-#define EXPLODE_INCREMENT 0.1
+#define ROTATION_RATE 0.20	  /* Rotations per second */
+#define EXPLODE_INCREMENT 0.05
 #define MORPH_DELAY 2.0		  /* Delay in seconds between morphs */
 #define MORPH_RATE  0.25	  /* Morphs per second */
 
@@ -67,11 +67,11 @@ float zigzag3_wrong[] = { PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIG
 
 float caterpillar[] = { RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT };
 
-float bow[] = { RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT};
+float bow[] = { RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT };
 
 float snowflake[] = { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT};
 
-float turtle[] = { RIGHT, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, PIN, RIGHT, LEFT, ZERO, ZERO, LEFT, LEFT, LEFT, RIGHT };
+float turtle[] = { ZERO, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, PIN, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT };
 
 float basket[] = { RIGHT, PIN, ZERO, ZERO, PIN, LEFT, ZERO, LEFT, LEFT, ZERO, LEFT, PIN, ZERO, ZERO, PIN, RIGHT, PIN, LEFT, PIN, ZERO, ZERO, PIN, LEFT };
 
@@ -85,38 +85,77 @@ float straight[] = { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO };
 
-float * model[] = { ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, caterpillar, turtle, basket, thing, straight };
+float hyperbola[] = {	RIGHT, PIN, LEFT, ZERO, RIGHT, ZERO, 
+						LEFT, PIN, RIGHT, ZERO, LEFT, ZERO, 
+						RIGHT, PIN, LEFT, ZERO, RIGHT, ZERO, 
+						LEFT, PIN, RIGHT, ZERO, LEFT, ZERO };
+
+float propellor[] = {	ZERO, ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT,
+						ZERO, ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT,
+						ZERO, ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT };
+
+float hexagon[] = {	ZERO, ZERO, ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT,
+					ZERO, ZERO, ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT,
+					ZERO, ZERO, ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT };
+
+float triangle[] = {ZERO, ZERO, ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT,
+					ZERO, ZERO, ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT,
+					ZERO, ZERO, ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT };
+
+float flower[] = {	ZERO, LEFT, PIN, RIGHT, RIGHT, PIN,
+					ZERO, LEFT, PIN, RIGHT, RIGHT, PIN,
+					ZERO, LEFT, PIN, RIGHT, RIGHT, PIN,
+					ZERO, LEFT, PIN, RIGHT, RIGHT, PIN };
+
+float crucifix[] = {	ZERO,PIN,PIN,ZERO,PIN,ZERO,PIN,PIN,ZERO,PIN,ZERO,PIN,
+						PIN,ZERO,PIN,ZERO,ZERO,ZERO,PIN,PIN,ZERO,ZERO,ZERO,PIN };
+
+float kayak[] = {	PIN,RIGHT,LEFT,PIN,LEFT,PIN,ZERO,ZERO,RIGHT,PIN,LEFT,ZERO,
+					ZERO,ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,LEFT,ZERO,ZERO,PIN,RIGHT };
+
+float * model[] = { ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, 
+					caterpillar, turtle, basket, thing, straight, hyperbola,
+					propellor, hexagon, triangle, flower, crucifix, kayak };
+
 
 int models = sizeof(model) / sizeof(float *);
 int m, m_next;
 
 /* rotation angle */
-float rotang = 0.0;
+float rotang1 = 0.0;
+float rotang2 = 0.0;
 
 /* morph ratio (how far between model m and model m_next we are) */
 float morph = 0.0;
+float ma_morph = 0.0;
+
 
 /* option variables */
-float explode = 0.1;
+float explode = 0.05;
 int wireframe = 0;
 
 /* wot initialises it */
 void init(void) {
+
 	float light_pos[][3] = {{0.0, 0.0, 20.0}, {0.0, 20.0, 0.0}};
 	float light_dir[][3] = {{0.0, 0.0,-20.0}, {0.0,-20.0, 0.0}};
 	glClearColor(0.0, 0.0, 0.0, 0.0);
 	glEnable(GL_DEPTH_TEST);
+	
 	/* gouraud shadin' */
 	glShadeModel(GL_SMOOTH);
+	
 	/* enable backface culling */
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
+	
 	/* set up our camera */
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(40.0, 640/480.0, 0.05, 100.0);
 	gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	glMatrixMode(GL_MODELVIEW);
+	
 	/* set up lighting */
 	glColor3f(1.0, 1.0, 1.0);
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos[0]);
@@ -127,25 +166,33 @@ void init(void) {
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHT1);
 	glEnable(GL_COLOR_MATERIAL);
+	
 	/* build a display list */
 	node_solid = glGenLists(1);
 	glNewList(node_solid, GL_COMPILE);
 	glBegin(GL_TRIANGLES);
 	glNormal3fv(prism_n[0]);
 	glVertex3fv(prism_v[0]);
+	glNormal3fv(prism_n[1]);
 	glVertex3fv(prism_v[1]);
+	glNormal3fv(prism_n[2]);
 	glVertex3fv(prism_v[2]);
 
 	glNormal3fv(prism_n[4]);
 	glVertex3fv(prism_v[3]);
+	glNormal3fv(prism_n[3]);
 	glVertex3fv(prism_v[5]);
+	glNormal3fv(prism_n[2]);
 	glVertex3fv(prism_v[4]);
 	glEnd();
 	glBegin(GL_QUADS);
 	glNormal3fv(prism_n[1]);
 	glVertex3fv(prism_v[1]);
+	glNormal3fv(prism_n[2]);	
 	glVertex3fv(prism_v[0]);
+	glNormal3fv(prism_n[3]);
 	glVertex3fv(prism_v[3]);
+	glNormal3fv(prism_n[4]);
 	glVertex3fv(prism_v[4]);
 	
 	glNormal3fv(prism_n[2]);
@@ -156,8 +203,11 @@ void init(void) {
 	
 	glNormal3fv(prism_n[3]);
 	glVertex3fv(prism_v[0]);
+	glNormal3fv(prism_n[2]);
 	glVertex3fv(prism_v[2]);
+	glNormal3fv(prism_n[1]);
 	glVertex3fv(prism_v[5]);
+	glNormal3fv(prism_n[0]);
 	glVertex3fv(prism_v[3]);
 	glEnd();
 	glEndList();
@@ -195,6 +245,8 @@ void init(void) {
 	glEndList();
 }
 
+unsigned long frames = 0;
+
 /* wot draws it */
 void display(void) {
 	int i;
@@ -206,23 +258,48 @@ void display(void) {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	
+	glShadeModel(GL_SMOOTH); 
+	//glEnable(GL_LINE_SMOOTH); 
+	//glEnable(GL_POLYGON_SMOOTH ); 
+
 	/* draw this dang thing */
 	
 	/* the origin */
-	glPointSize(4.0);
+/*	glPointSize(4.0);
 	glBegin(GL_POINTS);
 	glColor3f(1.0,1.0,0.0);
 	glVertex3f(0.0,0.0,0.0);
 	glEnd();
+*/
 
 	/* rotate and translate into snake space */
-	glRotatef(45.0,0.0,0.0,1.0);
+	glRotatef(45.0,-5.0,0.0,1.0);
 	glTranslatef(-0.5,0.0,0.5);
 	
 	/* rotate the 0th junction */
 	glTranslatef(0.5,0.0,0.5);
-	glRotatef(rotang, 0.0,1.0,0.0); 
+	glRotatef(rotang1, 0.0,1.0,0.0); 
+	glRotatef(rotang2, 0.0,0.0,1.0); 
 	glTranslatef(-0.5,0.0,-0.5);
+
+
+	/* translate center to middle node */
+	/* (disgusting hack by peter who knows naught of opengl) */
+	for (i = 11; i >= 0; i--) {
+		ang = model[m][i] * (1.0 - morph) + model[m_next][i] * morph;
+		if (i % 2) {
+			glTranslatef(0.5,0.0,0.5);
+			glRotatef(-ang, 0.0, 1.0, 0.0);
+			glTranslatef(-0.5,0.0,-0.5);
+			glTranslatef(1.0,-explode,0.0);
+		} else {
+			glTranslatef(0.0,0.5,0.5);
+			glRotatef(-ang, 1.0, 0.0, 0.0);
+			glTranslatef(0.0,-0.5,-0.5);
+			glTranslatef(-explode,1.0,0.0);
+		}
+		glRotatef(-180.0, 0.0,0.0,1.0);
+	}
 
 	/* now draw each node along the snake -- this is quite ugly :p */
 
@@ -232,6 +309,9 @@ void display(void) {
 			glColor3f(0.0,0.0,1.0);
 		else
 			glColor3f(1.0,1.0,1.0);
+		//glColor3b(rand() % 255,rand() % 255,rand() % 255); 
+		//glColor3b(i * 2341 % 255,i * 312 % 255,i * 5213 % 255); 
+
 		if (wireframe)
 			glCallList(node_wire);
 		else {
@@ -264,6 +344,7 @@ void display(void) {
 		glPopMatrix();
 	}
 	glFlush();
+	frames++;
 	/* glutSwapBuffers(); */
 }
 
@@ -286,8 +367,11 @@ void keyboard(unsigned char c, int x, int y) {
 			if (explode < 0.0) explode = 0.0;
 			break;
 		case 'n':
+			
 			m = m_next;
-			m_next = rand() % models;
+			m_next = ++m_next;
+			m_next %= models; 
+			
 			break;
 		case 'w':
 			wireframe = 1 - wireframe;
@@ -301,38 +385,31 @@ void keyboard(unsigned char c, int x, int y) {
 	}
 }
 
-struct timeval last_iteration;
-struct timeval last_morph;
+unsigned long idles = 0;
 
 /* "jwz?  no way man, he's my idle" -- me, 2001.  I forget the context :( */
 void idol(void) {
-	long i_sec, i_usec;		/* used for tracking how far through an iteration we are */
-	long m_sec, m_usec;
-	i_sec = -last_iteration.tv_sec;
-	i_usec = -last_iteration.tv_usec;
-	gettimeofday(&last_iteration,NULL);
-	i_sec += last_iteration.tv_sec;
-	i_usec += last_iteration.tv_usec;
-	i_usec += i_sec*1000000;
 
-	rotang += 360/((1000000/ROTATION_RATE)/i_usec);
+	rotang1 += 2; 
+	rotang2 += 3; 
 	
-	/* do the morphing stuff here */
-	m_sec = last_iteration.tv_sec - last_morph.tv_sec;
-	m_usec = last_iteration.tv_usec - last_morph.tv_usec;
-	m_usec += m_sec*1000000;
-	if (m_usec > (long)(MORPH_DELAY*1000000)) {
-		morph = (m_usec - MORPH_DELAY*1000000) * (MORPH_RATE/1000000);
-		if (morph > 1.0) {
-			morph = 0.0;
-			m = m_next;
-			m_next = rand() % models;
-			memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
-		}
+	ma_morph += 0.02;
+	if (ma_morph > 2.0) {
+		ma_morph = 0.0;
+		m = m_next;
+		m_next = rand() % models;
 	}
+	morph = 1.0 < ma_morph ? 1.0 : ma_morph; 
+//	morph = 0.0;
+
 	glutSwapBuffers();
 	glutPostRedisplay();
+
+
+
 }
+
+long start_time;
 
 /* stick anything that needs to be shutdown properly here */
 void unmain(void) {
@@ -342,18 +419,19 @@ void unmain(void) {
 int main(int argc, char ** argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-	glutInitWindowSize(640, 480);
+	glutInitWindowSize(800,600);
 	window = glutCreateWindow("glsnake");
-	gettimeofday(&last_iteration, NULL);
-	memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
-	srand((unsigned int)last_iteration.tv_usec);
+
 	m = rand() % models;
 	m_next = rand() % models;
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
 	glutIdleFunc(idol);
+	glutMotionFunc(exit); 
+	//glutPassiveMotionFunc(exit); 
 	init();
+	glutFullScreen();
 	atexit(unmain);
 	glutSwapBuffers();
 	glutMainLoop();
