@@ -1,3 +1,9 @@
+glsnake (0.7.1) unstable; urgency=low
+
+  * New upstream 
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Tue, 16 Oct 2001 14:54:25 +1000
+
 glsnake (0.7-4) unstable; urgency=low
 
   * Changed the pixmap to the snowflake, because I like it better ;)

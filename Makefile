@@ -1,3 +1,4 @@
+VERSION=0.7.1
 LDFLAGS=-lGL -lGLU -lglut -lm
 CFLAGS=-O2 -Wall -pedantic
 
@@ -5,8 +6,9 @@ all: glsnake
 
 install:
 	install glsnake $(DESTDIR)/usr/bin
-	mkdir $(DESTDIR)/usr/share/pixmaps/glsnake
-	install pixmaps/* $(DESTDIR)/usr/share/pixmaps/glsnake
+	-test ! -d $(DESTDIR)/usr/share/pixmaps/glsnake && mkdir $(DESTDIR)/usr/share/pixmaps/glsnake
+	install -m 644 pixmaps/*.png $(DESTDIR)/usr/share/pixmaps/glsnake
+	install -m 644 pixmaps/*.xpm $(DESTDIR)/usr/share/pixmaps/glsnake
 
 uninstall:
 	rm $(DESTDIR)/usr/bin/glsnake

@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.39 2001/10/13 08:44:20 jaq Exp $
+/* $Id: glsnake.c,v 1.40 2001/10/16 04:58:36 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -1617,9 +1617,12 @@ void display(void) {
 		if ((i == selected || i == selected+1) && interactive)
 			glColor3f(1.0,1.0,0.0);
 		else {
+			// uncomment the commented lines to get authentic colours
 			if (i % 2)
+				//glColor3f(0.6, 0.0, 0.9);
 				glColor3fv(colour);
 			else
+				//glColor3f(0.2, 0.9, 1.0);
 				glColor3f(1.0, 1.0, 1.0);
 		}
 
