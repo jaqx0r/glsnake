@@ -148,7 +148,7 @@ extern XtAppContext app;
                  "*zangvel:      " DEF_ZANGVEL              " \n" \
                  "*altcolour:    " DEF_ALTCOLOUR            " \n" \
                  "*titles:         True                       \n" \
-                 "*labelfont: -helvetica-medium-r-*-*-*-120-* \n" \
+                 "*labelfont:   -*-times-bold-r-normal-*-180-*\n" \
                  "*zoom:         " DEF_ZOOM                 " \n" \
 
 
