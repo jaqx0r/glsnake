@@ -7,7 +7,7 @@ Standards-Version: 3.0.1
 Package: glsnake
 Architecture: any
 Depends: ${shlibs:Depends}
-Description: Hardware accelerated stress toy
+Description: Hardware accelerated executive stress toy
  glsnake is an imitation of Rubiks' Snake.
  .
  Currently, glsnake has an interactive mode where you can create your

@@ -1,3 +1,9 @@
+glsnake (0.8.2-2) unstable; urgency=low
+
+  * Cosmetic changes to debian/control
+
+ -- Jamie Wilkinson <jaq@spacepants.org>  Tue, 18 Dec 2001 16:29:33 +1100
+
 glsnake (0.8.2-1) unstable; urgency=low
 
   * New upstream: fixed modelfile dump command, new manpage
