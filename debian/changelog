@@ -1,11 +1,11 @@
-glsnake (1.39-2) unstable; urgency=low
+glsnake (0.7-2) unstable; urgency=low
 
   * Incorporated Peter's patch into the main tree, modified debian/rules
     to use our Makefile, fixed a bug in glsnake.menu so it's lintian clean
 
  -- Jamie Wilkinson <jaq@spacepants.org>  Mon, 15 Oct 2001 13:04:54 +1000
 
-glsnake (1.39-1) unstable; urgency=low
+glsnake (0.7-1) unstable; urgency=low
 
   * Initial Release.
 
