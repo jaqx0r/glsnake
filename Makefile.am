@@ -6,8 +6,6 @@ glsnake_SOURCES = glsnake.c
 glsnake_CFLAGS = @GLUT_CFLAGS@ @OPENGL_CFLAGS@
 glsnake_LDADD = @GLUT_LIBS@ @OPENGL_LIBS@
 
-noinst_HEADERS = models.h
-
 man_MANS = glsnake.6
 
 SUBDIRS = . tools data pixmaps
