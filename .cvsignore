@@ -10,6 +10,6 @@ config.h.in
 config.log
 config.status
 configure
-stamp-h
-stamp-h.in
+stamp-h*
 .deps
+autom4te.cache
