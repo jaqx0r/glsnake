@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.32 2001/10/09 10:31:18 jaq Exp $
+/* $Id: glsnake.c,v 1.33 2001/10/09 10:52:32 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -952,6 +952,7 @@ struct timeb last_morph;
 
 /* window size */
 int width, height;
+int old_width, old_height;
 
 /* font lsit number */
 int font;
@@ -1522,11 +1523,12 @@ void keyboard(unsigned char c, int x, int y) {
 			break;
 		case 'f':
 			fullscreen = 1 - fullscreen;
-			if (!fullscreen) {
-				glutReshapeWindow(width, height);
-			} else {
+			if (fullscreen) {
+				old_width = width;
+				old_height = height;
 				glutFullScreen();
-			}
+			} else
+				glutReshapeWindow(old_width, old_height);
 			break;
 		case 't':
 			titles = 1 - titles;
