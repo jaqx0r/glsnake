@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.4 2001/10/04 16:21:50 jaq Exp $
+/* $Id: glsnake.c,v 1.5 2001/10/04 16:23:15 jaq Exp $
  * An OpenGL imitation of Rubik's Snake 
  * by Jamie Wilkinson and Andrew Bennetts
  * based on the Allegro snake.c by Peter Aylett and Andrew Bennetts
@@ -10,7 +10,7 @@
  */
 
 #include <GL/glut.h>
-#include <time.h>
+#include <sys/time.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +21,8 @@
 #define PIN     180.0
 #define LEFT    90.0
 
-#define ROTATION_RATE 0.20	  /* Rotations per second */
+#define ROTATION_RATE1 0.20	  /* Rotations per second */
+#define ROTATION_RATE2 0.30	  /* Rotations per second */
 #define EXPLODE_INCREMENT 0.05
 #define MORPH_DELAY 2.0		  /* Delay in seconds between morphs */
 #define MORPH_RATE  0.25	  /* Morphs per second */
@@ -34,30 +35,37 @@ int node_solid, node_wire;
 
 /* the triangular prism what makes up the basic unit */
 float prism_v[][3] = {{ 0.0, 0.0, 1.0 }, 
-					  { 1.0, 0.0, 1.0 },
-					  { 0.0, 1.0, 1.0 },
-					  { 0.0, 0.0, 0.0 },
-					  { 1.0, 0.0, 0.0 },
-					  { 0.0, 1.0, 0.0 }};
+			  { 1.0, 0.0, 1.0 },
+			  { 0.0, 1.0, 1.0 },
+			  { 0.0, 0.0, 0.0 },
+			  { 1.0, 0.0, 0.0 },
+			  { 0.0, 1.0, 0.0 }};
 
 /* face normals */
 float prism_n[][3] = {{0.0,0.0,1.0},
 	                  {0.0,-1.0,0.0},
-					  {0.707,0.707,0.0},
-					  {-1.0,0.0,0.0},
-					  {0.0,0.0,-1.0}};
+			  {0.707,0.707,0.0},
+			  {-1.0,0.0,0.0},
+			  {0.0,0.0,-1.0}};
 
 /* the actual models -- all with 24 nodes (23 joints) */
 
-float ball[] = { RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT};
+float ball[] = { RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT,
+	LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT,
+	RIGHT, LEFT, LEFT, RIGHT};
 
-float cat[] = { ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO };
+float cat[] = { ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, PIN,
+	ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO };
 
-float zigzag1[] = { RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT };
+float zigzag1[] = { RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT,
+	LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT,
+	RIGHT, LEFT, LEFT };
 
-float zigzag2[] = { PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN};
+float zigzag2[] = { PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN,
+	ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, PIN};
 
-float zigzag3[] = { PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN };
+float zigzag3[] = { PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN,
+	LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN };
 
 /* this model sucks */
 /* but try watching a caterpillar do a transition to this! */
@@ -65,57 +73,83 @@ float zigzag3[] = { PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, PIN, 
 float zigzag3_wrong[] = { PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, PIN, RIGHT, PIN};
 */
 
-float caterpillar[] = { RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT };
+float caterpillar[] = { RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN,
+	LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN,
+	LEFT, LEFT };
 
-float bow[] = { RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT };
+float bow[] = { RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT,
+	LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT,
+	RIGHT, LEFT, LEFT };
 
-float snowflake[] = { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT};
+float snowflake[] = { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT,
+	RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT,
+	RIGHT, RIGHT, LEFT, LEFT, LEFT};
 
-float turtle[] = { ZERO, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, PIN, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT };
+float turtle[] = { ZERO, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT,
+	RIGHT, LEFT, RIGHT, LEFT, LEFT, PIN, LEFT, LEFT, LEFT, RIGHT, LEFT,
+	RIGHT, RIGHT, RIGHT };
 
-float basket[] = { RIGHT, PIN, ZERO, ZERO, PIN, LEFT, ZERO, LEFT, LEFT, ZERO, LEFT, PIN, ZERO, ZERO, PIN, RIGHT, PIN, LEFT, PIN, ZERO, ZERO, PIN, LEFT };
+float basket[] = { RIGHT, PIN, ZERO, ZERO, PIN, LEFT, ZERO, LEFT, LEFT, ZERO,
+	LEFT, PIN, ZERO, ZERO, PIN, RIGHT, PIN, LEFT, PIN, ZERO, ZERO, PIN,
+	LEFT };
 
-float thing[] = { PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT, LEFT };
+float thing[] = { PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT, LEFT,
+	LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, RIGHT, LEFT, PIN, LEFT, RIGHT,
+	LEFT, LEFT };
 
 /* Note: this is a 32 node model
-float snowflake32[] = { RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT};
+float snowflake32[] = { RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT,
+LEFT, LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, LEFT,
+RIGHT, RIGHT, RIGHT};
 */
 
-float straight[] = { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
+float straight[] = { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
-	ZERO, ZERO };
+	ZERO, ZERO, ZERO };
 
-float hyperbola[] = {	RIGHT, PIN, LEFT, ZERO, RIGHT, ZERO, 
-						LEFT, PIN, RIGHT, ZERO, LEFT, ZERO, 
-						RIGHT, PIN, LEFT, ZERO, RIGHT, ZERO, 
-						LEFT, PIN, RIGHT, ZERO, LEFT, ZERO };
+float hyperbola[] = {	RIGHT, PIN, LEFT, ZERO, RIGHT, ZERO, LEFT, PIN, RIGHT,
+	ZERO, LEFT, ZERO, RIGHT, PIN, LEFT, ZERO, RIGHT, ZERO, LEFT, PIN,
+	RIGHT, ZERO, LEFT, ZERO };
 
-float propellor[] = {	ZERO, ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT,
-						ZERO, ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT,
-						ZERO, ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT };
+float propellor[] = {	ZERO, ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT, ZERO,
+	ZERO, ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT, ZERO, ZERO,
+	ZERO,RIGHT,LEFT,RIGHT,ZERO,LEFT };
 
-float hexagon[] = {	ZERO, ZERO, ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT,
-					ZERO, ZERO, ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT,
-					ZERO, ZERO, ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT };
+float hexagon[] = {	ZERO, ZERO, ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT, ZERO, ZERO,
+	ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT, ZERO, ZERO,
+	ZERO,ZERO,LEFT,ZERO,ZERO,RIGHT };
 
-float triangle[] = {ZERO, ZERO, ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT,
-					ZERO, ZERO, ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT,
-					ZERO, ZERO, ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT };
+float triangle[] = {ZERO, ZERO, ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT, ZERO, ZERO,
+	ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT, ZERO, ZERO,
+	ZERO,ZERO,ZERO,ZERO,LEFT,RIGHT };
 
-float flower[] = {	ZERO, LEFT, PIN, RIGHT, RIGHT, PIN,
-					ZERO, LEFT, PIN, RIGHT, RIGHT, PIN,
-					ZERO, LEFT, PIN, RIGHT, RIGHT, PIN,
-					ZERO, LEFT, PIN, RIGHT, RIGHT, PIN };
+float flower[] = {	ZERO, LEFT, PIN, RIGHT, RIGHT, PIN, ZERO, LEFT, PIN,
+	RIGHT, RIGHT, PIN, ZERO, LEFT, PIN, RIGHT, RIGHT, PIN, ZERO, LEFT, PIN,
+	RIGHT, RIGHT, PIN };
 
 float crucifix[] = {	ZERO,PIN,PIN,ZERO,PIN,ZERO,PIN,PIN,ZERO,PIN,ZERO,PIN,
-						PIN,ZERO,PIN,ZERO,ZERO,ZERO,PIN,PIN,ZERO,ZERO,ZERO,PIN };
+	PIN,ZERO,PIN,ZERO,ZERO,ZERO,PIN,PIN,ZERO,ZERO,ZERO,PIN };
 
-float kayak[] = {	PIN,RIGHT,LEFT,PIN,LEFT,PIN,ZERO,ZERO,RIGHT,PIN,LEFT,ZERO,
-					ZERO,ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,LEFT,ZERO,ZERO,PIN,RIGHT };
+float kayak[] = { PIN,RIGHT,LEFT,PIN,LEFT,PIN,ZERO,ZERO,RIGHT,PIN,LEFT,ZERO,
+	ZERO,ZERO,ZERO,ZERO,ZERO,RIGHT,PIN,LEFT,ZERO,ZERO,PIN,RIGHT };
 
-float * model[] = { ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake, 
-					caterpillar, turtle, basket, thing, straight, hyperbola,
-					propellor, hexagon, triangle, flower, crucifix, kayak };
+float bird[] = { ZERO,ZERO,ZERO,ZERO,RIGHT,RIGHT,ZERO,LEFT,PIN,RIGHT,ZERO,
+	RIGHT,ZERO,RIGHT,ZERO,RIGHT,PIN,LEFT,ZERO,RIGHT,LEFT,ZERO,PIN };   
+
+float seal[] = { RIGHT,LEFT,LEFT,PIN,RIGHT,LEFT,ZERO,PIN,PIN,ZERO,LEFT,ZERO,
+	LEFT,PIN,RIGHT,ZERO,LEFT,LEFT,LEFT,PIN,RIGHT,RIGHT,LEFT };
+
+float dog[] = { ZERO,ZERO,ZERO,ZERO,PIN,PIN,ZERO,PIN,ZERO,ZERO,PIN,ZERO,
+	PIN,PIN,ZERO,ZERO,ZERO,PIN,ZERO,PIN,PIN,ZERO,PIN };
+
+float frog[] = { RIGHT,RIGHT,LEFT,LEFT,RIGHT,PIN,RIGHT,PIN,LEFT,PIN,RIGHT,
+	ZERO,LEFT,ZERO,LEFT,PIN,RIGHT,ZERO,LEFT,LEFT,RIGHT,LEFT,LEFT};
+
+
+float * model[] = { ball, cat, zigzag1, zigzag2, zigzag3, bow, snowflake,
+	caterpillar, turtle, basket, thing, straight, hyperbola, propellor,
+	hexagon, triangle, flower, crucifix, kayak, bird, seal, dog, frog };
+
 
 
 int models = sizeof(model) / sizeof(float *);
@@ -128,6 +162,9 @@ float rotang2 = 0.0;
 /* morph ratio (how far between model m and model m_next we are) */
 float morph = 0.0;
 float ma_morph = 0.0;
+
+struct timeval last_iteration;
+struct timeval last_morph;
 
 
 /* option variables */
@@ -173,26 +210,19 @@ void init(void) {
 	glBegin(GL_TRIANGLES);
 	glNormal3fv(prism_n[0]);
 	glVertex3fv(prism_v[0]);
-	glNormal3fv(prism_n[1]);
 	glVertex3fv(prism_v[1]);
-	glNormal3fv(prism_n[2]);
 	glVertex3fv(prism_v[2]);
 
 	glNormal3fv(prism_n[4]);
 	glVertex3fv(prism_v[3]);
-	glNormal3fv(prism_n[3]);
 	glVertex3fv(prism_v[5]);
-	glNormal3fv(prism_n[2]);
 	glVertex3fv(prism_v[4]);
 	glEnd();
 	glBegin(GL_QUADS);
 	glNormal3fv(prism_n[1]);
 	glVertex3fv(prism_v[1]);
-	glNormal3fv(prism_n[2]);	
 	glVertex3fv(prism_v[0]);
-	glNormal3fv(prism_n[3]);
 	glVertex3fv(prism_v[3]);
-	glNormal3fv(prism_n[4]);
 	glVertex3fv(prism_v[4]);
 	
 	glNormal3fv(prism_n[2]);
@@ -203,11 +233,8 @@ void init(void) {
 	
 	glNormal3fv(prism_n[3]);
 	glVertex3fv(prism_v[0]);
-	glNormal3fv(prism_n[2]);
 	glVertex3fv(prism_v[2]);
-	glNormal3fv(prism_n[1]);
 	glVertex3fv(prism_v[5]);
-	glNormal3fv(prism_n[0]);
 	glVertex3fv(prism_v[3]);
 	glEnd();
 	glEndList();
@@ -245,8 +272,6 @@ void init(void) {
 	glEndList();
 }
 
-unsigned long frames = 0;
-
 /* wot draws it */
 void display(void) {
 	int i;
@@ -259,8 +284,8 @@ void display(void) {
 	glLoadIdentity();
 	
 	glShadeModel(GL_SMOOTH); 
-	//glEnable(GL_LINE_SMOOTH); 
-	//glEnable(GL_POLYGON_SMOOTH ); 
+	/*glEnable(GL_LINE_SMOOTH); */
+	/*glEnable(GL_POLYGON_SMOOTH );*/ 
 
 	/* draw this dang thing */
 	
@@ -309,8 +334,8 @@ void display(void) {
 			glColor3f(0.0,0.0,1.0);
 		else
 			glColor3f(1.0,1.0,1.0);
-		//glColor3b(rand() % 255,rand() % 255,rand() % 255); 
-		//glColor3b(i * 2341 % 255,i * 312 % 255,i * 5213 % 255); 
+		/*glColor3b(rand() % 255,rand() % 255,rand() % 255); */
+		/*glColor3b(i * 2341 % 255,i * 312 % 255,i * 5213 % 255); */ 
 
 		if (wireframe)
 			glCallList(node_wire);
@@ -344,7 +369,6 @@ void display(void) {
 		glPopMatrix();
 	}
 	glFlush();
-	frames++;
 	/* glutSwapBuffers(); */
 }
 
@@ -367,10 +391,14 @@ void keyboard(unsigned char c, int x, int y) {
 			if (explode < 0.0) explode = 0.0;
 			break;
 		case 'n':
-			
-			m = m_next;
-			m_next = ++m_next;
-			m_next %= models; 
+			/* Guard against changing models during a morph */
+			if (morph == 0.0) {		
+				m = m_next;
+				++m_next;
+				m_next %= models;
+				/* Reset last_morph time */
+				gettimeofday(&last_morph,NULL);
+			}
 			
 			break;
 		case 'w':
@@ -385,11 +413,37 @@ void keyboard(unsigned char c, int x, int y) {
 	}
 }
 
-unsigned long idles = 0;
-
 /* "jwz?  no way man, he's my idle" -- me, 2001.  I forget the context :( */
 void idol(void) {
+        long i_sec, i_usec;             /* used for tracking how far through an iteration we are */
+        long m_sec, m_usec;
+        i_sec = -last_iteration.tv_sec;
+        i_usec = -last_iteration.tv_usec;
+        gettimeofday(&last_iteration,NULL);
+        i_sec += last_iteration.tv_sec;
+        i_usec += last_iteration.tv_usec;
+        i_usec += i_sec*1000000;
 
+        rotang1 += 360/((1000000/ROTATION_RATE1)/i_usec);
+        rotang2 += 360/((1000000/ROTATION_RATE2)/i_usec);
+
+        /* do the morphing stuff here */
+        m_sec = last_iteration.tv_sec - last_morph.tv_sec;
+        m_usec = last_iteration.tv_usec - last_morph.tv_usec;
+        m_usec += m_sec*1000000;
+        if (m_usec > (long)(MORPH_DELAY*1000000)) {
+                morph = (m_usec - MORPH_DELAY*1000000) * (MORPH_RATE/1000000);
+                if (morph > 1.0) {
+                        morph = 0.0;
+                        m = m_next;
+                        m_next = rand() % models;
+                        memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
+                }
+        }
+
+	/*
+	 * Win32 hack
+ 
 	rotang1 += 2; 
 	rotang2 += 3; 
 	
@@ -401,12 +455,9 @@ void idol(void) {
 	}
 	morph = 1.0 < ma_morph ? 1.0 : ma_morph; 
 //	morph = 0.0;
-
+	*/
 	glutSwapBuffers();
 	glutPostRedisplay();
-
-
-
 }
 
 long start_time;
@@ -421,6 +472,10 @@ int main(int argc, char ** argv) {
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutInitWindowSize(800,600);
 	window = glutCreateWindow("glsnake");
+        gettimeofday(&last_iteration, NULL);
+        memcpy(&last_morph, &last_iteration, sizeof(struct timeval));
+        srand((unsigned int)last_iteration.tv_usec);
+        start_time = last_iteration.tv_sec;
 
 	m = rand() % models;
 	m_next = rand() % models;
@@ -428,8 +483,8 @@ int main(int argc, char ** argv) {
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
 	glutIdleFunc(idol);
-	glutMotionFunc(exit); 
-	//glutPassiveMotionFunc(exit); 
+	/*glutMotionFunc(exit); */
+	/*glutPassiveMotionFunc(exit);*/ 
 	init();
 	glutFullScreen();
 	atexit(unmain);
