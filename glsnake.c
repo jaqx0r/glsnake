@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.38 2001/10/11 09:42:33 andrew Exp $
+/* $Id: glsnake.c,v 1.39 2001/10/13 08:44:20 jaq Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -1551,15 +1551,18 @@ void draw_title(void) {
 	glPushMatrix();
 	glLoadIdentity();
 	gluOrtho2D(0, width, 0, height);
-	glColor3f(1.0, 1.0, 0.0);
+	glColor3f(1.0, 1.0, 1.0);
 	{
 		char * s;
 		int i = 0;
+		int w;
+		
 		if (interactive)
 			s = interactstr;
 		else
 			s = model[curModel].name;
-		glRasterPos2f(0, height - 12);
+		w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (unsigned char *) s);
+		glRasterPos2f(width - w - 3, 4);
 		while (s[i] != 0)
 			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
 	}
