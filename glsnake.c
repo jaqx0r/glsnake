@@ -639,10 +639,12 @@ struct model_s model[] = {
 
     /* These models come from the website at 
      * http://www.geocities.com/stigeide/snake */
+#if 0
     { "Abstract",
         { RIGHT, LEFT, RIGHT, ZERO, PIN, ZERO, LEFT, RIGHT, LEFT, PIN, ZERO, ZERO, PIN, LEFT, RIGHT, LEFT, ZERO, PIN, ZERO, RIGHT, LEFT, RIGHT, ZERO }
     },
-    { "AlanH1",
+#endif
+    { "toadstool",
         { LEFT, RIGHT, ZERO, RIGHT, LEFT, ZERO, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, PIN, RIGHT, LEFT, PIN }
     },
     { "AlanH2",
@@ -672,16 +674,16 @@ struct model_s model[] = {
     { "Beetle",
         { PIN, LEFT, RIGHT, ZERO, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, ZERO, LEFT, RIGHT, PIN, RIGHT }
     },
-    { "Bone",
+    { "bone",
         { PIN, PIN, LEFT, ZERO, PIN, PIN, ZERO, LEFT, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, RIGHT, ZERO, PIN, PIN, ZERO, RIGHT, PIN, PIN }
     },
     { "Bow",
         { LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT }
     },
-    { "Bra",
+    { "bra",
         { RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, LEFT }
     },
-    { "BronchoSaurian",
+    { "bronchosaurus",
         { ZERO, PIN, ZERO, PIN, PIN, ZERO, PIN, ZERO, ZERO, PIN, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, PIN }
     },
     { "Cactus",
@@ -711,12 +713,14 @@ struct model_s model[] = {
     { "Clockwise",
         { RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT }
     },
-    { "Cobra",
+    { "cobra",
         { ZERO, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, LEFT, LEFT, ZERO, LEFT, RIGHT, ZERO, ZERO, PIN, ZERO, ZERO, RIGHT }
     },
+#if 0
     { "Cobra2",
         { LEFT, ZERO, PIN, ZERO, PIN, LEFT, ZERO, PIN, ZERO, LEFT, LEFT, PIN, RIGHT, RIGHT, ZERO, PIN, ZERO, RIGHT, PIN, ZERO, PIN, ZERO, RIGHT }
     },
+#endif
     { "Cobra3",
         { ZERO, LEFT, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, ZERO, ZERO, LEFT, ZERO, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, LEFT }
     },
@@ -789,7 +793,7 @@ struct model_s model[] = {
     { "DoubleRoof",
         { ZERO, LEFT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, ZERO, LEFT, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT }
     },
-    { "DoubleToboggan",
+    { "txoboggan",
         { ZERO, ZERO, ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO, LEFT, PIN, RIGHT, ZERO, ZERO, ZERO, ZERO, PIN }
     },
     { "Doubled",
@@ -816,7 +820,7 @@ struct model_s model[] = {
     { "Esthetic",
         { LEFT, LEFT, PIN, RIGHT, RIGHT, ZERO, LEFT, PIN, RIGHT, PIN, LEFT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT }
     },
-    { "Explotion",
+    { "Explosion",
         { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, LEFT }
     },
     { "F-ZeroXCar",
@@ -906,7 +910,7 @@ struct model_s model[] = {
     { "Iron",
         { ZERO, ZERO, ZERO, ZERO, PIN, RIGHT, ZERO, RIGHT, ZERO, ZERO, LEFT, PIN, RIGHT, ZERO, ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, RIGHT, ZERO, RIGHT }
     },
-    { "JustSquares",
+    { "just squares",
         { RIGHT, RIGHT, LEFT, PIN, LEFT, PIN, RIGHT, PIN, RIGHT, LEFT, LEFT, PIN, RIGHT, RIGHT, LEFT, PIN, LEFT, PIN, RIGHT, PIN, RIGHT, LEFT, LEFT }
     },
     { "Kink",
@@ -924,10 +928,10 @@ struct model_s model[] = {
     { "Long-necked",
         { PIN, ZERO, LEFT, PIN, LEFT, PIN, RIGHT, PIN, RIGHT, ZERO, PIN, ZERO, LEFT, PIN, LEFT, PIN, RIGHT, PIN, LEFT, ZERO, PIN, PIN, ZERO }
     },
-    { "LunaModule",
+    { "lunar module",
         { PIN, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO, RIGHT, LEFT, ZERO, LEFT }
     },
-    { "MagnifyingGlass",
+    { "magnifying glass",
         { ZERO, ZERO, PIN, ZERO, LEFT, ZERO, PIN, PIN, ZERO, ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, ZERO, ZERO }
     },
     { "Mask",
@@ -951,16 +955,16 @@ struct model_s model[] = {
     { "Mountain",
         { ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO, LEFT, PIN, LEFT, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO }
     },
-    { "Mountains",
+    { "mountains",
         { ZERO, PIN, ZERO, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, PIN, RIGHT, PIN, LEFT, PIN, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, ZERO, PIN, ZERO }
     },
     { "MouseWithoutTail",
         { ZERO, PIN, PIN, ZERO, LEFT, ZERO, PIN, PIN, ZERO, ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, PIN, PIN, ZERO, RIGHT, ZERO, PIN, PIN, ZERO }
     },
-    { "Mushroom",
+    { "mushroom",
         { PIN, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO, ZERO, LEFT, PIN, ZERO, RIGHT, ZERO, PIN, PIN, ZERO, LEFT, ZERO, PIN }
     },
-    { "Necklace",
+    { "necklace",
         { ZERO, ZERO, LEFT, ZERO, ZERO, ZERO, LEFT, ZERO, ZERO, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, ZERO, RIGHT, ZERO, ZERO, ZERO, RIGHT, ZERO, ZERO }
     },
     { "NestledAgainst",
@@ -981,7 +985,7 @@ struct model_s model[] = {
     { "Ostrich2",
         { PIN, PIN, ZERO, PIN, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, RIGHT, PIN, ZERO, PIN, ZERO, ZERO, PIN, ZERO }
     },
-    { "PairOfGlasses",
+    { "pair of glasses",
         { ZERO, PIN, ZERO, ZERO, PIN, ZERO, ZERO, PIN, ZERO, LEFT, ZERO, PIN, ZERO, RIGHT, ZERO, PIN, ZERO, ZERO, PIN, ZERO, ZERO, PIN, ZERO }
     },
     { "Parrot",
@@ -1007,9 +1011,11 @@ struct model_s model[] = {
     { "PodRacer",
         { ZERO, PIN, ZERO, PIN, RIGHT, PIN, ZERO, RIGHT, PIN, LEFT, LEFT, PIN, RIGHT, LEFT, ZERO, PIN, PIN, ZERO, ZERO, LEFT, ZERO, PIN, LEFT }
     },
+#if 0
     { "Pokemon",
         { LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT }
     },
+#endif
     { "Prawn",
         { RIGHT, PIN, ZERO, PIN, RIGHT, ZERO, PIN, PIN, ZERO, ZERO, LEFT, PIN, RIGHT, ZERO, ZERO, PIN, PIN, ZERO, LEFT, PIN, ZERO, PIN, LEFT }
     },
@@ -1193,9 +1199,11 @@ struct model_s model[] = {
     { "Tripple",
         { PIN, ZERO, PIN, LEFT, PIN, RIGHT, PIN, RIGHT, PIN, ZERO, PIN, LEFT, PIN, RIGHT, PIN, ZERO, PIN, LEFT, PIN, LEFT, PIN, RIGHT, PIN }
     },
+#if 0
     { "Turtle",
         { RIGHT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, LEFT, PIN, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO, ZERO, LEFT, RIGHT, ZERO }
     },
+#endif
     { "Twins",
         { ZERO, PIN, ZERO, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, PIN, ZERO, ZERO, PIN, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, ZERO, PIN, ZERO, ZERO }
     },
@@ -1208,7 +1216,7 @@ struct model_s model[] = {
     { "UFO",
         { LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT, LEFT, PIN, LEFT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT, RIGHT, LEFT, LEFT }
     },
-    { "USSEnterprice",
+    { "USS Enterprise",
         { LEFT, PIN, RIGHT, PIN, RIGHT, LEFT, ZERO, PIN, PIN, ZERO, RIGHT, LEFT, ZERO, PIN, PIN, ZERO, RIGHT, LEFT, PIN, LEFT, PIN, RIGHT, ZERO }
     },
     { "UpAndDown",
@@ -1232,7 +1240,7 @@ struct model_s model[] = {
     { "Waterfall",
         { LEFT, ZERO, RIGHT, PIN, LEFT, ZERO, RIGHT, PIN, LEFT, ZERO, RIGHT, PIN, LEFT, ZERO, RIGHT, PIN, LEFT, ZERO, RIGHT, PIN, LEFT, ZERO, RIGHT }
     },
-    { "WindWheel",
+    { "windwheel",
         { PIN, RIGHT, RIGHT, PIN, ZERO, LEFT, PIN, RIGHT, RIGHT, PIN, ZERO, LEFT, PIN, RIGHT, RIGHT, PIN, ZERO, LEFT, PIN, RIGHT, RIGHT, PIN, ZERO }
     },
     { "Window",
