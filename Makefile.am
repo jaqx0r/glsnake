@@ -2,11 +2,11 @@
 
 bin_PROGRAMS = glsnake
 
-glsnake_SOURCES = glsnake.c loader.c
+glsnake_SOURCES = glsnake.c
 glsnake_CFLAGS = @GLUT_CFLAGS@
 glsnake_LDADD = @GLUT_LIBS@
 
-noinst_HEADERS = model.h
+noinst_HEADERS = models.h
 
 man_MANS = glsnake.6
 

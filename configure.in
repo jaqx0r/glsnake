@@ -99,19 +99,6 @@ AC_CHECK_HEADERS([stddef.h stdlib.h string.h sys/timeb.h])
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([atexit ftime memset sqrt strdup])
 
-dnl fill in path variables
-
-dnl $libdir usually gets set to ${exec_prefix}/lib,
-dnl $prefix and $exec_prefix is likely to be "NONE"
-dnl autoconf usually sets pkgdatadir correctly in the makefile, but not
-dnl in the configure script
-
-test "$prefix" = "NONE" && prefix=/usr/local
-test "$exec_prefix" = "NONE" && exec_prefix=$prefix
-
-eval PKGDATADIR="$datadir/$PACKAGE"
-AC_DEFINE_UNQUOTED(PKGDATADIR, "$PKGDATADIR", [Define this path to where data files are kept])
-
 dnl spit it out
 AC_CONFIG_FILES([
 	Makefile
@@ -126,8 +113,7 @@ glsnake $VERSION: automatic configuration OK!
 
 Configuration summary:
 
-  Program: ............. ${prefix}/bin
-  Model data: .......... $PKGDATADIR
+  Program: ............. ${prefix}/bin/glsnake
 
 Type 'make' to compile glsnake.
 ])

@@ -42,7 +42,7 @@
 #include <string.h>
 #include <math.h>
 #include <libgen.h>
-#include "model.h"
+#include "models.h"
 
 #define X_MASK	1
 #define Y_MASK	2
@@ -64,11 +64,9 @@
 
 #define GETSCALAR(vec,mask) ((vec)==(mask) ? 1 : ((vec)==-(mask) ? -1 : 0 ))
 
-#ifndef M_SQRT1_2	/* Win32 doesn't have this constant */
+#ifndef M_SQRT1_2	/* Win32 doesn't have this constant  */
 #define M_SQRT1_2 0.70710678118654752440084436210485
 #endif
-
-#define DATA(x) DATADIR ## x
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
@@ -144,11 +142,6 @@ float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
 			   {-1.0, 0.0, 0.0},
 			   { 0.0, 0.0,-1.0}};
 
-/* model loading function in loader.c */
-//model_t * load_modelfile(char * basedir, char * filename, model_t * models, int * count);
-//model_t * load_modelfile(char * filename, model_t * models, int * count);
-model_t * load_models(char * dirname, model_t * models, int * count);
-
 typedef struct {
     float prevAngle;
     float curAngle;
@@ -159,8 +152,6 @@ int selected = 11;
 
 nodeAng node[24];
 
-model_t * model;
-int models;
 int m;
 int curModel;
 
@@ -1228,21 +1219,8 @@ int main(int argc, char ** argv) {
     width = 320;
     height = 240;
     
-    /* this is so we can run it from the source directory */
-    basedir = (char *) malloc(sizeof(char) * (strlen(dirname(argv[0])) + strlen("/data") + 1));
-    sprintf(basedir, "%s/data", dirname(argv[0]));
-    
     glutInit(&argc, argv);
     
-    models = 0;
-    model = load_models(basedir, model, &models);
-    model = load_models(PKGDATADIR, model, &models);
-    free(basedir);
-    
-    if (models == 0) {
-	fputs("Unable to read any models!  Aborting...\n", stderr);
-	return 1;
-    }
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(width, height);
     window = glutCreateWindow("glsnake");
