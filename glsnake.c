@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.11 2001/10/04 16:39:08 jaq Exp $
+/* $Id: glsnake.c,v 1.12 2001/10/05 03:01:22 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -762,7 +762,7 @@ void calc_snake_metrics() {
 	x = y = z = 12;
 
 	for (i = 0; i < 23; i++) {
-		// establish new state vars
+		/* establish new state vars */
 		srcDir = -prevDstDir;
 		x += GETSCALAR(prevDstDir, X_MASK);
 		y += GETSCALAR(prevDstDir, Y_MASK);
@@ -777,7 +777,7 @@ void calc_snake_metrics() {
 				break;
 			case (int) RIGHT:
 			case (int) LEFT:
-				// think cross product
+				/* think cross product */
 				dstDir = X_MASK * (GETSCALAR(prevSrcDir, Y_MASK) * GETSCALAR(prevDstDir, Z_MASK) -
 					GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, Y_MASK) ) + 
 					Y_MASK * (	GETSCALAR(prevSrcDir, Z_MASK) * GETSCALAR(prevDstDir, X_MASK) -
