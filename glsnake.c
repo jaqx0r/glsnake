@@ -1,4 +1,4 @@
-/* $Id: glsnake.c,v 1.19 2001/10/05 10:39:50 andrew Exp $
+/* $Id: glsnake.c,v 1.20 2001/10/05 14:12:48 andrew Exp $
  * 
  * An OpenGL imitation of Rubik's Snake 
  * (c) 2001 Jamie Wilkinson <jaq@spacepants.org>,
@@ -743,10 +743,17 @@ void display(void) {
 	glutSwapBuffers();
 }
 
+int window_width, window_height;
+int fullscreen = 0;
+
 /* wot gets called when the winder is resized */
 void reshape(int width, int height) {
 	glViewport(0, 0, width, height);
 	gluPerspective(60.0, width/(float)height, 0.05, 100.0);
+	if (!fullscreen) {
+		window_width = width;
+		window_height = height;
+	}
 }
 
 /* calculate snake metrics */
@@ -967,6 +974,15 @@ void keyboard(unsigned char c, int x, int y) {
 					printf(", ");
 			}
 			printf(" };\n");
+			break;
+		case 'f':
+			if (fullscreen) {
+				fullscreen = 0;
+				glutReshapeWindow(window_width, window_height);
+			} else {
+				fullscreen = 1;
+				glutFullScreen();
+			}
 			break;
 		default:
 			break;
