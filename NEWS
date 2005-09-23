@@ -1,6 +1,9 @@
 NEWS for glsnake
 ----------------
 
+* 0.9.0:
+- Changed build system to SCons.
+
 Version 0.8.9:
 * A lot of changes since the last version, including:
   - a rework of the code to merge the xscreensaver port back into the
