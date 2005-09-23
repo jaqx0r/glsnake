@@ -1860,6 +1860,11 @@ float morph_percent(void) {
 	/* ang_diff / rot approaches 0, we want the complement */
 	retval = 1.0 - (ang_diff_max / rot_max);
 	/* protect against naan */
+
+/* Apparently some systems (Solaris) don't have isinf() */
+#undef isinf
+#define isinf(x) (((x) > 999999999999.9) || ((x) < -999999999999.9))
+
 	if (isnan(retval) || isinf(retval)) retval = 1.0;
     }
     /*printf("morph_pct = %f\n", retval);*/
