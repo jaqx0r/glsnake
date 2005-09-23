@@ -112,7 +112,7 @@
 
 static GLfloat explode;
 static long statictime;
-static GLfloat yspin = 45.0;
+static GLfloat yspin = 60.0;
 static GLfloat zspin = -45.0;
 static GLfloat yangvel;
 static GLfloat zangvel;
@@ -1481,7 +1481,7 @@ ModeInfo * mi
     bp->is_legal = 1;
     bp->last_turn = -1;
     bp->morphing = 0;
-    bp->paused = 0;
+    bp->paused = 1;
     bp->new_morph = 0;
 
     gettime(&bp->last_iteration);
