@@ -1477,7 +1477,7 @@ ModeInfo * mi
     bp->is_legal = 1;
     bp->last_turn = -1;
     bp->morphing = 0;
-    bp->paused = 1;
+    bp->paused = 0;
     bp->new_morph = 0;
 
     gettime(&bp->last_iteration);
