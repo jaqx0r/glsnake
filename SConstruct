@@ -55,7 +55,7 @@ warnings = ['',
 			'nested-externs',
 			'shadow',
 			'bad-function-cast',
-#			'write-strings'
+			'write-strings'
 			]
 env.AppendUnique(CCFLAGS=['-W%s' % (w,) for w in warnings])
 

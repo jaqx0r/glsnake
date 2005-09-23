@@ -191,7 +191,7 @@ ModeSpecOpt sws_opts = {countof(opts), opts, countof(vars), vars, NULL};
 #endif
 
 struct model_s {
-    char * name;
+    const char * name;
     float node[NODE_COUNT];
 };
 
@@ -1674,7 +1674,7 @@ void draw_title(
     glColor3f(1.0, 1.0, 1.0);
     {
 	char interactstr[] = "interactive";
-	char * s;
+	const char * s;
 	int i = 0;
 #ifdef HAVE_GLUT
 	int w;
@@ -1685,7 +1685,7 @@ void draw_title(
 	else
 	    s = model[glc->next_model].name;
 #ifdef HAVE_GLUT
-	w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (unsigned char *) s);
+	w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *) s);
 	glRasterPos2f(glc->width - w - 3, 4);
 	while (s[i] != '\0')
 	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
