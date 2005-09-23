@@ -112,8 +112,8 @@
 
 static GLfloat explode;
 static long statictime;
-static GLfloat yspin = 0;
-static GLfloat zspin = 0;
+static GLfloat yspin = 45.0;
+static GLfloat zspin = -45.0;
 static GLfloat yangvel;
 static GLfloat zangvel;
 static Bool altcolour;
@@ -257,6 +257,7 @@ struct glsnake_cfg {
 #define COLOUR_ACYCLIC 1
 #define COLOUR_INVALID 2
 #define COLOUR_AUTHENTIC 3
+#define COLOUR_ORIGLOGO 4
 
 float colour[][2][3] = {
     /* cyclic - green */
@@ -270,7 +271,10 @@ float colour[][2][3] = {
       { 1.0, 1.0, 1.0 } },
     /* authentic - purple and green */
     { { 0.38, 0.0, 0.55 },
-      { 0.0,  0.5, 0.34 } }
+      { 0.0,  0.5, 0.34 } },
+    /* old "authentic" colours from the logo */
+    { { 171/255.0, 0, 1.0 },
+      { 46/255.0, 205/255.0, 227/255.0 } }
 };
 
 struct model_s model[] = {
@@ -281,12 +285,12 @@ struct model_s model[] = {
 	ZERO, ZERO }
     },
     /* the models in the Rubik's snake manual */
-#define START_MODEL 1
     { "ball",
       { RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT, RIGHT, LEFT,
 	RIGHT, LEFT, LEFT, RIGHT, RIGHT, LEFT, LEFT, RIGHT, LEFT, RIGHT,
 	RIGHT, LEFT, RIGHT, LEFT }
     },
+#define START_MODEL 2
     { "snow",
       { RIGHT, RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT,
 	RIGHT, RIGHT, RIGHT, LEFT, LEFT, LEFT, LEFT, RIGHT, RIGHT, RIGHT,
