@@ -49,12 +49,12 @@ int main() {
 warnings = ['',
 			'all',
 			'error',
-#			'aggregate-return',
-#			'cast-align',
-#			'cast-qual',
-#			'nested-externs',
-#			'shadow',
-#			'bad-function-cast',
+			'aggregate-return',
+			'cast-align',
+			'cast-qual',
+			'nested-externs',
+			'shadow',
+			'bad-function-cast',
 #			'write-strings'
 			]
 env.AppendUnique(CCFLAGS=['-W%s' % (w,) for w in warnings])
