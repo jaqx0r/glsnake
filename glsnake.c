@@ -562,7 +562,6 @@ struct model_s model[] = {
 	ZERO, PIN, ZERO, ZERO, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, ZERO,
 	ZERO, PIN, ZERO }
     },
-#if 0
     { "erect penis",     /* thanks benno */
       { PIN, ZERO, PIN, PIN, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, PIN,
 	PIN, ZERO, ZERO, ZERO, RIGHT, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
@@ -578,7 +577,6 @@ struct model_s model[] = {
 	LEFT, ZERO, ZERO, ZERO, LEFT, ZERO, LEFT, PIN, LEFT, PIN, RIGHT,
 	PIN, RIGHT, ZERO }
     },
-#endif
     { "mask",
       { ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, PIN, ZERO, ZERO, PIN,
 	ZERO, ZERO, PIN, ZERO, PIN, ZERO, PIN, ZERO, ZERO, PIN, ZERO,
