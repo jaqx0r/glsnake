@@ -8,10 +8,10 @@ shapes with this toy.
 
 Read the fine manual page for usage instructions.
 
-If you've got this in a tarball, you should be able to do the standard old
-./configure
-make
-make install
+If you've got this in a tarball, make sure you have SCons, and GLUT:
+
+% scons
+
 thing to get this up and running.
 
  -- Jamie Wilkinson <jaq@spacepants.org>
