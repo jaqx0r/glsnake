@@ -234,7 +234,7 @@ struct glsnake_cfg {
     int new_morph;
 
     /* colours */
-    float colour[2][3];
+    float colour[2][4];
     int next_colour;
     int prev_colour;
 
@@ -259,22 +259,22 @@ struct glsnake_cfg {
 #define COLOUR_AUTHENTIC 3
 #define COLOUR_ORIGLOGO 4
 
-float colour[][2][3] = {
+float colour[][2][4] = {
     /* cyclic - green */
-    { { 0.4, 0.8, 0.2 },
-      { 1.0, 1.0, 1.0 } },
+    { { 0.4, 0.8, 0.2, 0.8 },
+      { 1.0, 1.0, 1.0, 0.8 } },
     /* acyclic - blue */
-    { { 0.3, 0.1, 0.9 },
-      { 1.0, 1.0, 1.0 } },
+    { { 0.3, 0.1, 0.9, 0.8 },
+      { 1.0, 1.0, 1.0, 0.8 } },
     /* invalid - grey */
-    { { 0.3, 0.1, 0.9 },
-      { 1.0, 1.0, 1.0 } },
+    { { 0.3, 0.1, 0.9, 0.8 },
+      { 1.0, 1.0, 1.0, 0.8 } },
     /* authentic - purple and green */
-    { { 0.38, 0.0, 0.55 },
-      { 0.0,  0.5, 0.34 } },
+    { { 0.38, 0.0, 0.55, 0.8 },
+      { 0.0,  0.5, 0.34, 0.8 } },
     /* old "authentic" colours from the logo */
-    { { 171/255.0, 0, 1.0 },
-      { 46/255.0, 205/255.0, 227/255.0 } }
+    { { 171/255.0, 0, 1.0, 0.8 },
+      { 46/255.0, 205/255.0, 227/255.0, 0.8 } }
 };
 
 struct model_s model[] = {
@@ -1368,6 +1368,11 @@ void calc_rotation();
 inline void ui_mousedrag();
 #endif
 
+GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };
+GLfloat lmodel_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
+GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+GLfloat mat_shininess[] = { 50.0 };
+
 void gl_init(
 #ifndef HAVE_GLUT
 	     ModeInfo * mi
@@ -1376,23 +1381,31 @@ void gl_init(
     float light_pos[][3] = {{0.0, 0.0, 20.0}, {0.0, 20.0, 0.0}};
     float light_dir[][3] = {{0.0, 0.0,-20.0}, {0.0,-20.0, 0.0}};
 
-    glClearColor(0.0, 0.0, 0.0, 0.0);
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
     glEnable(GL_NORMALIZE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
 
     if (!wireframe) {
-	glColor3f(1.0, 1.0, 1.0);
+	/*glColor4f(1.0, 1.0, 1.0, 1.0);*/
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos[0]);
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_dir[0]);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
 	glLightfv(GL_LIGHT1, GL_POSITION, light_pos[1]);
 	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir[1]);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, white_light);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, white_light);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHT1);
-	glEnable(GL_COLOR_MATERIAL);
+	/*glEnable(GL_COLOR_MATERIAL);*/
     }
 }
 
@@ -1660,6 +1673,7 @@ void draw_title(
     glPushAttrib(GL_TRANSFORM_BIT | GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -1671,7 +1685,7 @@ void draw_title(
 #else
     gluOrtho2D(0, mi->xgwa.width, 0, mi->xgwa.height);
 #endif
-    glColor3f(1.0, 1.0, 1.0);
+    glColor4f(1.0, 1.0, 1.0, 1.0);
     {
 	char interactstr[] = "interactive";
 	const char * s;
@@ -1880,10 +1894,12 @@ void morph_colour(void) {
     glc->colour[0][0] = colour[glc->prev_colour][0][0] * compct + colour[glc->next_colour][0][0] * percent;
     glc->colour[0][1] = colour[glc->prev_colour][0][1] * compct + colour[glc->next_colour][0][1] * percent;
     glc->colour[0][2] = colour[glc->prev_colour][0][2] * compct + colour[glc->next_colour][0][2] * percent;
+    glc->colour[0][3] = colour[glc->prev_colour][0][3] * compct + colour[glc->next_colour][0][3] * percent;
 
     glc->colour[1][0] = colour[glc->prev_colour][1][0] * compct + colour[glc->next_colour][1][0] * percent;
     glc->colour[1][1] = colour[glc->prev_colour][1][1] * compct + colour[glc->next_colour][1][1] * percent;
     glc->colour[1][2] = colour[glc->prev_colour][1][2] * compct + colour[glc->next_colour][1][2] * percent;
+    glc->colour[1][3] = colour[glc->prev_colour][1][3] * compct + colour[glc->next_colour][1][3] * percent;
 }
 
 /* Start morph process to this model */
@@ -1914,9 +1930,11 @@ void start_morph(int model_index, int immediate) {
 	glc->colour[0][0] = colour[glc->next_colour][0][0];
 	glc->colour[0][1] = colour[glc->next_colour][0][1];
 	glc->colour[0][2] = colour[glc->next_colour][0][2];
+	glc->colour[0][3] = colour[glc->next_colour][0][3];
 	glc->colour[1][0] = colour[glc->next_colour][1][0];
 	glc->colour[1][1] = colour[glc->next_colour][1][1];
 	glc->colour[1][2] = colour[glc->next_colour][1][2];
+	glc->colour[1][3] = colour[glc->next_colour][1][3];
     }
     glc->morphing = 1;
 
@@ -2178,7 +2196,7 @@ void glsnake_display(
     glTranslatef(-com[0], -com[1], -com[2]);
 
     glDisable(GL_LIGHTING);
-    glColor3f(1.0, 0.0, 0.0);
+    glColor4f(1.0, 0.0, 0.0, 1.0);
     glBegin(GL_LINE_STRIP);
     for (i = 0; i < NODE_COUNT - 1; i++) {
 	glVertex3fv(positions[i]);
@@ -2206,9 +2224,13 @@ void glsnake_display(
 	/* choose a colour for this node */
 	if ((i == glc->selected || i == glc->selected+1) && interactive)
 	    /* yellow */
-	    glColor3f(1.0, 1.0, 0.0);
-	else
-	    glColor3fv(glc->colour[(i+1)%2]);
+	    glColor4f(1.0, 1.0, 0.0, 1.0);
+	else {
+	    /*glColor4fv(glc->colour[(i+1)%2]);*/
+	    glMaterialfv(GL_FRONT, GL_AMBIENT, glc->colour[(i+1)%2]);
+	    glMaterialfv(GL_FRONT, GL_DIFFUSE, glc->colour[(i+1)%2]);
+	    /*glMaterialfv(GL_FRONT, GL_SPECULAR, glc->colour[(i+1)%2]);*/
+	}
 
 	/* draw the node */
 	if (wireframe)
