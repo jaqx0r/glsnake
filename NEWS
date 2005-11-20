@@ -2,7 +2,7 @@ NEWS for glsnake
 ----------------
 
 * 0.9.0:
-- Changed build system to SCons.
+- Changed build system to SCons, which is great news for all our users!
 - Added alpha-blending for transparent nodes.
 
 Version 0.8.9:
