@@ -261,20 +261,20 @@ struct glsnake_cfg {
 
 float colour[][2][4] = {
     /* cyclic - green */
-    { { 0.4, 0.8, 0.2, 0.8 },
-      { 1.0, 1.0, 1.0, 0.8 } },
+    { { 0.4, 0.8, 0.2, 0.6 },
+      { 1.0, 1.0, 1.0, 0.6 } },
     /* acyclic - blue */
-    { { 0.3, 0.1, 0.9, 0.8 },
-      { 1.0, 1.0, 1.0, 0.8 } },
+    { { 0.3, 0.1, 0.9, 0.6 },
+      { 1.0, 1.0, 1.0, 0.6 } },
     /* invalid - grey */
-    { { 0.3, 0.1, 0.9, 0.8 },
-      { 1.0, 1.0, 1.0, 0.8 } },
+    { { 0.3, 0.1, 0.9, 0.6 },
+      { 1.0, 1.0, 1.0, 0.6 } },
     /* authentic - purple and green */
-    { { 0.38, 0.0, 0.55, 0.8 },
-      { 0.0,  0.5, 0.34, 0.8 } },
+    { { 0.38, 0.0, 0.55, 1.0 },
+      { 0.0,  0.5, 0.34, 1.0 } },
     /* old "authentic" colours from the logo */
-    { { 171/255.0, 0, 1.0, 0.8 },
-      { 46/255.0, 205/255.0, 227/255.0, 0.8 } }
+    { { 171/255.0, 0, 1.0, 1.0 },
+      { 46/255.0, 205/255.0, 227/255.0, 1.0 } }
 };
 
 struct model_s model[] = {
@@ -1384,10 +1384,10 @@ void gl_init(
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
     glCullFace(GL_BACK);
-    glEnable(GL_CULL_FACE);
+    /*glEnable(GL_CULL_FACE);*/
     glEnable(GL_NORMALIZE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
+    /*glEnable(GL_BLEND);*/
 
     if (!wireframe) {
 	/*glColor4f(1.0, 1.0, 1.0, 1.0);*/
@@ -1395,10 +1395,12 @@ void gl_init(
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_dir[0]);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
+#if 0
 	glLightfv(GL_LIGHT1, GL_POSITION, light_pos[1]);
 	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir[1]);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, white_light);
-	glLightfv(GL_LIGHT1, GL_SPECULAR, white_light);
+	/*glLightfv(GL_LIGHT1, GL_SPECULAR, white_light);*/
+#endif
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
