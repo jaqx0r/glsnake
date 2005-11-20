@@ -1369,8 +1369,8 @@ inline void ui_mousedrag();
 #endif
 
 GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };
-GLfloat lmodel_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
-GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
+GLfloat mat_specular[] = { 0.1, 0.1, 0.1, 1.0 };
 GLfloat mat_shininess[] = { 20.0 };
 
 void gl_init(
@@ -2286,8 +2286,8 @@ int main(int argc, char ** argv) {
     glc = malloc(sizeof(struct glsnake_cfg));
     memset(glc, 0, sizeof(struct glsnake_cfg));
 
-    glc->width = 320;
-    glc->height = 240;
+    glc->width = 640;
+    glc->height = 480;
     
     ui_init(&argc, argv);
 
