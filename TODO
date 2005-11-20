@@ -5,4 +5,3 @@ TODO for glsnake
 - clean up models (remove duplicates, fix names)
 - cel shading -- check for multitexture and use cel shading with
     scratch textures othrerwise just smooth shading with scratch tex.
-- alpha blending for faces
