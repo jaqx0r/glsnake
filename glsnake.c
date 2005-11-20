@@ -1371,15 +1371,15 @@ inline void ui_mousedrag();
 GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };
 GLfloat lmodel_ambient[] = { 0.1, 0.1, 0.1, 1.0 };
 GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-GLfloat mat_shininess[] = { 50.0 };
+GLfloat mat_shininess[] = { 20.0 };
 
 void gl_init(
 #ifndef HAVE_GLUT
 	     ModeInfo * mi
 #endif
 	     ) {
-    float light_pos[][3] = {{0.0, 0.0, 20.0}, {0.0, 20.0, 0.0}};
-    float light_dir[][3] = {{0.0, 0.0,-20.0}, {0.0,-20.0, 0.0}};
+    float light_pos[][3] = {{0.0, 10.0, 20.0}, {0.0, 20.0, -1.0}};
+    float light_dir[][3] = {{0.0, -10.0,-20.0}, {0.0,-20.0, 1.0}};
 
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
@@ -1387,19 +1387,19 @@ void gl_init(
     /*glEnable(GL_CULL_FACE);*/
     glEnable(GL_NORMALIZE);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    /*glEnable(GL_BLEND);*/
+    glEnable(GL_BLEND);
 
     if (!wireframe) {
 	/*glColor4f(1.0, 1.0, 1.0, 1.0);*/
 	glLightfv(GL_LIGHT0, GL_POSITION, light_pos[0]);
 	glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, light_dir[0]);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
-#if 0
+	/*glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);*/
+#if 1
 	glLightfv(GL_LIGHT1, GL_POSITION, light_pos[1]);
 	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_dir[1]);
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, white_light);
-	/*glLightfv(GL_LIGHT1, GL_SPECULAR, white_light);*/
+	glLightfv(GL_LIGHT1, GL_SPECULAR, white_light);
 #endif
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
