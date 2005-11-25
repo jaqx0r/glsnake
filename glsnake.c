@@ -2553,8 +2553,8 @@ void ui_motion(int x, int y) {
     if (dragging) {
 	/* construct the motion end vector from the x,y position on the
 	 * window */
-	m_e[0] = (x - (glc->width/ 2.0)) / (glc->width / 2.0);
-	m_e[1] = ((glc->height / 2.0) - y) / (glc->height / 2.0);
+	m_e[0] = M_SQRT1_2 * (x - (glc->width/ 2.0)) / (glc->width / 2.0);
+	m_e[1] = M_SQRT1_2 * ((glc->height / 2.0) - y) / (glc->height / 2.0);
 	/* calculate the normal of the vector... */
 	norm = m_e[0] * m_e[0] + m_e[1] * m_e[1];
 	/* check if norm is outside the sphere and wraparound if necessary */
