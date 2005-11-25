@@ -87,6 +87,7 @@
 #define DEF_INTERACTIVE 0
 #define DEF_ZOOM        25.0
 #define DEF_WIREFRAME   0
+#define DEF_TRANSPARENT 1
 #else
 /* xscreensaver options doobies prefer strings */
 #define DEF_YANGVEL     "0.10"
@@ -100,6 +101,7 @@
 #define DEF_INTERACTIVE "False"
 #define DEF_ZOOM        "25.0"
 #define DEF_WIREFRAME   "False"
+#define DEF_TRANSPARENT "True"
 #endif
 
 /* static variables */
@@ -120,6 +122,7 @@ static Bool altcolour;
 static Bool titles;
 static Bool interactive;
 static Bool wireframe;
+static Bool transparent;
 static GLfloat zoom;
 static GLfloat angvel;
 
@@ -139,6 +142,7 @@ extern XtAppContext app;
                  "*count:          30                         \n" \
                  "*showFPS:        False                      \n" \
                  "*wireframe:      False                      \n" \
+                 "*transparent:    True                       \n" \
                  "*explode:      " DEF_EXPLODE              " \n" \
                  "*angvel:       " DEF_ANGVEL               " \n" \
                  "*accel:        " DEF_ACCEL                " \n" \
@@ -171,6 +175,8 @@ static XrmOptionDescRec opts[] = {
     { "-zoom", ".zoom", XrmoptionSepArg, DEF_ZOOM },
     { "-wireframe", ".wireframe", XrmoptionNoArg, (caddr_t) "true" },
     { "-no-wireframe", ".wireframe", XrmoptionNoArg, (caddr_t) "false" },
+    { "-transparent", ".transparent", XrmoptionNoArg, (caddr_t) "true" },
+    { "-no-transparent", ".transparent", XrmoptionNoArg, (caddr_t) "false" },
 };
 
 static argtype vars[] = {
@@ -185,6 +191,7 @@ static argtype vars[] = {
     {(caddr_t *) &titles, "titles", "Titles", DEF_TITLES, t_Bool},
     {(caddr_t *) &zoom, "zoom", "Zoom", DEF_ZOOM, t_Float},
     {(caddr_t *) &wireframe, "wireframe", "Wireframe", DEF_WIREFRAME, t_Bool},
+    {(caddr_t *) &transparent, "transparent", "Transparent!", DEF_TRANSPARENT, t_Bool},
 };
 
 ModeSpecOpt sws_opts = {countof(opts), opts, countof(vars), vars, NULL};
@@ -270,8 +277,8 @@ float colour[][2][4] = {
     { { 0.3, 0.1, 0.9, 0.6 },
       { 1.0, 1.0, 1.0, 0.6 } },
     /* authentic - purple and green */
-    { { 0.38, 0.0, 0.55, 1.0 },
-      { 0.0,  0.5, 0.34, 1.0 } },
+    { { 0.38, 0.0, 0.55, 0.7 },
+      { 0.0,  0.5, 0.34, 0.7 } },
     /* old "authentic" colours from the logo */
     { { 171/255.0, 0, 1.0, 1.0 },
       { 46/255.0, 205/255.0, 227/255.0, 1.0 } }
@@ -1386,8 +1393,10 @@ void gl_init(
     glCullFace(GL_BACK);
     /*glEnable(GL_CULL_FACE);*/
     glEnable(GL_NORMALIZE);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
+    if (transparent) {
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+    }
 
     if (!wireframe) {
 	/*glColor4f(1.0, 1.0, 1.0, 1.0);*/
@@ -1675,7 +1684,9 @@ void draw_title(
     glPushAttrib(GL_TRANSFORM_BIT | GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
+    if (transparent) {
+	glDisable(GL_BLEND);
+    }
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
@@ -2422,6 +2433,14 @@ void ui_keyboard(unsigned char c, int x, int y) {
 	    glEnable(GL_LIGHTING);
 	glutPostRedisplay();
 	break;
+      case 'a':
+	transparent = 1 - transparent;
+	if (transparent) {
+	    glEnable(GL_BLEND);
+	} else {
+	    glDisable(GL_BLEND);
+	}
+	break;
       case 'p':
 	if (glc->paused) {
 	    /* unpausing, reset last_iteration and last_morph time */
@@ -2467,7 +2486,7 @@ void ui_keyboard(unsigned char c, int x, int y) {
 	if (interactive || glc->paused)
 	    glutPostRedisplay();
 	break;
-      case 'a':
+      case 'c':
 	altcolour = 1 - altcolour;
 	break;
       case 'z':
@@ -2612,5 +2631,6 @@ void ui_init(int * argc, char ** argv) {
     interactive = DEF_INTERACTIVE;
     zoom = DEF_ZOOM;
     wireframe = DEF_WIREFRAME;
+    transparent = DEF_TRANSPARENT;
 }
 #endif /* HAVE_GLUT */
