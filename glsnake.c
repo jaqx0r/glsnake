@@ -2343,7 +2343,7 @@ float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,0.1};
 float rotation[16];
 
 /* mouse drag vectors: start and end */
-float m_s[3], m_e[3];
+float mouse_start[3], mouse_end[3];
 
 /* dragging boolean */
 int dragging = 0;
@@ -2554,11 +2554,11 @@ void ui_mouse(int button, int state, int x, int y) {
 	switch (state) {
 	  case GLUT_DOWN:
 	    dragging = 1;
-	    m_s[0] = M_SQRT1_2 * 
+	    mouse_start[0] = M_SQRT1_2 * 
 		(x - (glc->width / 2.0)) / (glc->width / 2.0);
-	    m_s[1] = M_SQRT1_2 * 
+	    mouse_start[1] = M_SQRT1_2 * 
 		((glc->height / 2.0) - y) / (glc->height / 2.0);
-	    m_s[2] = sqrt(1-(m_s[0]*m_s[0]+m_s[1]*m_s[1]));
+	    mouse_start[2] = sqrt(1-(mouse_start[0]*mouse_start[0]+mouse_start[1]*mouse_start[1]));
 	    break;
 	  case GLUT_UP:
 	    dragging = 0;
@@ -2581,25 +2581,25 @@ void ui_motion(int x, int y) {
     if (dragging) {
 	/* construct the motion end vector from the x,y position on the
 	 * window */
-	m_e[0] = M_SQRT1_2 * (x - (glc->width/ 2.0)) / (glc->width / 2.0);
-	m_e[1] = M_SQRT1_2 * ((glc->height / 2.0) - y) / (glc->height / 2.0);
+	mouse_end[0] = M_SQRT1_2 * (x - (glc->width/ 2.0)) / (glc->width / 2.0);
+	mouse_end[1] = M_SQRT1_2 * ((glc->height / 2.0) - y) / (glc->height / 2.0);
 	/* calculate the normal of the vector... */
-	norm = m_e[0] * m_e[0] + m_e[1] * m_e[1];
+	norm = mouse_end[0] * mouse_end[0] + mouse_end[1] * mouse_end[1];
 	/* check if norm is outside the sphere and wraparound if necessary */
 	if (norm > 1.0) {
-	    m_e[0] = -m_e[0];
-	    m_e[1] = -m_e[1];
-	    m_e[2] = sqrt(norm - 1);
+	    mouse_end[0] = -mouse_end[0];
+	    mouse_end[1] = -mouse_end[1];
+	    mouse_end[2] = sqrt(norm - 1);
 	} else {
 	    /* the z value comes from projecting onto an elliptical spheroid */
-	    m_e[2] = sqrt(1 - norm);
+	    mouse_end[2] = sqrt(1 - norm);
 	}
 
-	/* now here, build a quaternion from m_s and m_e */
-	q[0] = m_s[1] * m_e[2] - m_s[2] * m_e[1];
-	q[1] = m_s[2] * m_e[0] - m_s[0] * m_e[2];
-	q[2] = m_s[0] * m_e[1] - m_s[1] * m_e[0];
-	q[3] = m_s[0] * m_e[0] + m_s[1] * m_e[1] + m_s[2] * m_e[2];
+	/* now here, build a quaternion from mouse_start and mouse_end */
+	q[0] = mouse_start[1] * mouse_end[2] - mouse_start[2] * mouse_end[1];
+	q[1] = mouse_start[2] * mouse_end[0] - mouse_start[0] * mouse_end[2];
+	q[2] = mouse_start[0] * mouse_end[1] - mouse_start[1] * mouse_end[0];
+	q[3] = mouse_start[0] * mouse_end[0] + mouse_start[1] * mouse_end[1] + mouse_start[2] * mouse_end[2];
 
 	/* new rotation is the product of the new one and the old one */
 	cumquat[0] = q[3] * oldquat[0] + q[0] * oldquat[3] + 
