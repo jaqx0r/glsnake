@@ -183,17 +183,17 @@ static XrmOptionDescRec opts[] = {
 };
 
 static argtype vars[] = {
-    {(caddr_t *) &explode, "explode", "Explode", DEF_EXPLODE, t_Float},
-    {(caddr_t *) &angvel, "angvel", "Angular Velocity", DEF_ANGVEL, t_Float},
-    {(caddr_t *) &statictime, "statictime", "Static Time", DEF_STATICTIME, t_Int},
-    {(caddr_t *) &yangvel, "yangvel", "Angular Velocity about Y axis", DEF_YANGVEL, t_Float},
-    {(caddr_t *) &zangvel, "zangvel", "Angular Velocity about X axis", DEF_ZANGVEL, t_Float},
-    {(caddr_t *) &interactive, "interactive", "Interactive", DEF_INTERACTIVE, t_Bool},
-    {(caddr_t *) &altcolour, "altcolour", "Alternate Colour Scheme", DEF_ALTCOLOUR, t_Bool},
-    {(caddr_t *) &titles, "titles", "Titles", DEF_TITLES, t_Bool},
-    {(caddr_t *) &zoom, "zoom", "Zoom", DEF_ZOOM, t_Float},
-    {(caddr_t *) &wireframe, "wireframe", "Wireframe", DEF_WIREFRAME, t_Bool},
-    {(caddr_t *) &transparent, "transparent", "Transparent!", DEF_TRANSPARENT, t_Bool},
+    {&explode, "explode", "Explode", DEF_EXPLODE, t_Float},
+    {&angvel, "angvel", "Angular Velocity", DEF_ANGVEL, t_Float},
+    {&statictime, "statictime", "Static Time", DEF_STATICTIME, t_Int},
+    {&yangvel, "yangvel", "Angular Velocity about Y axis", DEF_YANGVEL, t_Float},
+    {&zangvel, "zangvel", "Angular Velocity about X axis", DEF_ZANGVEL, t_Float},
+    {&interactive, "interactive", "Interactive", DEF_INTERACTIVE, t_Bool},
+    {&altcolour, "altcolour", "Alternate Colour Scheme", DEF_ALTCOLOUR, t_Bool},
+    {&titles, "titles", "Titles", DEF_TITLES, t_Bool},
+    {&zoom, "zoom", "Zoom", DEF_ZOOM, t_Float},
+    {&wireframe, "wireframe", "Wireframe", DEF_WIREFRAME, t_Bool},
+    {&transparent, "transparent", "Transparent!", DEF_TRANSPARENT, t_Bool},
 };
 
 ModeSpecOpt sws_opts = {(int)countof(opts), opts, (int)countof(vars), vars, NULL};
