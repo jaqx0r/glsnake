@@ -2185,9 +2185,9 @@ void glsnake_display(
 	/*printf("ang = %f\n", ang);*/
 	
 	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
-	glRotatef(90, 0.0, 0.0, -1.0);		/* reorient  */
+	glRotatef(90.0, 0.0, 0.0, -1.0);	/* reorient  */
 	glTranslatef(1.0 + explode, 0.0, 0.0);	/* move to new pos. */
-	glRotatef(180 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
+	glRotatef(180.0 + ang, 1.0, 0.0, 0.0);	/* pivot to new angle */
 	glTranslatef(-0.5, -0.5, -0.5);		/* return from center */
 
 	glGetFloatv(GL_MODELVIEW_MATRIX, rotmat);
