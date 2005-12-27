@@ -2558,7 +2558,7 @@ void ui_mouse(int button, int state, int x, int y) {
 		(x - (glc->width / 2.0)) / (glc->width / 2.0);
 	    mouse_start[1] = M_SQRT1_2 * 
 		((glc->height / 2.0) - y) / (glc->height / 2.0);
-	    mouse_start[2] = sqrt(1-(mouse_start[0]*mouse_start[0]+mouse_start[1]*mouse_start[1]));
+	    mouse_start[2] = sqrt((double)(1-(mouse_start[0]*mouse_start[0]+mouse_start[1]*mouse_start[1])));
 	    break;
 	  case GLUT_UP:
 	    dragging = 0;
