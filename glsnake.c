@@ -1721,7 +1721,7 @@ void draw_title(
 	while (s[i] != '\0')
 	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
 #else
-	glRasterPos2f(10, mi->xgwa.height - 10 - (bp->font->ascent + bp->font->descent));
+	glRasterPos2f(10.0, (GLfloat) mi->xgwa.height - 10 - (bp->font->ascent + bp->font->descent));
 	while (s[i] != '\0')
 	    glCallList(bp->font_list + (int)s[i++]);
 #endif
