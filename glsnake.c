@@ -1690,7 +1690,7 @@ void draw_title(
 #endif
 
     /* draw some text */
-    glPushAttrib(GL_TRANSFORM_BIT | GL_ENABLE_BIT);
+    glPushAttrib((GLbitfield) GL_TRANSFORM_BIT | GL_ENABLE_BIT);
     glDisable(GL_LIGHTING);
     glDisable(GL_DEPTH_TEST);
     if (transparent) {
@@ -2153,7 +2153,7 @@ void glsnake_display(
 #endif
     
     /* clear the buffer */
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear((GLbitfield) GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     /* go into the modelview stack */
     glMatrixMode(GL_MODELVIEW);
