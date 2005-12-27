@@ -1887,7 +1887,7 @@ float morph_percent(void) {
 	     * target */
 	    ang_diff = fabs(glc->node[i] -
 			    model[glc->next_model].node[i]);
-	    if (ang_diff > 180.0) ang_diff = 180 - ang_diff;
+	    if (ang_diff > 180.0) ang_diff = 180.0 - ang_diff;
 	    /* if it's the biggest so far, record it */
 	    if (rot > rot_max) rot_max = rot;
 	    if (ang_diff > ang_diff_max) ang_diff_max = ang_diff;
