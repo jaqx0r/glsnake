@@ -1,6 +1,6 @@
 /* glsnake.c - OpenGL imitation of Rubik's Snake
  * 
- * (c) 2001-2003 Jamie Wilkinson <jaq@spacepants.org>
+ * (c) 2001-2005 Jamie Wilkinson <jaq@spacepants.org>
  * (c) 2001-2003 Andrew Bennetts <andrew@puzzling.org> 
  * (c) 2001-2003 Peter Aylett <peter@ylett.com>
  * 
@@ -2462,13 +2462,9 @@ void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __att
     }
 }
 
-void ui_special(int key, int x, int y) {
-    int i;
+void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__((__unused))) {
     float *destAngle = &(model[glc->next_model].node[glc->selected]);
     int unknown_key = 0;
-
-    /* doing this to hush gcc -W :-) */
-    i = x = y;
 
     if (interactive) {
 	switch (key) {
