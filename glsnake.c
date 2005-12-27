@@ -1445,7 +1445,7 @@ static void load_font(ModeInfo * mi, char * res, XFontStruct ** fontp, GLuint * 
     const char * font = get_string_resource(res, "Font");
     XFontStruct * f;
     Font id;
-    int first, last;
+    GLsizei first, last;
 
     if (!font)
 	font = "-*-helvetica-medium-r-*-*-*-120-*";
@@ -1455,11 +1455,11 @@ static void load_font(ModeInfo * mi, char * res, XFontStruct ** fontp, GLuint * 
 	f = XLoadQueryFont(mi->dpy, "fixed");
 
     id = f->fid;
-    first = f->min_char_or_byte2;
-    last = f->max_char_or_byte2;
+    first = (GLsizei) f->min_char_or_byte2;
+    last = (GLsizei) f->max_char_or_byte2;
 
     clear_gl_error();
-    *dlistp = glGenLists((GLuint) last + 1);
+    *dlistp = glGenLists(last + 1);
     check_gl_error("glGenLists");
     glXUseXFont(id, first, last - first + 1, *dlistp + first);
     check_gl_error("glXUseXFont");
