@@ -45,26 +45,33 @@
 #define RIGHT   270.0
 
 #ifdef HAVE_GETTIMEOFDAY
-#ifdef GETTIMEOFDAY_TWO_ARGS
-# include <sys/time.h>
-# include <time.h>
-  typedef struct timeval snaketime;
-# define GETSECS(t) ((t).tv_sec)
-# define GETMSECS(t) ((t).tv_usec/1000)
-#else /* GETTIMEOFDAY_TWO_ARGS */
-# include <sys/time.h>
-# include <time.h>
-  typedef struct timeval snaketime;
-# define GETSECS(t) ((t).tv_sec)
-# define GETMSECS(t) ((t).tv_usec/1000)
-#endif
-#else /* HAVE_GETTIMEOFDAY */
-#ifdef HAVE_FTIME
-# include <sys/timeb.h>
-  typedef struct timeb snaketime;
-# define GETSECS(t) ((long)(t).time)
-# define GETMSECS(t) ((t).millitm/1000)
-#endif /* HAVE_FTIME */
+# ifdef GETTIMEOFDAY_TWO_ARGS
+
+#  include <sys/time.h>
+#  include <time.h>
+   typedef struct timeval snaketime;
+#  define GETSECS(t) ((t).tv_sec)
+#  define GETMSECS(t) ((t).tv_usec/1000)
+
+# else /* !GETTIMEOFDAY_TWO_ARGS */
+
+#  include <sys/time.h>
+#  include <time.h>
+   typedef struct timeval snaketime;
+#  define GETSECS(t) ((t).tv_sec)
+#  define GETMSECS(t) ((t).tv_usec/1000)
+
+# endif /* GETTIMEOFDAY_TWO_ARGS */
+
+#else /* !HAVE_GETTIMEOFDAY */
+# ifdef HAVE_FTIME
+
+#  include <sys/timeb.h>
+   typedef struct timeb snaketime;
+#  define GETSECS(t) ((long)(t).time)
+#  define GETMSECS(t) ((t).millitm/1000)
+
+# endif /* HAVE_FTIME */
 #endif /* HAVE_GETTIMEOFDAY */
 
 #include <math.h>
