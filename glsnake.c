@@ -1984,13 +1984,8 @@ float morph(long iter_msec) {
 #ifdef HAVE_GLUT
 void glsnake_idle();
 
-void restore_idle(int v)
+void restore_idle(int v __attribute__((__unused__)))
 {
-    /* doing this to hush gcc -W */
-    int i;
-
-    i = v;
-
     glutIdleFunc(glsnake_idle);
 }
 #endif
