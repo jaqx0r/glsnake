@@ -1722,7 +1722,7 @@ void draw_title(
 	    s = model[glc->next_model].name;
 #ifdef HAVE_GLUT
 	w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *) s);
-	glRasterPos2f(glc->width - w - 3, 4);
+	glRasterPos2f((GLfloat) (glc->width - w - 3), 4.0);
 	while (s[i] != '\0')
 	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
 #else
