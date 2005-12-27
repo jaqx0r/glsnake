@@ -261,7 +261,7 @@ struct glsnake_cfg {
     int old_width, old_height;
 
     /* the id of the display lists for drawing a node */
-    int node_solid, node_wire;
+    GLuint node_solid, node_wire;
 
     /* is the window fullscreen? */
     int fullscreen;
