@@ -1277,7 +1277,7 @@ struct model_s model[] = {
     },
 };
 
-int models = (sizeof(model) / sizeof(struct model_s));
+size_t models = sizeof(model) / sizeof(struct model_s);
 
 #define VOFFSET 0.045
 
