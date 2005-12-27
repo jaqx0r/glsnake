@@ -2381,12 +2381,7 @@ inline void ui_mousedrag() {
     glMultMatrixf(rotation);
 }
 
-void ui_keyboard(unsigned char c, int x, int y) {
-    int i;
-
-    /* doing this to hush gcc -W */
-    i = x = y;
-    
+void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
     switch (c) {
       case 27:  /* ESC */
       case 'q':
@@ -2461,21 +2456,25 @@ void ui_keyboard(unsigned char c, int x, int y) {
       case 'd':
 	/* dump the current model so we can add it! */
 	printf("# %s\nnoname:\t", model[glc->next_model].name);
-	for (i = 0; i < NODE_COUNT; i++) {
-	    if (glc->node[i] == ZERO)
-		printf("Z");
-	    else if (glc->node[i] == LEFT)
-		printf("L");
-	    else if (glc->node[i] == PIN)
-		printf("P");
-	    else if (glc->node[i] == RIGHT)
-		printf("R");
-	    /*
-	      else
-	      printf("%f", node[i].curAngle);
-	    */
-	    if (i < NODE_COUNT - 1)
-		printf(" ");
+	{
+	    int i;
+	    
+	    for (i = 0; i < NODE_COUNT; i++) {
+		if (glc->node[i] == ZERO)
+		    printf("Z");
+		else if (glc->node[i] == LEFT)
+		    printf("L");
+		else if (glc->node[i] == PIN)
+		    printf("P");
+		else if (glc->node[i] == RIGHT)
+		    printf("R");
+		/*
+		  else
+		  printf("%f", node[i].curAngle);
+		*/
+		if (i < NODE_COUNT - 1)
+		    printf(" ");
+	    }
 	}
 	printf("\n");
 	break;
