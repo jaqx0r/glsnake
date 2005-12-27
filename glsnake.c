@@ -231,7 +231,7 @@ struct glsnake_cfg {
     /* snake metrics */
     int is_cyclic;
     int is_legal;
-    int last_turn;
+    float last_turn;
     int debug;
 
     /* the shape of the model */
