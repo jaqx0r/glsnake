@@ -2412,7 +2412,7 @@ void ui_keyboard(unsigned char c, int x, int y) {
 	break;
       case ',':
 	/* previous model */
-	glc->next_model = (glc->next_model + models - 1) % models;
+	glc->next_model = (glc->next_model + (int)models - 1) % (int)models;
 	start_morph(glc->next_model, 0);
 	
 	/* Reset glc->last_morph time */
