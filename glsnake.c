@@ -236,8 +236,8 @@ struct glsnake_cfg {
     int selected;
 
     /* models */
-    int prev_model;
-    int next_model;
+    unsigned int prev_model;
+    unsigned int next_model;
 
     /* model morphing */
     int new_morph;
@@ -1468,7 +1468,7 @@ static void load_font(ModeInfo * mi, char * res, XFontStruct ** fontp, GLuint * 
 }
 #endif
 
-void start_morph(int model_index, int immediate);
+void start_morph(unsigned int model_index, int immediate);
 
 /* wot initialises it */
 void glsnake_init(
@@ -1920,7 +1920,7 @@ void morph_colour(void) {
 }
 
 /* Start morph process to this model */
-void start_morph(int model_index, int immediate) {
+void start_morph(unsigned int model_index, int immediate) {
     /* if immediate, don't bother morphing, go straight to the next model */
     if (immediate) {
 	int i;
