@@ -154,6 +154,7 @@ extern XtAppContext app;
 #define countof(x) (sizeof((x))/sizeof((*x)))
 
 #include "xlockmore.h"
+#include "glxfonts.h"
 
 static XrmOptionDescRec opts[] = {
     { "-explode", ".explode", XrmoptionSepArg, DEF_EXPLODE },
@@ -1430,34 +1431,6 @@ void gettime(snaketime *t)
 #endif /* !HAVE_GETTIMEOFDAY */
 }
 
-#ifndef HAVE_GLUT
-static void load_font(ModeInfo * mi, char * res, XFontStruct ** fontp, GLuint * dlistp) {
-    const char * font = get_string_resource(res, "Font");
-    XFontStruct * f;
-    Font id;
-    GLsizei first, last;
-
-    if (!font)
-	font = "-*-helvetica-medium-r-*-*-*-120-*";
-
-    f = XLoadQueryFont(mi->dpy, font);
-    if (!f)
-	f = XLoadQueryFont(mi->dpy, "fixed");
-
-    id = f->fid;
-    first = (GLsizei) f->min_char_or_byte2;
-    last = (GLsizei) f->max_char_or_byte2;
-
-    clear_gl_error();
-    *dlistp = glGenLists(last + 1);
-    check_gl_error("glGenLists");
-    glXUseXFont(id, first, last - first + 1, (int) *dlistp + first);
-    check_gl_error("glXUseXFont");
-
-    *fontp = f;
-}
-#endif
-
 void start_morph(unsigned int model_index, int immediate);
 
 /* wot initialises it */
@@ -1509,7 +1482,7 @@ ModeInfo * mi
     /* set up a font for the labels */
 #ifndef HAVE_GLUT
     if (titles)
-	load_font(mi, "labelfont", &bp->font, &bp->font_list);
+	load_font(mi->dpy, "labelfont", &bp->font, &bp->font_list);
 #endif
     
     /* build a solid display list */
@@ -1696,7 +1669,6 @@ void draw_title(
     {
 	char interactstr[] = "interactive";
 	const char * s;
-	int i = 0;
 #ifdef HAVE_GLUT
 	int w;
 #endif
@@ -1711,9 +1683,10 @@ void draw_title(
 	while (s[i] != '\0')
 	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
 #else
-	glRasterPos2f(10.0, (GLfloat) mi->xgwa.height - 10 - (bp->font->ascent + bp->font->descent));
-	while (s[i] != '\0')
-	    glCallList(bp->font_list + (int)s[i++]);
+	print_gl_string(mi->dpy, bp->font, bp->font_list,
+			mi->xgwa.width, mi->xgwa.height,
+			10.0, (float) mi->xgwa.height - 10.0,
+			s);
 #endif
     }
     glPopMatrix();
