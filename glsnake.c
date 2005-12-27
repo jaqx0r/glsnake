@@ -146,17 +146,7 @@ extern XtAppContext app;
 #define DEFAULTS "*delay:          30000                      \n" \
                  "*count:          30                         \n" \
                  "*showFPS:        False                      \n" \
-                 "*wireframe:      False                      \n" \
-                 "*transparent:    True                       \n" \
-                 "*explode:      " DEF_EXPLODE              " \n" \
-                 "*angvel:       " DEF_ANGVEL               " \n" \
-                 "*statictime:   " DEF_STATICTIME           " \n" \
-                 "*yangvel:      " DEF_YANGVEL              " \n" \
-                 "*zangvel:      " DEF_ZANGVEL              " \n" \
-                 "*altcolour:    " DEF_ALTCOLOUR            " \n" \
-                 "*titles:         True                       \n" \
                  "*labelfont:   -*-times-bold-r-normal-*-180-*\n" \
-                 "*zoom:         " DEF_ZOOM                 " \n" \
 
 
 
