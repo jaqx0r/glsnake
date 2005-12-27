@@ -1765,7 +1765,7 @@ void glsnake_reshape(
     glViewport(0, 0, (GLint) w, (GLint) h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(zoom, w/(GLfloat)h, 0.05, 100.0);
+    gluPerspective(zoom, (GLdouble) w / (GLdouble) h, 0.05, 100.0);
     gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
     glMatrixMode(GL_MODELVIEW);
     /*gluLookAt(0.0, 0.0, 20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);*/
