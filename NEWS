@@ -4,6 +4,8 @@ NEWS for glsnake
 * 0.9.0:
 - Changed build system to SCons, which is great news for all our users!
 - Added alpha-blending for transparent nodes.
+- merged in XScreensaver changes from version 4.23
+- lots of fixes thanks to splint's static analysis
 
 Version 0.8.9:
 * A lot of changes since the last version, including:
