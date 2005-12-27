@@ -1678,10 +1678,14 @@ void draw_title(
 	    s = model[glc->next_model].name;
 	
 #ifdef HAVE_GLUT
-	w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *) s);
-	glRasterPos2f((GLfloat) (glc->width - w - 3), 4.0);
-	while (s[i] != '\0')
-	    glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
+	{
+	    unsigned int i = 0;
+	    
+	    w = glutBitmapLength(GLUT_BITMAP_HELVETICA_12, (const unsigned char *) s);
+	    glRasterPos2f((GLfloat) (glc->width - w - 3), 4.0);
+	    while (s[i] != '\0')
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, s[i++]);
+	}
 #else
 	print_gl_string(mi->dpy, bp->font, bp->font_list,
 			mi->xgwa.width, mi->xgwa.height,
@@ -2463,7 +2467,7 @@ void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __att
     }
 }
 
-void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__((__unused))) {
+void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
     float *destAngle = &(model[glc->next_model].node[glc->selected]);
     int unknown_key = 0;
 
