@@ -196,7 +196,7 @@ static argtype vars[] = {
     {(caddr_t *) &transparent, "transparent", "Transparent!", DEF_TRANSPARENT, t_Bool},
 };
 
-ModeSpecOpt sws_opts = {countof(opts), opts, countof(vars), vars, NULL};
+ModeSpecOpt sws_opts = {(int)countof(opts), opts, (int)countof(vars), vars, NULL};
 #endif
 
 struct model_s {
