@@ -1461,7 +1461,7 @@ static void load_font(ModeInfo * mi, char * res, XFontStruct ** fontp, GLuint * 
     clear_gl_error();
     *dlistp = glGenLists(last + 1);
     check_gl_error("glGenLists");
-    glXUseXFont(id, first, last - first + 1, *dlistp + first);
+    glXUseXFont(id, first, last - first + 1, (int) *dlistp + first);
     check_gl_error("glXUseXFont");
 
     *fontp = f;
