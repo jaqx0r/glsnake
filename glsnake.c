@@ -87,7 +87,6 @@
 #define DEF_ZANGVEL     0.14
 #define DEF_EXPLODE     0.03
 #define DEF_ANGVEL      1.0
-#define DEF_ACCEL       0.1
 #define DEF_STATICTIME  5000
 #define DEF_ALTCOLOUR   0
 #define DEF_TITLES      1
@@ -101,7 +100,6 @@
 #define DEF_ZANGVEL     "0.14"
 #define DEF_EXPLODE     "0.03"
 #define DEF_ANGVEL      "1.0"
-#define DEF_ACCEL       "0.1"
 #define DEF_STATICTIME  "5000"
 #define DEF_ALTCOLOUR   "False"
 #define DEF_TITLES      "True"
@@ -152,7 +150,6 @@ extern XtAppContext app;
                  "*transparent:    True                       \n" \
                  "*explode:      " DEF_EXPLODE              " \n" \
                  "*angvel:       " DEF_ANGVEL               " \n" \
-                 "*accel:        " DEF_ACCEL                " \n" \
                  "*statictime:   " DEF_STATICTIME           " \n" \
                  "*yangvel:      " DEF_YANGVEL              " \n" \
                  "*zangvel:      " DEF_ZANGVEL              " \n" \
@@ -171,7 +168,6 @@ extern XtAppContext app;
 static XrmOptionDescRec opts[] = {
     { "-explode", ".explode", XrmoptionSepArg, DEF_EXPLODE },
     { "-angvel", ".angvel", XrmoptionSepArg, DEF_ANGVEL },
-    { "-accel", ".accel", XrmoptionSepArg, DEF_ACCEL },
     { "-statictime", ".statictime", XrmoptionSepArg, DEF_STATICTIME },
     { "-yangvel", ".yangvel", XrmoptionSepArg, DEF_YANGVEL },
     { "-zangvel", ".zangvel", XrmoptionSepArg, DEF_ZANGVEL },
@@ -189,7 +185,6 @@ static XrmOptionDescRec opts[] = {
 static argtype vars[] = {
     {(caddr_t *) &explode, "explode", "Explode", DEF_EXPLODE, t_Float},
     {(caddr_t *) &angvel, "angvel", "Angular Velocity", DEF_ANGVEL, t_Float},
-    {(caddr_t *) &accel, "accel", "Acceleration", DEF_ACCEL, t_Float},
     {(caddr_t *) &statictime, "statictime", "Static Time", DEF_STATICTIME, t_Int},
     {(caddr_t *) &yangvel, "yangvel", "Angular Velocity about Y axis", DEF_YANGVEL, t_Float},
     {(caddr_t *) &zangvel, "zangvel", "Angular Velocity about X axis", DEF_ZANGVEL, t_Float},
@@ -2414,11 +2409,11 @@ void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __att
 	gettime(&glc->last_morph);			
 	break;
       case '+':
-	angvel += DEF_ACCEL;
+	angvel += DEF_ANGVEL;
 	break;
       case '-':
-	if (angvel > DEF_ACCEL)
-	    angvel -= DEF_ACCEL;
+	if (angvel > DEF_ANGVEL)
+	    angvel -= DEF_ANGVEL;
 	break;
       case 'i':
 	if (interactive) {
