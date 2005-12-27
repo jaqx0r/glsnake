@@ -1703,9 +1703,9 @@ void draw_title(
     glPushMatrix();
     glLoadIdentity();
 #ifdef HAVE_GLUT
-    gluOrtho2D(0, glc->width, 0, glc->height);
+    gluOrtho2D((GLdouble) 0., (GLdouble) glc->width, (GLdouble) 0., (GLdouble) glc->height);
 #else
-    gluOrtho2D(0, mi->xgwa.width, 0, mi->xgwa.height);
+    gluOrtho2D((GLdouble) 0., (GLdouble) mi->xgwa.width, (GLdouble) 0., (GLdouble) mi->xgwa.height);
 #endif
     glColor4f(1.0, 1.0, 1.0, 1.0);
     {
