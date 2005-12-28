@@ -36,6 +36,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 /* angles */
 #define ZERO	  0.0
