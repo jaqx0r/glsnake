@@ -259,7 +259,7 @@ struct glsnake_cfg {
 #define COLOUR_AUTHENTIC 3
 #define COLOUR_ORIGLOGO 4
 
-float colour[][2][4] = {
+static float colour[][2][4] = {
     /* cyclic - green */
     { { 0.4, 0.8, 0.2, 0.6 },
       { 1.0, 1.0, 1.0, 0.6 } },
@@ -277,7 +277,7 @@ float colour[][2][4] = {
       { 46/255.0, 205/255.0, 227/255.0, 1.0 } }
 };
 
-struct model_s model[] = {
+static struct model_s model[] = {
 #define STRAIGHT_MODEL 0
     { "straight",
       { ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
@@ -1270,7 +1270,7 @@ struct model_s model[] = {
     },
 };
 
-size_t models = sizeof(model) / sizeof(struct model_s);
+static size_t models = sizeof(model) / sizeof(struct model_s);
 
 #define VOFFSET 0.045
 
@@ -1294,7 +1294,7 @@ size_t models = sizeof(model) / sizeof(struct model_s);
 #define RANDSIGN() ((random() & 1) ? 1 : -1)
 
 /* the triangular prism what makes up the basic unit */
-float solid_prism_v[][3] = {
+static float solid_prism_v[][3] = {
     /* first corner, bottom left front */
     { VOFFSET, VOFFSET, 1.0 },
     { VOFFSET, 0.00, 1.0 - VOFFSET },
@@ -1320,7 +1320,7 @@ float solid_prism_v[][3] = {
     { VOFFSET / M_SQRT1_2, 1.0 - VOFFSET * M_SQRT1_2, VOFFSET },
     { 0.0, 1.0 - VOFFSET / M_SQRT1_2, VOFFSET }};
 
-float solid_prism_n[][3] = {/* corners */
+static float solid_prism_n[][3] = {/* corners */
     { -VOFFSET, -VOFFSET, VOFFSET },
     { VOFFSET, -VOFFSET, VOFFSET },
     { -VOFFSET, VOFFSET, VOFFSET },
@@ -1344,18 +1344,21 @@ float solid_prism_n[][3] = {/* corners */
     { -1.0, 0.0, 0.0 },
     { 0.0, 0.0, -1.0 }};
 
-float wire_prism_v[][3] = {{ 0.0, 0.0, 1.0 },
+static float wire_prism_v[][3] = {{ 0.0, 0.0, 1.0 },
 			   { 1.0, 0.0, 1.0 },
 			   { 0.0, 1.0, 1.0 },
 			   { 0.0, 0.0, 0.0 },
 			   { 1.0, 0.0, 0.0 },
 			   { 0.0, 1.0, 0.0 }};
 
-float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
+#if 0
+/* this isn't used! */
+static float wire_prism_n[][3] = {{ 0.0, 0.0, 1.0},
 			   { 0.0,-1.0, 0.0},
 			   { M_SQRT1_2, M_SQRT1_2, 0.0},
 			   {-1.0, 0.0, 0.0},
 			   { 0.0, 0.0,-1.0}};
+#endif /* 0 */
 
 static struct glsnake_cfg * glc = NULL;
 #ifdef HAVE_GLUT
@@ -1366,14 +1369,14 @@ typedef float (*morphFunc)(long);
 
 #ifdef HAVE_GLUT
 /* forward definitions for GLUT functions */
-void calc_rotation();
-inline void ui_mousedrag();
+static void calc_rotation();
+static inline void ui_mousedrag();
 #endif
 
-GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };
-GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
-GLfloat mat_specular[] = { 0.1, 0.1, 0.1, 1.0 };
-GLfloat mat_shininess[] = { 20.0 };
+static GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };
+static GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
+static GLfloat mat_specular[] = { 0.1, 0.1, 0.1, 1.0 };
+static GLfloat mat_shininess[] = { 20.0 };
 
 void gl_init(
 #ifndef HAVE_GLUT
@@ -1415,7 +1418,7 @@ void gl_init(
     }
 }
 
-void gettime(snaketime *t)
+static void gettime(snaketime *t)
 {
 #ifdef HAVE_GETTIMEOFDAY
 #ifdef GETTIMEOFDAY_TWO_ARGS
@@ -1431,7 +1434,7 @@ void gettime(snaketime *t)
 #endif /* !HAVE_GETTIMEOFDAY */
 }
 
-void start_morph(unsigned int model_index, int immediate);
+static void start_morph(unsigned int model_index, int immediate);
 
 /* wot initialises it */
 void glsnake_init(
@@ -1638,7 +1641,7 @@ ModeInfo * mi
 #endif
 }
 
-void draw_title(
+static void draw_title(
 #ifndef HAVE_GLUT
 		ModeInfo * mi
 #endif
@@ -1701,7 +1704,7 @@ void draw_title(
 }
 
 /* apply the matrix to the origin and stick it in vec */
-void matmult_origin(float rotmat[16], float vec[4]) {
+static void matmult_origin(float rotmat[16], float vec[4]) {
 #if 1
     vec[0] = 0.5 * rotmat[0] + 0.5 * rotmat[4] + 0.5 * rotmat [8] + 1 * rotmat[12];
     vec[1] = 0.5 * rotmat[1] + 0.5 * rotmat[5] + 0.5 * rotmat [9] + 1 * rotmat[13];
@@ -1740,7 +1743,7 @@ void glsnake_reshape(
 }
 
 /* Returns the new dst_dir for the given src_dir and dst_dir */
-int cross_product(int src_dir, int dst_dir) {
+static int cross_product(int src_dir, int dst_dir) {
     return X_MASK*(GETSCALAR(src_dir,Y_MASK) * GETSCALAR(dst_dir,Z_MASK) -
 		   GETSCALAR(src_dir,Z_MASK) * GETSCALAR(dst_dir,Y_MASK))+ 
 	Y_MASK*(GETSCALAR(src_dir,Z_MASK) * GETSCALAR(dst_dir,X_MASK) -
@@ -1754,7 +1757,7 @@ int cross_product(int src_dir, int dst_dir) {
  *  is_cyclic = true if last node connects back to first node
  *  last_turn = for cyclic snakes, specifes what the 24th turn would be
  */
-void calc_snake_metrics(void) {
+static void calc_snake_metrics(void) {
     int srcDir, dstDir;
     int i, x, y, z;
     int prevSrcDir = -Y_MASK;
@@ -1823,7 +1826,7 @@ void calc_snake_metrics(void) {
 }
 
 /* work out how far through the current morph we are */
-float morph_percent(void) {
+static float morph_percent(void) {
     float retval;
     int i;
 
@@ -1870,7 +1873,7 @@ float morph_percent(void) {
     return retval;
 }
 
-void morph_colour(void) {
+static void morph_colour(void) {
     float percent, compct; /* complement of percentage */
 
     percent = morph_percent();
@@ -1888,7 +1891,7 @@ void morph_colour(void) {
 }
 
 /* Start morph process to this model */
-void start_morph(unsigned int model_index, int immediate) {
+static void start_morph(unsigned int model_index, int immediate) {
     /* if immediate, don't bother morphing, go straight to the next model */
     if (immediate) {
 	int i;
@@ -1926,8 +1929,10 @@ void start_morph(unsigned int model_index, int immediate) {
     morph_colour();
 }
 
+#if 0
+/* HOLY SHIT THIS FUNCTION ISN'T EVEN USED */
 /* Returns morph progress */
-float morph(long iter_msec) {
+static float morph(long iter_msec) {
     /* work out the maximum angle for this iteration */
     int still_morphing;
     float iter_angle_max, largest_diff, largest_progress;
@@ -1958,17 +1963,18 @@ float morph(long iter_msec) {
 	
     return MIN(largest_diff / largest_progress, 1.0);
 }
+#endif /* 0 */
 
 #ifdef HAVE_GLUT
-void glsnake_idle();
+static void glsnake_idle();
 
-void restore_idle(int v __attribute__((__unused__)))
+static void restore_idle(int v __attribute__((__unused__)))
 {
     glutIdleFunc(glsnake_idle);
 }
 #endif
 
-void quick_sleep(void)
+static void quick_sleep(void)
 {
 #ifdef HAVE_GLUT
     /* By using glutTimerFunc we can keep responding to 
@@ -2253,12 +2259,12 @@ void glsnake_display(
 
 #ifdef HAVE_GLUT
 /* anything that needs to be cleaned up goes here */
-void unmain() {
+static void unmain() {
     glutDestroyWindow(glc->window);
     free(glc);
 }
 
-void ui_init(int *, char **);
+static void ui_init(int *, char **);
 
 int main(int argc, char ** argv) {
     glc = malloc(sizeof(struct glsnake_cfg));
@@ -2295,20 +2301,20 @@ int main(int argc, char ** argv) {
 #ifdef HAVE_GLUT
 
 /* trackball quaternions */
-float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,0.1};
+static float cumquat[4] = {0.0,0.0,0.0,0.0}, oldquat[4] = {0.0,0.0,0.0,0.1};
 
 /* rotation matrix */
-float rotation[16];
+static float rotation[16];
 
 /* mouse drag vectors: start and end */
-float mouse_start[3], mouse_end[3];
+static float mouse_start[3], mouse_end[3];
 
 /* dragging boolean */
-int dragging = 0;
+static int dragging = 0;
 
 /* this function calculates the rotation matrix based on the quaternions
  * generated from the mouse drag vectors */
-void calc_rotation() {
+static void calc_rotation() {
     double Nq, s;
     double xs, ys, zs, wx, wy, wz, xx, xy, xz, yy, yz, zz;
 
@@ -2335,11 +2341,11 @@ void calc_rotation() {
     rotation[15] = 1.0;
 }
 
-inline void ui_mousedrag() {
+static inline void ui_mousedrag() {
     glMultMatrixf(rotation);
 }
 
-void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
+static void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
     switch (c) {
       case 27:  /* ESC */
       case 'q':
@@ -2468,7 +2474,7 @@ void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __att
     }
 }
 
-void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
+static void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
     float *destAngle = &(model[glc->next_model].node[glc->selected]);
     int unknown_key = 0;
 
@@ -2502,7 +2508,7 @@ void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__(
 	glutPostRedisplay();
 }
 
-void ui_mouse(int button, int state, int x, int y) {
+static void ui_mouse(int button, int state, int x, int y) {
     if (button==0) {
 	switch (state) {
 	  case GLUT_DOWN:
@@ -2527,7 +2533,7 @@ void ui_mouse(int button, int state, int x, int y) {
     glutPostRedisplay();
 }
 
-void ui_motion(int x, int y) {
+static void ui_motion(int x, int y) {
     double norm;
     float q[4];
     
@@ -2569,7 +2575,7 @@ void ui_motion(int x, int y) {
     glutPostRedisplay();
 }
 
-void ui_init(int * argc, char ** argv) {
+static void ui_init(int * argc, char ** argv) {
     glutInit(argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(glc->width, glc->height);
