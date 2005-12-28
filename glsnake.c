@@ -282,8 +282,8 @@ static float colour[][2][4] = {
  *   If the models contained within cause offence, you can do one of two
  * things:
  *
- * 1) Complain about it in bug reports and web forums, sharing war stories of
- *    how you were humiliated when you were giving a career-making
+ * 1) Complain about it in bug reports and web forums, sharing war stories
+ *    of how you were humiliated when you were giving a career-making
  *    presentation to your peers, or company board, and the screensaver
  *    kicked in, or
  *
