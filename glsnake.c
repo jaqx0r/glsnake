@@ -1374,6 +1374,7 @@ static inline void ui_mousedrag();
 #endif
 
 static GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };
+static GLfloat yellow_light[] = { 1.0, 1.0, 0.0, 0.8 };
 static GLfloat lmodel_ambient[] = { 0.2, 0.2, 0.2, 1.0 };
 static GLfloat mat_specular[] = { 0.1, 0.1, 0.1, 1.0 };
 static GLfloat mat_shininess[] = { 20.0 };
@@ -2209,10 +2210,8 @@ void glsnake_display(
     for (i = 0; i < NODE_COUNT; i++) {
 	/* choose a colour for this node */
 	if ((i == glc->selected || i == glc->selected+1) && interactive)
-	    /* yellow */
-	    glColor4f(1.0, 1.0, 0.0, 1.0);
+	    glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow_light);
 	else {
-	    /*glColor4fv(glc->colour[(i+1)%2]);*/
 	    glMaterialfv(GL_FRONT, GL_AMBIENT, glc->colour[(i+1)%2]);
 	    glMaterialfv(GL_FRONT, GL_DIFFUSE, glc->colour[(i+1)%2]);
 	    /*glMaterialfv(GL_FRONT, GL_SPECULAR, glc->colour[(i+1)%2]);*/
