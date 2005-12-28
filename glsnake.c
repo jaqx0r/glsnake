@@ -2210,11 +2210,19 @@ void glsnake_display(
     for (i = 0; i < NODE_COUNT; i++) {
 	/* choose a colour for this node */
 	if ((i == glc->selected || i == glc->selected+1) && interactive)
-	    glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow_light);
+	    if (wireframe) {
+		glColor4fv(yellow_light);
+	    } else {
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, yellow_light);
+	    }
 	else {
-	    glMaterialfv(GL_FRONT, GL_AMBIENT, glc->colour[(i+1)%2]);
-	    glMaterialfv(GL_FRONT, GL_DIFFUSE, glc->colour[(i+1)%2]);
-	    /*glMaterialfv(GL_FRONT, GL_SPECULAR, glc->colour[(i+1)%2]);*/
+	    if (wireframe) {
+		glColor4fv(glc->colour[(i+1)%2]);
+	    } else {
+		glMaterialfv(GL_FRONT, GL_AMBIENT, glc->colour[(i+1)%2]);
+		glMaterialfv(GL_FRONT, GL_DIFFUSE, glc->colour[(i+1)%2]);
+		/*glMaterialfv(GL_FRONT, GL_SPECULAR, glc->colour[(i+1)%2]);*/
+	    }
 	}
 
 	/* draw the node */
