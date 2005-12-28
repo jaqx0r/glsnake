@@ -1785,7 +1785,7 @@ void calc_snake_metrics(void) {
 	  case (int) (RIGHT):
 	  case (int) (LEFT):
 	    dstDir = cross_product(prevSrcDir, prevDstDir);
-	    if (model[glc->next_model].node[i] == (int) (RIGHT))
+	    if (fabs(model[glc->next_model].node[i] - RIGHT) < FLT_EPSILON)
 		dstDir = -dstDir;
 	    break;
 	  default:
