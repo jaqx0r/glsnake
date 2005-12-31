@@ -1,6 +1,9 @@
 NEWS for glsnake
 ----------------
 
+* 0.9.1 -
+- Fix race condition (Jan Schmidt)
+
 * 0.9.0 - 28/12/2005:
 - Changed build system to SCons, which is great news for all our users!
 - Added alpha-blending for transparent nodes.
