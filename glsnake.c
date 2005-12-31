@@ -2024,7 +2024,6 @@ void glsnake_idle(
 	/* Avoid busy waiting when nothing is changing */
 	quick_sleep();
 #ifdef HAVE_GLUT
-	glutSwapBuffers();
 	glutPostRedisplay();
 #endif
 	return;
@@ -2101,7 +2100,6 @@ void glsnake_idle(
 	morph_colour();
 	
 #ifdef HAVE_GLUT
-	glutSwapBuffers();
 	glutPostRedisplay();
 #endif
     } else {
