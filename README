@@ -10,8 +10,13 @@ Read the fine manual page for usage instructions.
 
 If you've got this in a tarball, make sure you have SCons, and GLUT:
 
+type
+
 % scons
 
-thing to get this up and running.
+to get this up and running.
+
+Patches to me, bug reports to /dev/null, and flames to the web forum of your
+favourite distribution.
 
  -- Jamie Wilkinson <jaq@spacepants.org>
