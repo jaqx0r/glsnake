@@ -2,7 +2,7 @@
  * 
  * (c) 2001-2005 Jamie Wilkinson <jaq@spacepants.org>
  * (c) 2001-2003 Andrew Bennetts <andrew@puzzling.org> 
- * (c) 2001-2003 Peter Aylett <peter@ylett.com>
+ * (c) 2001-2006 Peter Aylett <aylett@gmail.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
