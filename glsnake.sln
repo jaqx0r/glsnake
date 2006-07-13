@@ -1,0 +1,25 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glsnake", "glsnake.vcproj", "{80C41E59-3F3A-40FC-AEBE-DDD1F18FC590}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "winsetup", "winsetup\winsetup.vdproj", "{9A12C51E-7EC1-4B5B-B7EA-A5E8CE4D8F3C}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{80C41E59-3F3A-40FC-AEBE-DDD1F18FC590}.Debug.ActiveCfg = Debug|Win32
+		{80C41E59-3F3A-40FC-AEBE-DDD1F18FC590}.Debug.Build.0 = Debug|Win32
+		{80C41E59-3F3A-40FC-AEBE-DDD1F18FC590}.Release.ActiveCfg = Release|Win32
+		{80C41E59-3F3A-40FC-AEBE-DDD1F18FC590}.Release.Build.0 = Release|Win32
+		{9A12C51E-7EC1-4B5B-B7EA-A5E8CE4D8F3C}.Debug.ActiveCfg = Debug
+		{9A12C51E-7EC1-4B5B-B7EA-A5E8CE4D8F3C}.Release.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
