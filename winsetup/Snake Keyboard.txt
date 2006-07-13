@@ -1,0 +1,30 @@
+Snake Keyboard:
+
+ESC or Q        Quit
+> (.)           Next Model
+< (,)           Prev Model
++               Speed up transitions
+-               Slow down transitions
+W               Wire frame
+P               Pause
+F               Full screen
+T               Show/hide Titles
+A               Switch transparency on/off
+Z               Zoom in
+Shift+Z         Zoom out
+E               Explode pieces
+Shift+E         Implode pieces
+
+
+Interactive mode:
+I               Toggle interactive mode
+Up/Down         Move yellor cursor to different junction
+Left/Right      Twist snake about yellow cursor
+D               Dump model (print to stdout)
+Home            Go to straight snake
+
+
+If you design a fantastic snake, dump it and send
+the output to one of us at http://spacepants.org/src/glsnake/
+along with a suitable name and we'll consider adding
+it to the next version of snake.

@@ -1,0 +1,50 @@
+Steps to make glsnake 0.9.1 compile on Visual Studio 2002
+
+1. Install Glut:
+	Visual Studio comes with GL and GLU, but not GLUT.
+
+	A fully installed Windows OpenGL development environment will look like this:
+	[compiler]\include\gl
+		gl.h
+		glu.h   
+		glut.h
+	[compiler]\lib
+		Opengl32.lib
+		glu32.lib
+		glut32.lib
+	[system]
+		Opengl32.dll
+		glu32.dll   
+		glut32.dll
+
+	Where for VC7, [compiler] is:
+	C:\Program Files\Microsoft Visual Studio .NET\Vc7\PlatformSDK
+
+	Download GLUT from:
+	http://www.xmission.com/~nate/glut.html
+	http://www.opengl.org/resources/libraries/glut/
+	See also:
+	http://www.opengl.org/resources/faq/technical/gettingstarted.htm
+	http://www.opengl.org/resources/libraries/glut/
+
+2. Create a new Win32 project and modify these settings:
+
+	Add HAVE_GLUT;HAVE_FTIME to list of C++ preprocessor definitions
+	Set Linker/System/SubSystem to Console
+	Set C++/Precompiled Headers to Not using precompiled headers
+	
+3. Add the following source code
+	#ifdef WIN32
+	# include <windows.h>
+	# define isnan _isnan
+	# define inline __inline
+	# define random rand
+	# define ATTRIBUTE_UNUSED
+	#else
+	# define ATTRIBUTE_UNUSED __attribute__((__unused__))
+	#endif WIN32
+
+
+4. Fix timing code:
+	Remove /1000 from
+	#  define GETMSECS(t) ((t).millitm/1000)
