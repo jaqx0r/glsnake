@@ -2,7 +2,7 @@
  * 
  * (c) 2001-2005 Jamie Wilkinson <jaq@spacepants.org>
  * (c) 2001-2003 Andrew Bennetts <andrew@puzzling.org> 
- * (c) 2001-2003 Peter Aylett <peter@ylett.com>
+ * (c) 2001-2006 Peter Aylett <aylett@gmail.com>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+
+
+#ifdef WIN32
+# include <windows.h>
+# define isnan _isnan
+# define inline __inline
+# define random rand
+# define ATTRIBUTE_UNUSED
+#endif /* WIN32 */
 
 #ifdef HAVE_CONFIG_H
 # include "config.h"
@@ -37,6 +46,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
+
 
 /* angles */
 #define ZERO	  0.0
@@ -69,8 +79,7 @@
 #  include <sys/timeb.h>
    typedef struct timeb snaketime;
 #  define GETSECS(t) ((long)(t).time)
-#  define GETMSECS(t) ((t).millitm/1000)
-
+#  define GETMSECS(t) ((t).millitm)
 # endif /* HAVE_FTIME */
 #endif /* HAVE_GETTIMEOFDAY */
 
@@ -78,6 +87,10 @@
 
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant  */
 #define M_SQRT1_2 0.70710678118654752440084436210485
+#endif
+
+#ifndef ATTRIBUTE_UNUSED
+# define ATTRIBUTE_UNUSED __attribute__((__unused__))
 #endif
 
 #define NODE_COUNT 24
@@ -550,11 +563,6 @@ static struct model_s model[] = {
 	PIN, ZERO, RIGHT, RIGHT, ZERO, PIN, PIN, ZERO, PIN, PIN, ZERO,
 	RIGHT, ZERO }
     },
-    { "k's turd",
-      { RIGHT, RIGHT, PIN, RIGHT, LEFT, RIGHT, PIN, RIGHT, LEFT,
-	RIGHT, PIN, RIGHT, LEFT, RIGHT, PIN, RIGHT, LEFT, RIGHT, PIN,
-	RIGHT, LEFT, RIGHT, PIN, ZERO }
-    },
     { "lightsabre",
       { ZERO, ZERO, ZERO, ZERO, ZERO, PIN, PIN, ZERO, ZERO, ZERO, ZERO,
 	ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
@@ -579,21 +587,6 @@ static struct model_s model[] = {
       { PIN, ZERO, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, ZERO, ZERO,
 	ZERO, PIN, ZERO, ZERO, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, ZERO,
 	ZERO, PIN, ZERO }
-    },
-    { "erect penis",     /* thanks benno */
-      { PIN, ZERO, PIN, PIN, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, PIN,
-	PIN, ZERO, ZERO, ZERO, RIGHT, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO,
-	ZERO, ZERO }
-    },
-    { "flaccid penis",
-      { PIN, ZERO, PIN, PIN, ZERO, ZERO, PIN, ZERO, ZERO, ZERO, PIN,
-	PIN, ZERO, ZERO, ZERO, RIGHT, PIN, ZERO, ZERO, ZERO, ZERO, ZERO,
-	ZERO, ZERO }
-    },
-    { "vagina",
-      { RIGHT, ZERO, ZERO, ZERO, RIGHT, ZERO, ZERO, PIN, ZERO, ZERO,
-	LEFT, ZERO, ZERO, ZERO, LEFT, ZERO, LEFT, PIN, LEFT, PIN, RIGHT,
-	PIN, RIGHT, ZERO }
     },
     { "mask",
       { ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, PIN, ZERO, ZERO, PIN,
@@ -848,12 +841,6 @@ static struct model_s model[] = {
     { "Face",
         { ZERO, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, LEFT, PIN, RIGHT, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, PIN, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, ZERO }
     },
-    { "Fantasy",
-        { LEFT, LEFT, RIGHT, PIN, ZERO, RIGHT, ZERO, LEFT, PIN, LEFT, PIN, RIGHT, PIN, RIGHT, ZERO, LEFT, ZERO, PIN, LEFT, RIGHT, RIGHT, RIGHT, PIN, ZERO }
-    },
-    { "Fantasy1",
-        { PIN, ZERO, ZERO, PIN, PIN, ZERO, PIN, RIGHT, LEFT, RIGHT, RIGHT, PIN, LEFT, LEFT, RIGHT, LEFT, PIN, ZERO, PIN, PIN, ZERO, ZERO, PIN, ZERO }
-    },
     { "FaserGun",
         { ZERO, ZERO, LEFT, RIGHT, PIN, RIGHT, ZERO, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, ZERO, RIGHT, PIN, RIGHT, RIGHT, ZERO, PIN, ZERO }
     },
@@ -1009,9 +996,6 @@ static struct model_s model[] = {
     },
     { "Parrot",
         { ZERO, ZERO, ZERO, ZERO, RIGHT, RIGHT, ZERO, LEFT, PIN, RIGHT, ZERO, RIGHT, ZERO, RIGHT, ZERO, RIGHT, PIN, LEFT, ZERO, RIGHT, LEFT, ZERO, PIN, ZERO }
-    },
-    { "Penis",
-        { PIN, PIN, RIGHT, ZERO, PIN, PIN, ZERO, PIN, ZERO, ZERO, RIGHT, PIN, LEFT, ZERO, ZERO, PIN, ZERO, PIN, PIN, ZERO, LEFT, PIN, PIN, ZERO }
     },
     { "PictureCommingSoon",
         { LEFT, LEFT, ZERO, RIGHT, LEFT, PIN, RIGHT, RIGHT, PIN, RIGHT, LEFT, PIN, LEFT, RIGHT, PIN, RIGHT, RIGHT, PIN, RIGHT, LEFT, ZERO, RIGHT, RIGHT, ZERO }
@@ -1985,7 +1969,7 @@ static float morph(long iter_msec) {
 #ifdef HAVE_GLUT
 static void glsnake_idle();
 
-static void restore_idle(int v __attribute__((__unused__)))
+static void restore_idle(int v ATTRIBUTE_UNUSED)
 {
     glutIdleFunc(glsnake_idle);
 }
@@ -2037,7 +2021,7 @@ void glsnake_idle(
      * <spiv>   b) The code will divide by zero
      */
     gettime(&current_time);
-    
+
     iter_msec = (long) GETMSECS(current_time) - GETMSECS(glc->last_iteration) + 
 	((long) GETSECS(current_time) - GETSECS(glc->last_iteration)) * 1000L;
 
@@ -2120,7 +2104,6 @@ void glsnake_display(
     Display * dpy = MI_DISPLAY(mi);
     Window window = MI_WINDOW(mi);
 #endif
-
     int i;
     float ang;
     float positions[NODE_COUNT][4]; /* origin points for each node */
@@ -2362,11 +2345,11 @@ static void calc_rotation() {
     rotation[15] = 1.0;
 }
 
-static inline void ui_mousedrag() {
+static void ui_mousedrag() {
     glMultMatrixf(rotation);
 }
 
-static void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
+static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE_UNUSED) {
     switch (c) {
       case 27:  /* ESC */
       case 'q':
@@ -2495,7 +2478,7 @@ static void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int 
     }
 }
 
-static void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
+static void ui_special(int key, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE_UNUSED) {
     float *destAngle = &(model[glc->next_model].node[glc->selected]);
     int unknown_key = 0;
 
@@ -2529,7 +2512,7 @@ static void ui_special(int key, int x __attribute__((__unused__)), int y __attri
 	glutPostRedisplay();
 }
 
-static void ui_mouse(int button, int state, int x, int y) {
+static inline void ui_mouse(int button, int state, int x, int y) {
     if (button==0) {
 	switch (state) {
 	  case GLUT_DOWN:
