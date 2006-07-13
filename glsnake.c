@@ -19,6 +19,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#ifdef WIN32
+# include <windows.h>
+# define isnan _isnan
+# define inline __inline
+# define random rand
+# define ATTRIBUTE_UNUSED
+#endif WIN32
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -69,8 +77,7 @@
 #  include <sys/timeb.h>
    typedef struct timeb snaketime;
 #  define GETSECS(t) ((long)(t).time)
-#  define GETMSECS(t) ((t).millitm/1000)
-
+#  define GETMSECS(t) ((t).millitm)
 # endif /* HAVE_FTIME */
 #endif /* HAVE_GETTIMEOFDAY */
 
@@ -78,6 +85,10 @@
 
 #ifndef M_SQRT1_2	/* Win32 doesn't have this constant  */
 #define M_SQRT1_2 0.70710678118654752440084436210485
+#endif
+
+#ifndef ATTRIBUTE_UNUSED
+# define ATTRIBUTE_UNUSED __attribute__((__unused__))
 #endif
 
 #define NODE_COUNT 24
@@ -1985,7 +1996,7 @@ static float morph(long iter_msec) {
 #ifdef HAVE_GLUT
 static void glsnake_idle();
 
-static void restore_idle(int v __attribute__((__unused__)))
+static void restore_idle(int v ATTRIBUTE_UNUSED)
 {
     glutIdleFunc(glsnake_idle);
 }
@@ -2362,11 +2373,11 @@ static void calc_rotation() {
     rotation[15] = 1.0;
 }
 
-static inline void ui_mousedrag() {
+static void ui_mousedrag() {
     glMultMatrixf(rotation);
 }
 
-static void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
+static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE_UNUSED) {
     switch (c) {
       case 27:  /* ESC */
       case 'q':
@@ -2495,7 +2506,7 @@ static void ui_keyboard(unsigned char c, int x __attribute__((__unused__)), int 
     }
 }
 
-static void ui_special(int key, int x __attribute__((__unused__)), int y __attribute__((__unused__))) {
+static void ui_special(int key, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE_UNUSED) {
     float *destAngle = &(model[glc->next_model].node[glc->selected]);
     int unknown_key = 0;
 
@@ -2529,7 +2540,7 @@ static void ui_special(int key, int x __attribute__((__unused__)), int y __attri
 	glutPostRedisplay();
 }
 
-static void ui_mouse(int button, int state, int x, int y) {
+static inline void ui_mouse(int button, int state, int x, int y) {
     if (button==0) {
 	switch (state) {
 	  case GLUT_DOWN:
