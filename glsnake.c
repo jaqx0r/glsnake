@@ -2015,7 +2015,7 @@ static void quick_sleep(void)
      * mouse and keyboard events, unlike using something like
      * usleep. */
     glutIdleFunc(NULL);
-    glutTimerFunc(1, restore_idle, 0);
+    glutTimerFunc(5, restore_idle, 0);
 #else
     usleep(1);
 #endif
