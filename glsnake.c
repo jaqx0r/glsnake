@@ -203,6 +203,10 @@ static argtype vars[] = {
 ModeSpecOpt sws_opts = {(int)countof(opts), opts, (int)countof(vars), vars, NULL};
 #endif
 
+struct glsnake_shape{
+    float node[NODE_COUNT];
+};
+
 struct model_s {
     const char * name;
     float node[NODE_COUNT];
@@ -234,7 +238,7 @@ struct glsnake_cfg {
     int debug;
 
     /* the shape of the model */
-    float node[NODE_COUNT];
+    struct glsnake_shape shape;
 
     /* currently selected node for interactive mode */
     int selected;
@@ -1494,7 +1498,7 @@ ModeInfo * mi
 #endif
 
     /* initialise conf struct */
-    memset(&bp->node, 0, sizeof(float) * NODE_COUNT);
+    memset(&bp->shape.node, 0, sizeof(float) * NODE_COUNT);
 
     bp->selected = 11;
     bp->is_cyclic = 0;
@@ -1881,7 +1885,7 @@ static float morph_percent(void) {
 	    if (rot > 180.0) rot = 180.0 - rot;
 	    /* work out the difference between the current position and the
 	     * target */
-	    ang_diff = fabs(glc->node[i] -
+	    ang_diff = fabs(glc->shape.node[i] -
 			    model[glc->next_model].node[i]);
 	    if (ang_diff > 180.0) ang_diff = 180.0 - ang_diff;
 	    /* if it's the biggest so far, record it */
@@ -1927,7 +1931,7 @@ static void start_morph(unsigned int model_index, int immediate) {
 	int i;
 
 	for (i = 0; i < NODE_COUNT; i++)
-	    glc->node[i] = model[model_index].node[i];
+	    glc->shape.node[i] = model[model_index].node[i];
     }
 
     glc->prev_model = glc->next_model;
@@ -2093,16 +2097,17 @@ void glsnake_idle(
 
 	still_morphing = 0;
 	for (i = 0; i < NODE_COUNT; i++) {
-	    float cur_angle = glc->node[i];
+	    struct glsnake_shape *shape = &(glc->shape);
+	    float cur_angle = shape->node[i];
 	    float dest_angle = model[glc->next_model].node[i];
 	    if (cur_angle != dest_angle) {
 		still_morphing = 1;
 		if (fabs(cur_angle - dest_angle) <= iter_angle_max)
-		    glc->node[i] = dest_angle;
+		    shape->node[i] = dest_angle;
 		else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
-		    glc->node[i] = fmod(cur_angle + iter_angle_max, 360);
+		    shape->node[i] = fmod(cur_angle + iter_angle_max, 360);
 		else
-		    glc->node[i] = fmod(cur_angle + 360 - iter_angle_max, 360);
+		    shape->node[i] = fmod(cur_angle + 360 - iter_angle_max, 360);
 	    }
 	}
 
@@ -2171,7 +2176,7 @@ void glsnake_display(
     for (i = 0; i < NODE_COUNT; i++) {
 	float rotmat[16];
 
-	ang = glc->node[i];
+	ang = glc->shape.node[i];
 
 	/*printf("ang = %f\n", ang);*/
 	
@@ -2260,7 +2265,7 @@ void glsnake_display(
 	/* now work out where to draw the next one */
 	
 	/* Interpolate between models */
-	ang = glc->node[i];
+	ang = glc->shape.node[i];
 	
 	glTranslatef(0.5, 0.5, 0.5);		/* move to center */
 	glRotatef(90.0, 0.0, 0.0, -1.0);	/* reorient  */
@@ -2455,15 +2460,16 @@ static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE
 	printf("# %s\nnoname:\t", model[glc->next_model].name);
 	{
 	    int i;
+	    struct glsnake_shape *shape = &(glc->shape);
 	    
 	    for (i = 0; i < NODE_COUNT; i++) {
-		if (glc->node[i] == ZERO)
+		if (shape->node[i] == ZERO)
 		    printf("Z");
-		else if (glc->node[i] == LEFT)
+		else if (shape->node[i] == LEFT)
 		    printf("L");
-		else if (glc->node[i] == PIN)
+		else if (shape->node[i] == PIN)
 		    printf("P");
-		else if (glc->node[i] == RIGHT)
+		else if (shape->node[i] == RIGHT)
 		    printf("R");
 		/*
 		  else
