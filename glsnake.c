@@ -212,6 +212,13 @@ struct model_s {
     struct glsnake_shape shape;
 };
 
+#ifdef HAVE_GLUT
+#define UNDO_LENGTH 100
+struct glsnake_shape undo_ring_buffer[UNDO_LENGTH];
+int undo_ring_start;
+int undo_ring_end;
+#endif
+
 struct glsnake_cfg {
 #ifndef HAVE_GLUT
     GLXContext * glx_context;
@@ -237,15 +244,19 @@ struct glsnake_cfg {
     float last_turn;
     int debug;
 
-    /* the shape of the model */
+    /* the current shape of the model */
     struct glsnake_shape shape;
+
+    /* the shapes we are morphing from and morphing to */
+    struct model_s prev_model_s;
+    struct model_s next_model_s;
 
     /* currently selected node for interactive mode */
     int selected;
 
-    /* models */
-    unsigned int prev_model;
-    unsigned int next_model;
+    /* if next_model_s is from the preset model array, this is the index into
+     * that array, otherwise -1. */
+    int preset_index;
 
     /* model morphing */
     int new_morph;
@@ -1469,6 +1480,8 @@ static void gettime(snaketime *t)
 }
 
 static void start_morph(unsigned int model_index, int immediate);
+static void start_morph_shape(struct glsnake_shape *shape, int immediate);
+
 
 /* wot initialises it */
 void glsnake_init(
@@ -1512,9 +1525,8 @@ ModeInfo * mi
     memcpy(&bp->last_morph, &bp->last_iteration, sizeof(bp->last_morph));
 
     bp->prev_colour = bp->next_colour = COLOUR_ACYCLIC;
-    bp->next_model = RAND(models);
-    bp->prev_model = START_MODEL;
-    start_morph(bp->prev_model, 1);
+    start_morph(START_MODEL, 1);
+    memcpy(&bp->next_model_s, &model[RAND(models)], sizeof(struct model_s));
 
     /* set up a font for the labels */
 #ifndef HAVE_GLUT
@@ -1713,7 +1725,7 @@ static void draw_title(
 	if (interactive)
 	    s = interactstr;
 	else
-	    s = model[glc->next_model].name;
+	    s = glc->next_model_s.name;
 	
 #ifdef HAVE_GLUT
 	{
@@ -1791,7 +1803,17 @@ static int cross_product(int src_dir, int dst_dir) {
  *  is_cyclic = true if last node connects back to first node
  *  last_turn = for cyclic snakes, specifes what the 24th turn would be
  */
+static void calc_snake_metrics_shape(struct glsnake_shape *shape);
+static void calc_snake_metrics_model_s(struct model_s *mdl);
 static void calc_snake_metrics(void) {
+    calc_snake_metrics_model_s(&glc->next_model_s);
+}
+
+static void calc_snake_metrics_model_s(struct model_s *mdl) {
+    calc_snake_metrics_shape(&mdl->shape);
+}
+
+static void calc_snake_metrics_shape(struct glsnake_shape *shape) {
     int srcDir, dstDir;
     int i, x, y, z;
     int prevSrcDir = -Y_MASK;
@@ -1813,7 +1835,7 @@ static void calc_snake_metrics(void) {
 	y += GETSCALAR(prevDstDir, Y_MASK);
 	z += GETSCALAR(prevDstDir, Z_MASK);
 
-	switch ((int) model[glc->next_model].shape.node[i]) {
+	switch ((int) shape->node[i]) {
 	  case (int) (ZERO):
 	    dstDir = -prevSrcDir;
 	    break;
@@ -1823,7 +1845,7 @@ static void calc_snake_metrics(void) {
 	  case (int) (RIGHT):
 	  case (int) (LEFT):
 	    dstDir = cross_product(prevSrcDir, prevDstDir);
-	    if (fabs(model[glc->next_model].shape.node[i] - RIGHT) < FLT_EPSILON)
+	    if (fabs(shape->node[i] - RIGHT) < FLT_EPSILON)
 		dstDir = -dstDir;
 	    break;
 	  default:
@@ -1880,13 +1902,13 @@ static float morph_percent(void) {
 	    /* work out the maximum rotation this node has to go through
 	     * from the previous to the next model, taking into account that
 	     * the snake always morphs through the smaller angle */
-	    rot = fabs(model[glc->prev_model].shape.node[i] -
-		       model[glc->next_model].shape.node[i]);
+	    rot = fabs(glc->prev_model_s.shape.node[i] -
+		       glc->next_model_s.shape.node[i]);
 	    if (rot > 180.0) rot = 180.0 - rot;
 	    /* work out the difference between the current position and the
 	     * target */
 	    ang_diff = fabs(glc->shape.node[i] -
-			    model[glc->next_model].shape.node[i]);
+			    glc->next_model_s.shape.node[i]);
 	    if (ang_diff > 180.0) ang_diff = 180.0 - ang_diff;
 	    /* if it's the biggest so far, record it */
 	    if (rot > rot_max) rot_max = rot;
@@ -1926,16 +1948,23 @@ static void morph_colour(void) {
 
 /* Start morph process to this model */
 static void start_morph(unsigned int model_index, int immediate) {
+    start_morph_shape(&model[model_index].shape, immediate);
+    glc->next_model_s.name = model[model_index].name;
+    glc->preset_index = model_index;
+}
+
+static void start_morph_shape(struct glsnake_shape *shape, int immediate) {
     /* if immediate, don't bother morphing, go straight to the next model */
     if (immediate) {
 	int i;
 
 	for (i = 0; i < NODE_COUNT; i++)
-	    glc->shape.node[i] = model[model_index].shape.node[i];
+	    glc->shape.node[i] = shape->node[i];
     }
 
-    glc->prev_model = glc->next_model;
-    glc->next_model = model_index;
+    memcpy(&glc->prev_model_s, &glc->next_model_s, sizeof(struct model_s));
+    memcpy(&glc->next_model_s.shape, shape, sizeof(struct glsnake_shape));
+    glc->next_model_s.name = "(XXX)";
     glc->prev_colour = glc->next_colour;
 
     calc_snake_metrics();
@@ -1998,6 +2027,22 @@ static float morph(long iter_msec) {
     return MIN(largest_diff / largest_progress, 1.0);
 }
 #endif /* 0 */
+
+void save_snake_state()
+{
+    /* calculate new ring buffer indices */
+    undo_ring_end++;
+    undo_ring_end %= UNDO_LENGTH;
+    if (undo_ring_end == undo_ring_start) {
+        /* We have a full buffer.  We're about to overwrite the oldest entry,
+         * so increment the start pointer. */
+        undo_ring_start++;
+        undo_ring_start %= UNDO_LENGTH;
+    }
+
+    /* Store the current snake shape */
+    memcpy(&undo_ring_buffer[undo_ring_end], &glc->shape, sizeof(struct glsnake_shape));
+}
 
 #ifdef HAVE_GLUT
 static void glsnake_idle();
@@ -2099,7 +2144,7 @@ void glsnake_idle(
 	for (i = 0; i < NODE_COUNT; i++) {
 	    struct glsnake_shape *shape = &(glc->shape);
 	    float cur_angle = shape->node[i];
-	    float dest_angle = model[glc->next_model].shape.node[i];
+	    float dest_angle = glc->next_model_s.shape.node[i];
 	    if (cur_angle != dest_angle) {
 		still_morphing = 1;
 		if (fabs(cur_angle - dest_angle) <= iter_angle_max)
@@ -2318,9 +2363,8 @@ int main(int argc, char ** argv) {
     srand((unsigned int)GETSECS(glc->last_iteration));
 
     glc->prev_colour = glc->next_colour = COLOUR_ACYCLIC;
-    glc->next_model = RAND(models);
-    glc->prev_model = 0;
-    start_morph(glc->prev_model, 1);	
+    start_morph(STRAIGHT_MODEL, 1);	
+    memcpy(&bp->next_model_s, &model[RAND(models)], sizeof(struct model_s));
 
     glsnake_init();
     
@@ -2400,17 +2444,17 @@ static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE
 	break;
       case '.':
 	/* next model */
-	glc->next_model++;
-	glc->next_model %= models;
-	start_morph(glc->next_model, 0);
+	glc->preset_index++;
+	glc->preset_index %= models;
+	start_morph(glc->preset_index, 0);
 	
 	/* Reset last_morph time */
 	gettime(&glc->last_morph);			
 	break;
       case ',':
 	/* previous model */
-	glc->next_model = (glc->next_model + (int)models - 1) % (int)models;
-	start_morph(glc->next_model, 0);
+	glc->preset_index = (glc->preset_index + (int)models - 1) % (int)models;
+	start_morph(glc->preset_index, 0);
 	
 	/* Reset glc->last_morph time */
 	gettime(&glc->last_morph);			
@@ -2457,7 +2501,7 @@ static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE
 	break;
       case 'd':
 	/* dump the current model so we can add it! */
-	printf("# %s\nnoname:\t", model[glc->next_model].name);
+	printf("# %s\nnoname:\t", glc->next_model_s.name);
 	{
 	    int i;
 	    struct glsnake_shape *shape = &(glc->shape);
@@ -2508,13 +2552,20 @@ static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE
 	zoom -= 1.0;
 	glsnake_reshape(glc->width, glc->height);
 	break;
+      case 'u':
+        if (undo_ring_end != undo_ring_start) {
+	    memcpy(&glc->next_model_s.shape, &undo_ring_buffer[undo_ring_end--], sizeof(struct glsnake_shape));
+	    undo_ring_end %= UNDO_LENGTH;
+	    glc->morphing = glc->new_morph = 1;
+        }
+	break;
       default:
 	break;
     }
 }
 
 static void ui_special(int key, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE_UNUSED) {
-    float *destAngle = &(model[glc->next_model].shape.node[glc->selected]);
+    float *destAngle = &(glc->next_model_s.shape.node[glc->selected]);
     int unknown_key = 0;
 
     if (interactive) {
@@ -2526,14 +2577,17 @@ static void ui_special(int key, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE_UNUSED) 
 	    glc->selected = (glc->selected + 1) % (NODE_COUNT - 1);
 	    break;
 	  case GLUT_KEY_LEFT:
+            save_snake_state();
 	    *destAngle = fmod(*destAngle+(LEFT), 360);
 	    glc->morphing = glc->new_morph = 1;
 	    break;
 	  case GLUT_KEY_RIGHT:
+            save_snake_state();
 	    *destAngle = fmod(*destAngle+(RIGHT), 360);
 	    glc->morphing = glc->new_morph = 1;
 	    break;
 	  case GLUT_KEY_HOME:
+            save_snake_state();
 	    start_morph(STRAIGHT_MODEL, 0);
 	    break;
 	  default:
@@ -2541,6 +2595,7 @@ static void ui_special(int key, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE_UNUSED) 
 	    break;
 	}
     }
+
     calc_snake_metrics();
 
     if (!unknown_key)
@@ -2639,5 +2694,7 @@ static void ui_init(int * argc, char ** argv) {
     zoom = DEF_ZOOM;
     wireframe = DEF_WIREFRAME;
     transparent = DEF_TRANSPARENT;
+    undo_ring_start = 0;
+    undo_ring_end = 0;
 }
 #endif /* HAVE_GLUT */
