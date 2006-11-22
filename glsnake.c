@@ -2468,6 +2468,7 @@ static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE
 	break;
       case '.':
 	/* next model */
+	save_snake_state();
 	glc->preset_index++;
 	glc->preset_index %= models;
 	start_morph(glc->preset_index, 0);
@@ -2477,6 +2478,7 @@ static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE
 	break;
       case ',':
 	/* previous model */
+	save_snake_state();
 	glc->preset_index = (glc->preset_index + (int)models - 1) % (int)models;
 	start_morph(glc->preset_index, 0);
 	
