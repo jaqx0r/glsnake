@@ -2063,7 +2063,11 @@ int pop_undo_entry()
 void save_snake_state()
 {
     struct glsnake_shape *undo_shape = &undo_ring_buffer[push_undo_entry()];
-    memcpy(undo_shape, &glc->shape, sizeof(struct glsnake_shape));
+    /* By "current snake shape", we mean the shape we are currently
+     * transitioning to, rather than the currently displayed shape.  i.e., if we
+     * are mid-transition, we don't capture the half-transitioned shape, but the
+     * destination shape. */
+    memcpy(undo_shape, &glc->next_model_s.shape, sizeof(struct glsnake_shape));
 }
 
 #ifdef HAVE_GLUT
