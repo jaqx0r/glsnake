@@ -213,6 +213,8 @@ struct model_s {
 };
 
 #ifdef HAVE_GLUT
+/* Define a ring buffer to store previous snake shapes.  The 'u' key will go
+ * back to the previously stored state. */
 #define UNDO_LENGTH 100
 struct glsnake_shape undo_ring_buffer[UNDO_LENGTH];
 int undo_ring_start;
@@ -2027,7 +2029,8 @@ static float morph(long iter_msec) {
 }
 #endif /* 0 */
 
-void save_snake_state()
+/* Allocate a new undo entry in undo_ring_buffer, and return its index. */
+int push_undo_entry()
 {
     /* calculate new ring buffer indices */
     undo_ring_end++;
@@ -2038,9 +2041,29 @@ void save_snake_state()
         undo_ring_start++;
         undo_ring_start %= UNDO_LENGTH;
     }
+    return undo_ring_end;
+}
 
-    /* Store the current snake shape */
-    memcpy(&undo_ring_buffer[undo_ring_end], &glc->shape, sizeof(struct glsnake_shape));
+/* Deallocate the most recent undo entry, and return its index.
+ *
+ * Make sure you use or copy the entry before doing another push, or it may be
+ * overwritten!
+ *
+ * Returns -1 if there are no entries to pop. */
+int pop_undo_entry()
+{
+    int entry;
+    if (undo_ring_start == undo_ring_end) return -1;
+    entry = undo_ring_end--;
+    undo_ring_end %= UNDO_LENGTH;
+    return entry;
+}
+
+/* Store the current snake shape */
+void save_snake_state()
+{
+    struct glsnake_shape *undo_shape = &undo_ring_buffer[push_undo_entry()];
+    memcpy(undo_shape, &glc->shape, sizeof(struct glsnake_shape));
 }
 
 #ifdef HAVE_GLUT
@@ -2550,10 +2573,13 @@ static void ui_keyboard(unsigned char c, int x ATTRIBUTE_UNUSED, int y ATTRIBUTE
 	glsnake_reshape(glc->width, glc->height);
 	break;
       case 'u':
-        if (undo_ring_end != undo_ring_start) {
-	    memcpy(&glc->next_model_s.shape, &undo_ring_buffer[undo_ring_end--], sizeof(struct glsnake_shape));
-	    undo_ring_end %= UNDO_LENGTH;
-	    glc->morphing = glc->new_morph = 1;
+        {
+            int undo_idx = pop_undo_entry();
+            if (undo_idx != -1) {
+                memcpy(&glc->next_model_s.shape, &undo_ring_buffer[undo_idx], 
+                       sizeof(struct glsnake_shape));
+                glc->morphing = glc->new_morph = 1;
+            }
         }
 	break;
       default:
