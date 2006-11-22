@@ -1526,7 +1526,6 @@ ModeInfo * mi
 
     bp->prev_colour = bp->next_colour = COLOUR_ACYCLIC;
     start_morph(START_MODEL, 1);
-    memcpy(&bp->next_model_s, &model[RAND(models)], sizeof(struct model_s));
 
     /* set up a font for the labels */
 #ifndef HAVE_GLUT
@@ -2363,8 +2362,6 @@ int main(int argc, char ** argv) {
     srand((unsigned int)GETSECS(glc->last_iteration));
 
     glc->prev_colour = glc->next_colour = COLOUR_ACYCLIC;
-    start_morph(STRAIGHT_MODEL, 1);	
-    memcpy(&bp->next_model_s, &model[RAND(models)], sizeof(struct model_s));
 
     glsnake_init();
     
