@@ -1495,6 +1495,18 @@ static int morph_all_at_once(long iter_msec);
 static int morph_one_at_a_time(long iter_msec);
 static float morph_percent_one_at_a_time(void);
 
+struct morph_method_t {
+    morph_func_t morph;
+    morph_percent_func_t morph_percent;
+};
+
+static struct morph_method_t morph_methods[] = {
+    {&morph_all_at_once, &morph_percent},
+    {&morph_one_at_a_time, &morph_percent_one_at_a_time}
+};
+static size_t MORPH_METHOD_COUNT = sizeof(morph_methods) / sizeof(struct morph_method_t);
+
+
 /* wot initialises it */
 void glsnake_init(
 #ifndef HAVE_GLUT
@@ -1532,8 +1544,6 @@ ModeInfo * mi
     bp->morphing = 0;
     bp->paused = 0;
     bp->new_morph = 0;
-    bp->morph = morph_all_at_once;
-    bp->morph_percent = morph_percent;
     bp->morph = morph_one_at_a_time;
     bp->morph_percent = morph_percent_one_at_a_time;
 
@@ -2002,6 +2012,11 @@ static void start_morph_shape(struct glsnake_shape *shape, int immediate) {
 	glc->colour[1][2] = colour[glc->next_colour][1][2];
 	glc->colour[1][3] = colour[glc->next_colour][1][3];
     } else {
+        /* Randomly select the next morph method */
+        int morph_method = RAND(MORPH_METHOD_COUNT);
+        glc->morph = morph_methods[morph_method].morph;
+        glc->morph_percent = morph_methods[morph_method].morph_percent;
+        /* Signal to the morph method that this is a new morph */
         glc->new_morph = 1;
     }
     glc->morphing = 1;
@@ -2249,8 +2264,10 @@ void glsnake_idle(
 
 	still_morphing = glc->morph(iter_msec);
 
-	if (!still_morphing)
+	if (!still_morphing) {
 	    glc->morphing = 0;
+        }
+
 
 	/* colour cycling */
 	morph_colour();
