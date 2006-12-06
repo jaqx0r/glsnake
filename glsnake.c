@@ -1501,7 +1501,9 @@ struct morph_method_t {
 };
 
 static struct morph_method_t morph_methods[] = {
+    /* rotate all joints at the same time */
     {&morph_all_at_once, &morph_percent},
+    /* rotate joints one at a time */
     {&morph_one_at_a_time, &morph_percent_one_at_a_time}
 };
 static size_t MORPH_METHOD_COUNT = sizeof(morph_methods) / sizeof(struct morph_method_t);
@@ -2123,6 +2125,27 @@ static void quick_sleep(void)
 #endif
 }
 
+/* returns a flag indicating if any rotation happened */
+int rotate_joint(int current_node, float iter_angle_max)
+{
+    struct glsnake_shape *shape = &(glc->shape);
+    float cur_angle = shape->node[current_node];
+    float dest_angle = glc->next_model_s.shape.node[current_node];
+    int rotated = 0;
+
+    if (cur_angle != dest_angle) {
+        rotated = 1;
+    }
+    if (fabs(cur_angle - dest_angle) <= iter_angle_max)
+        shape->node[current_node] = dest_angle;
+    else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
+        shape->node[current_node] = fmod(cur_angle + iter_angle_max, 360);
+    else
+        shape->node[current_node] = fmod(cur_angle + 360 - iter_angle_max, 360);
+
+    return rotated;
+}
+
 /* returns a flag indicating if this morph is complete */
 static int morph_all_at_once(long iter_msec)
 {
@@ -2132,17 +2155,9 @@ static int morph_all_at_once(long iter_msec)
 	float iter_angle_max = 90.0 * (angvel/1000.0) * iter_msec;
 
 	for (i = 0; i < NODE_COUNT; i++) {
-	    struct glsnake_shape *shape = &(glc->shape);
-	    float cur_angle = shape->node[i];
-	    float dest_angle = glc->next_model_s.shape.node[i];
-	    if (cur_angle != dest_angle) {
+	    int rotated = rotate_joint(i, iter_angle_max);
+	    if (rotated) {
 		still_morphing = 1;
-		if (fabs(cur_angle - dest_angle) <= iter_angle_max)
-		    shape->node[i] = dest_angle;
-		else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
-		    shape->node[i] = fmod(cur_angle + iter_angle_max, 360);
-		else
-		    shape->node[i] = fmod(cur_angle + 360 - iter_angle_max, 360);
 	    }
 	}
 	return still_morphing;
@@ -2157,7 +2172,6 @@ static int morph_one_at_a_time(long iter_msec)
     /* work out the maximum angle we could turn this node in this
      * timeslice, iter_msec milliseconds long */
     float iter_angle_max = 90.0 * (angvel/1000.0) * iter_msec;
-    //fprintf(stderr, "current node was %d\n", current_node);
 
     if (glc->new_morph) {
         current_node = morph_one_at_time_current_node = 0;
@@ -2175,17 +2189,7 @@ static int morph_one_at_a_time(long iter_msec)
     }
     morph_one_at_time_current_node = current_node;
 
-    {
-        float cur_angle = shape->node[current_node];
-        float dest_angle = glc->next_model_s.shape.node[current_node];
-        //fprintf(stderr, "cur_angle: %0.3f, dest_angle: %0.3f\n", cur_angle, dest_angle);
-        if (fabs(cur_angle - dest_angle) <= iter_angle_max)
-            shape->node[current_node] = dest_angle;
-        else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
-            shape->node[current_node] = fmod(cur_angle + iter_angle_max, 360);
-        else
-            shape->node[current_node] = fmod(cur_angle + 360 - iter_angle_max, 360);
-    }
+    rotate_joint(current_node, iter_angle_max);
 
     return 1;
 }
