@@ -1492,6 +1492,8 @@ static void start_morph(unsigned int model_index, int immediate);
 static void start_morph_shape(struct glsnake_shape *shape, int immediate);
 static float morph_percent(void);
 static int morph_all_at_once(long iter_msec);
+static int morph_one_at_a_time(long iter_msec);
+static float morph_percent_one_at_a_time(void);
 
 /* wot initialises it */
 void glsnake_init(
@@ -1532,6 +1534,8 @@ ModeInfo * mi
     bp->new_morph = 0;
     bp->morph = morph_all_at_once;
     bp->morph_percent = morph_percent;
+    bp->morph = morph_one_at_a_time;
+    bp->morph_percent = morph_percent_one_at_a_time;
 
     gettime(&bp->last_iteration);
     memcpy(&bp->last_morph, &bp->last_iteration, sizeof(bp->last_morph));
@@ -1943,7 +1947,7 @@ static float morph_percent(void) {
 static void morph_colour(void) {
     float percent, compct; /* complement of percentage */
 
-    percent = morph_percent();
+    percent = glc->morph_percent();
     compct = 1.0 - percent;
 
     glc->colour[0][0] = colour[glc->prev_colour][0][0] * compct + colour[glc->next_colour][0][0] * percent;
@@ -1997,6 +2001,8 @@ static void start_morph_shape(struct glsnake_shape *shape, int immediate) {
 	glc->colour[1][1] = colour[glc->next_colour][1][1];
 	glc->colour[1][2] = colour[glc->next_colour][1][2];
 	glc->colour[1][3] = colour[glc->next_colour][1][3];
+    } else {
+        glc->new_morph = 1;
     }
     glc->morphing = 1;
 
@@ -2127,17 +2133,52 @@ static int morph_all_at_once(long iter_msec)
 	return still_morphing;
 }
 
-/*
-static int morph_one_at_a_time(float iter_angle_max)
+static int morph_one_at_time_current_node = 0;
+
+static int morph_one_at_a_time(long iter_msec)
 {
+    int current_node = morph_one_at_time_current_node;
+    struct glsnake_shape *shape = &(glc->shape);
+    /* work out the maximum angle we could turn this node in this
+     * timeslice, iter_msec milliseconds long */
+    float iter_angle_max = 90.0 * (angvel/1000.0) * iter_msec;
+    //fprintf(stderr, "current node was %d\n", current_node);
+
+    if (glc->new_morph) {
+        current_node = morph_one_at_time_current_node = 0;
+        glc->new_morph = 0;
+    }
+
+    /* find the next angle (possibly the current one) to rotate */
+    while (shape->node[current_node] == glc->next_model_s.shape.node[current_node]) {
+        current_node++;
+        if (current_node == NODE_COUNT) {
+            /* all joints are at their destination, so we're done morphing */
+            morph_one_at_time_current_node = 0;
+            return 0;
+        }
+    }
+    morph_one_at_time_current_node = current_node;
+
+    {
+        float cur_angle = shape->node[current_node];
+        float dest_angle = glc->next_model_s.shape.node[current_node];
+        //fprintf(stderr, "cur_angle: %0.3f, dest_angle: %0.3f\n", cur_angle, dest_angle);
+        if (fabs(cur_angle - dest_angle) <= iter_angle_max)
+            shape->node[current_node] = dest_angle;
+        else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
+            shape->node[current_node] = fmod(cur_angle + iter_angle_max, 360);
+        else
+            shape->node[current_node] = fmod(cur_angle + 360 - iter_angle_max, 360);
+    }
+
     return 1;
 }
 
 static float morph_percent_one_at_a_time(void)
 {
-    return i / NODE_COUNT; // XXX
+    return morph_one_at_time_current_node / NODE_COUNT;
 }
-*/
 
 void glsnake_idle(
 #ifndef HAVE_GLUT
@@ -2206,7 +2247,7 @@ void glsnake_idle(
 
 	}
 
-	still_morphing = morph_all_at_once(iter_msec);
+	still_morphing = glc->morph(iter_msec);
 
 	if (!still_morphing)
 	    glc->morphing = 0;
