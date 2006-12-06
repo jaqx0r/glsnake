@@ -221,6 +221,9 @@ int undo_ring_start;
 int undo_ring_end;
 #endif
 
+typedef int (*morph_func_t)(long);
+typedef float (*morph_percent_func_t)(void);
+
 struct glsnake_cfg {
 #ifndef HAVE_GLUT
     GLXContext * glx_context;
@@ -236,6 +239,10 @@ struct glsnake_cfg {
 
     /* is a morph in progress? */
     int morphing;
+
+    /* functions for this morph */
+    morph_func_t morph;
+    morph_percent_func_t morph_percent;
 
     /* has the model been paused? */
     int paused;
@@ -1483,7 +1490,8 @@ static void gettime(snaketime *t)
 
 static void start_morph(unsigned int model_index, int immediate);
 static void start_morph_shape(struct glsnake_shape *shape, int immediate);
-
+static float morph_percent(void);
+static int morph_all_at_once(long iter_msec);
 
 /* wot initialises it */
 void glsnake_init(
@@ -1522,6 +1530,8 @@ ModeInfo * mi
     bp->morphing = 0;
     bp->paused = 0;
     bp->new_morph = 0;
+    bp->morph = morph_all_at_once;
+    bp->morph_percent = morph_percent;
 
     gettime(&bp->last_iteration);
     memcpy(&bp->last_morph, &bp->last_iteration, sizeof(bp->last_morph));
@@ -1882,7 +1892,7 @@ static void calc_snake_metrics_shape(struct glsnake_shape *shape) {
 	}
 }
 
-/* work out how far through the current morph we are */
+/* Work out how far through the current morph we are.  Used by morph_colour. */
 static float morph_percent(void) {
     float retval;
     int i;
@@ -2092,6 +2102,43 @@ static void quick_sleep(void)
 #endif
 }
 
+/* returns a flag indicating if this morph is complete */
+static int morph_all_at_once(long iter_msec)
+{
+	int i, still_morphing = 0;
+	/* work out the maximum angle we could turn this node in this
+	 * timeslice, iter_msec milliseconds long */
+	float iter_angle_max = 90.0 * (angvel/1000.0) * iter_msec;
+
+	for (i = 0; i < NODE_COUNT; i++) {
+	    struct glsnake_shape *shape = &(glc->shape);
+	    float cur_angle = shape->node[i];
+	    float dest_angle = glc->next_model_s.shape.node[i];
+	    if (cur_angle != dest_angle) {
+		still_morphing = 1;
+		if (fabs(cur_angle - dest_angle) <= iter_angle_max)
+		    shape->node[i] = dest_angle;
+		else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
+		    shape->node[i] = fmod(cur_angle + iter_angle_max, 360);
+		else
+		    shape->node[i] = fmod(cur_angle + 360 - iter_angle_max, 360);
+	    }
+	}
+	return still_morphing;
+}
+
+/*
+static int morph_one_at_a_time(float iter_angle_max)
+{
+    return 1;
+}
+
+static float morph_percent_one_at_a_time(void)
+{
+    return i / NODE_COUNT; // XXX
+}
+*/
+
 void glsnake_idle(
 #ifndef HAVE_GLUT
 		  struct glsnake_cfg * bp
@@ -2101,11 +2148,8 @@ void glsnake_idle(
     long iter_msec;
     /* time since the beginning of last morph */
     long morf_msec;
-    float iter_angle_max;
     snaketime current_time;
-    /*    morphFunc transition; */
     int still_morphing;
-    int i;
     
     /* Do nothing to the model if we are paused */
     if (glc->paused) {
@@ -2162,25 +2206,7 @@ void glsnake_idle(
 
 	}
 
-	/* work out the maximum angle we could turn this node in this
-	 * timeslice, iter_msec milliseconds long */
-	iter_angle_max = 90.0 * (angvel/1000.0) * iter_msec;
-
-	still_morphing = 0;
-	for (i = 0; i < NODE_COUNT; i++) {
-	    struct glsnake_shape *shape = &(glc->shape);
-	    float cur_angle = shape->node[i];
-	    float dest_angle = glc->next_model_s.shape.node[i];
-	    if (cur_angle != dest_angle) {
-		still_morphing = 1;
-		if (fabs(cur_angle - dest_angle) <= iter_angle_max)
-		    shape->node[i] = dest_angle;
-		else if (fmod(cur_angle - dest_angle + 360, 360) > 180)
-		    shape->node[i] = fmod(cur_angle + iter_angle_max, 360);
-		else
-		    shape->node[i] = fmod(cur_angle + 360 - iter_angle_max, 360);
-	    }
-	}
+	still_morphing = morph_all_at_once(iter_msec);
 
 	if (!still_morphing)
 	    glc->morphing = 0;
