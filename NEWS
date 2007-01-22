@@ -10,21 +10,35 @@ NEWS for glsnake
    (Andrew Bennetts)
  * Add undo history to interactive mode!  (Andrew Bennetts)
 
-* 0.9.2 - 1/7/2006:
-- Removed controversial models
-- Added VS solution for building and packaging under Windows
+0.9.2
+-----
 
-* 0.9.1 - 31/12/2005:
-- Fix race condition (Jan Schmidt)
+1/7/2006
 
-* 0.9.0 - 28/12/2005:
-- Changed build system to SCons, which is great news for all our users!
-- Added alpha-blending for transparent nodes.
-- merged in XScreensaver changes from version 4.23
-- lots of fixes thanks to splint's static analysis
+ * Removed controversial models
+ * Added VS solution for building and packaging under Windows
 
-Version 0.8.9:
-* A lot of changes since the last version, including:
+0.9.1
+-----
+
+31/12/2005
+
+ * Fix race condition (Jan Schmidt)
+
+0.9.0
+-----
+
+28/12/2005
+
+ * Changed build system to SCons, which is great news for all our users!
+ * Added alpha-blending for transparent nodes.
+ * merged in XScreensaver changes from version 4.23
+ * lots of fixes thanks to splint's static analysis
+
+0.8.9
+-----
+
+ * A lot of changes since the last version, including:
   - a rework of the code to merge the xscreensaver port back into the
     main trunk
   - fixed colour morph code
@@ -33,14 +47,20 @@ Version 0.8.9:
   - simple build system!
 This same version (should) appear in xscreensaver 4.13.
 
-Version 0.8.2:
+0.8.2
+-----
+
 After fixing up the manpage a bit more, Jaq has decided to make 'd' work as
 expected.
 
-Version 0.8.1:
+0.8.1
+-----
+
 glsnake is now usable outside of the source tree again, as it now hunts in a
 few locations for its model data
 
-Version 0.8:
+0.8
+---
+
 Jamie has moved the entire source tree to the GNU autotools, which is great
 news for all our users!
