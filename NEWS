@@ -1,6 +1,15 @@
 NEWS for glsnake
 ----------------
 
+0.9.3
+-----
+
+2007-01-22
+
+ * Add node-at-a-time morphing, to copmlement whole-model-at-once morph.
+   (Andrew Bennetts)
+ * Add undo history to interactive mode!  (Andrew Bennetts)
+
 * 0.9.2 - 1/7/2006:
 - Removed controversial models
 - Added VS solution for building and packaging under Windows
