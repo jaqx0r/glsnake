@@ -1,6 +1,5 @@
 TODO for glsnake
 
-- random morph methods
 - fingerprints and scratch texture mapping
 - clean up models (remove duplicates, fix names)
 - cel shading -- check for multitexture and use cel shading with
