@@ -295,6 +295,7 @@ struct glsnake_cfg {
 #define COLOUR_INVALID 2
 #define COLOUR_AUTHENTIC 3
 #define COLOUR_ORIGLOGO 4
+#define COLOUR_SPOOKY 5
 
 static float colour[][2][4] = {
     /* cyclic - green */
@@ -311,7 +312,10 @@ static float colour[][2][4] = {
       { 0.0,  0.5, 0.34, 0.7 } },
     /* old "authentic" colours from the logo */
     { { 171/255.0, 0, 1.0, 1.0 },
-      { 46/255.0, 205/255.0, 227/255.0, 1.0 } }
+      { 46/255.0, 205/255.0, 227/255.0, 1.0 } },
+    /* Spooky */
+    { { 1.0, 0x99/255.0, 0.0, 1.0 },
+      { 0.1, 0.1, 0.1, 1.0 } },
 };
 
 /* Dearest reader,
@@ -1908,6 +1912,18 @@ static void calc_snake_metrics_shape(struct glsnake_shape *shape) {
 	}
 }
 
+int spooky(void) {
+  time_t t;
+  struct tm* tm_p;
+  if ((t = time(NULL)) == -1) {
+    return 0;
+  }
+  if ((tm_p = localtime(&t)) == NULL) {
+    return 0;
+  }
+  return ((tm_p->tm_mon == 9 && tm_p->tm_mday == 31));
+}
+
 /* Work out how far through the current morph we are.  Used by morph_colour. */
 static float morph_percent(void) {
     float retval;
@@ -1997,9 +2013,13 @@ static void start_morph_shape(struct glsnake_shape *shape, int immediate) {
     calc_snake_metrics();
     if (!glc->is_legal)
 	glc->next_colour = COLOUR_INVALID;
-    else if (altcolour)
-	glc->next_colour = COLOUR_AUTHENTIC;
-    else if (glc->is_cyclic)
+    else if (altcolour) {
+      if (spooky()) { 
+        glc->next_colour = COLOUR_SPOOKY;
+      } else {
+        glc->next_colour = COLOUR_AUTHENTIC;
+      }
+    } else if (glc->is_cyclic)
 	glc->next_colour = COLOUR_CYCLIC;
     else
 	glc->next_colour = COLOUR_ACYCLIC;
@@ -2476,7 +2496,7 @@ int main(int argc, char ** argv) {
     memcpy(&glc->last_morph, &glc->last_iteration, sizeof(snaketime));
     srand((unsigned int)GETSECS(glc->last_iteration));
 
-    glc->prev_colour = glc->next_colour = COLOUR_ACYCLIC;
+    glc->prev_colour = glc->next_colour = spooky() ? COLOUR_SPOOKY : COLOUR_ACYCLIC;
 
     glsnake_init();
     
