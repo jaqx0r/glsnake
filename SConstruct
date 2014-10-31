@@ -8,9 +8,39 @@ env = Environment()
 if not env.GetOption("clean"):
 	conf = Configure(env)
 
+	# check for GL
+	if conf.CheckLib('GL', 'glLightfv'):
+		if conf.CheckCHeader('GL/gl.h'):
+			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GL'])
+		else:
+			print "GL header file not found!"
+			Exit(1)
+	else:
+		print "GL library not found!"
+		Exit(1)
+	# check for GLU
+	if conf.CheckLib('GLU', 'gluOrtho2D'):
+		if conf.CheckCHeader('GL/glu.h'):
+			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLU'])
+		else:
+			print "GLU header file not found!"
+			Exit(1)
+	else:
+		print "GLU library not found!"
+		Exit(1)
 	# check for GLUT
 	if conf.CheckLib('glut', 'glutMainLoop'):
 		if conf.CheckCHeader('GL/glut.h'):
+			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
+		else:
+			print "GLUT header file not found!"
+			Exit(1)
+	else:
+		print "GLUT library not found!"
+		Exit(1)
+	# check for libm
+	if conf.CheckLib('m', 'fmod'):
+		if conf.CheckCHeader('math.h'):
 			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
 		else:
 			print "GLUT header file not found!"
@@ -62,4 +92,4 @@ env.AppendUnique(CCFLAGS=['-W%s' % (w,) for w in warnings])
 glsnake_sources = 'glsnake.c'
 
 glsnake = env.Program('glsnake', glsnake_sources,
-					  LIBS=['glut'])
+					  LIBS=['glut', 'GLU', 'GL', 'm'])
