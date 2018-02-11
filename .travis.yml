@@ -1,4 +1,9 @@
 language: c
 script: scons
 sudo: false
-before_install: apt install libgl-dev libglu-dev freeglut-dev
+addons:
+  apt:
+    packages:
+      - libgl-dev
+      - libglu-dev
+      - freeglut-dev
