@@ -4,6 +4,5 @@ sudo: false
 addons:
   apt:
     packages:
-      - libgl-dev
-      - libglu-dev
-      - freeglut-dev
+      - libgl1-mesa-dev
+      - freeglut3-dev
