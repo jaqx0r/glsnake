@@ -1,5 +1,6 @@
-config.log
-glsnake.o
 glsnake
 .sconf_temp
 .sconsign.dblite
+config.log
+*.o
+*~
