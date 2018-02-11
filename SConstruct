@@ -9,27 +9,39 @@ env.ParseConfig('pkg-config --cflags --libs gl')
 if not env.GetOption("clean"):
 	conf = Configure(env)
 
-	if not conf.CheckLibWithHeader('m', 'math.h', 'c'):
-		print "libm not found"
-		Exit(1)
-
-	if not conf.CheckLibWithHeader('GL', 'GL/gl.h', 'c'):
-		print "libGL not found"
-		Exit(1)
-
-	if conf.CheckLib('GLU', 'gluOrtho2D'):
-		if conf.CheckCHeader('GL/glu.h'):
-			pass
+	# check for GL
+	if conf.CheckLib('GL', 'glLightfv'):
+		if conf.CheckCHeader('GL/gl.h'):
+			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GL'])
 		else:
-			print "glu.h not found"
+			print "GL header file not found!"
 			Exit(1)
 	else:
-		print "libGLU not found"
+		print "GL library not found!"
 		Exit(1)
-
+	# check for GLU
+	if conf.CheckLib('GLU', 'gluOrtho2D'):
+		if conf.CheckCHeader('GL/glu.h'):
+			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLU'])
+		else:
+			print "GLU header file not found!"
+			Exit(1)
+	else:
+		print "GLU library not found!"
+		Exit(1)
 	# check for GLUT
 	if conf.CheckLib('glut', 'glutMainLoop'):
 		if conf.CheckCHeader('GL/glut.h'):
+			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
+		else:
+			print "GLUT header file not found!"
+			Exit(1)
+	else:
+		print "GLUT library not found!"
+		Exit(1)
+	# check for libm
+	if conf.CheckLib('m', 'fmod'):
+		if conf.CheckCHeader('math.h'):
 			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
 		else:
 			print "GLUT header file not found!"
