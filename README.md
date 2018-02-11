@@ -1,6 +1,8 @@
 glsnake
 -------
 
+[![Travis Build Status](https://travis-ci.org/jaqx0r/glsnake.svg?branch=master)](https://travis-ci.org/jaqx0r/glsnake)
+
 glsnake has been dubbed a "hardware accelerated executive stress toy" by its
 fans.  It merely provides a virtual Rubiks' Snake toy for the user to play
 with by rotating joints about; quite a lot of fun can be had by creating new
@@ -10,13 +12,14 @@ Read the fine manual page for usage instructions.
 
 If you've got this in a tarball, make sure you have SCons, and GLUT:
 
+    apt install libgl1-mesa-dev freeglut3-dev
+
+for example,
+
 type
 
-% scons
+    scons
 
 to get this up and running.
-
-Patches to me, bug reports to /dev/null, and flames to the web forum of your
-favourite distribution.
 
  -- Jamie Wilkinson <jaq@spacepants.org>
