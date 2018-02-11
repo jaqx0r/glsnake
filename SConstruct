@@ -3,10 +3,29 @@ SConsignFile('.sconsign')
 
 env = Environment()
 
+env.ParseConfig('pkg-config --cflags --libs gl')
 
 # configure
 if not env.GetOption("clean"):
 	conf = Configure(env)
+
+	if not conf.CheckLibWithHeader('m', 'math.h', 'c'):
+		print "libm not found"
+		Exit(1)
+
+	if not conf.CheckLibWithHeader('GL', 'GL/gl.h', 'c'):
+		print "libGL not found"
+		Exit(1)
+
+	if conf.CheckLib('GLU', 'gluOrtho2D'):
+		if conf.CheckCHeader('GL/glu.h'):
+			pass
+		else:
+			print "glu.h not found"
+			Exit(1)
+	else:
+		print "libGLU not found"
+		Exit(1)
 
 	# check for GLUT
 	if conf.CheckLib('glut', 'glutMainLoop'):
@@ -62,4 +81,4 @@ env.AppendUnique(CCFLAGS=['-W%s' % (w,) for w in warnings])
 glsnake_sources = 'glsnake.c'
 
 glsnake = env.Program('glsnake', glsnake_sources,
-					  LIBS=['glut'])
+					  LIBS=['m', 'GL', 'GLU', 'glut'])
