@@ -14,44 +14,44 @@ if not env.GetOption("clean"):
 		if conf.CheckCHeader('GL/gl.h'):
 			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GL'])
 		else:
-			print "GL header file not found!"
+			print("GL header file not found!")
 			Exit(1)
 	else:
-		print "GL library not found!"
+		print("GL library not found!")
 		Exit(1)
 	# check for GLU
 	if conf.CheckLib('GLU', 'gluOrtho2D'):
 		if conf.CheckCHeader('GL/glu.h'):
 			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLU'])
 		else:
-			print "GLU header file not found!"
+			print("GLU header file not found!")
 			Exit(1)
 	else:
-		print "GLU library not found!"
+		print("GLU library not found!")
 		Exit(1)
 	# check for GLUT
 	if conf.CheckLib('glut', 'glutMainLoop'):
 		if conf.CheckCHeader('GL/glut.h'):
 			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
 		else:
-			print "GLUT header file not found!"
+			print("GLUT header file not found!")
 			Exit(1)
 	else:
-		print "GLUT library not found!"
+		print("GLUT library not found!")
 		Exit(1)
 	# check for libm
 	if conf.CheckLib('m', 'fmod'):
 		if conf.CheckCHeader('math.h'):
 			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
 		else:
-			print "GLUT header file not found!"
+			print("GLUT header file not found!")
 			Exit(1)
 	else:
-		print "GLUT library not found!"
+		print("GLUT library not found!")
 		Exit(1)
 
 	# check whether gettimeofday() exists, and how many arguments it has
-	print "Checking for gettimeofday() semantics...",
+	print("Checking for gettimeofday() semantics...", end=' ')
 	if conf.TryCompile("""#include <stdlib.h>
 #include <sys/time.h>
 int main() {
@@ -62,7 +62,7 @@ int main() {
 	""", '.c'):
 		conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GETTIMEOFDAY',
 										'-DGETTIMEOFDAY_TWO_ARGS'])
-		print "two args"
+		print("two args")
 	else:
 		if conf.TryCompile("""#include <stdlib.h>
 		#include <sys/time.h>
@@ -70,10 +70,10 @@ int main() {
 		struct timeval tv; gettimeofday(&tv);
 		}""", '.c'):
 			conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GETTIMEOFDAY'])
-			print "one arg"
+			print("one arg")
 		else:
-			print "unknown"
-			print "gettimeofday() has unknown number of arguments"
+			print("unknown")
+			print("gettimeofday() has unknown number of arguments")
 			Exit(1)
 	
 # set warning flags
