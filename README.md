@@ -1,7 +1,7 @@
 glsnake
 -------
 
-[![Travis Build Status](https://travis-ci.org/jaqx0r/glsnake.svg?branch=master)](https://travis-ci.org/jaqx0r/glsnake)
+![ci](https://github.com/jaqx0r/glsnake/workflows/CI/badge.svg)
 
 glsnake has been dubbed a "hardware accelerated executive stress toy" by its
 fans.  It merely provides a virtual Rubiks' Snake toy for the user to play
