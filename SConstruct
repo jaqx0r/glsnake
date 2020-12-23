@@ -1,5 +1,8 @@
+from __future__ import print_function
+
 EnsureSConsVersion(0, 95)
 SConsignFile('.sconsign')
+
 
 env = Environment()
 
