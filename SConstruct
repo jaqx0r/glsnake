@@ -7,7 +7,15 @@ SConsignFile('.sconsign')
 
 env = Environment(ENV={'PATH': os.environ['PATH']})
 
-env.ParseConfig('pkg-config --cflags --libs gl glu glut')
+# Require gl
+env.ParseConfig('pkg-config --cflags --libs gl')
+
+# Merge in glu + glut pkg configs if they exist
+for pkg in ['glu', 'glut']:
+	try:
+		env.ParseConfig('pkg-config --cflags --libs ' + pkg)
+	except Exception:
+		pass
 
 # configure
 if not env.GetOption("clean"):
