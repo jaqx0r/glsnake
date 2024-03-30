@@ -594,6 +594,16 @@ static struct model_s model[] = {
        ZERO, RIGHT, LEFT, RIGHT, PIN, ZERO, RIGHT, ZERO, RIGHT, ZERO, RIGHT,
        ZERO, ZERO}}},
 
+    /* Models by stixpjr@gmail.com */
+    {"begging dog",
+      {{ZERO, RIGHT, RIGHT, RIGHT, PIN, LEFT, RIGHT, ZERO, RIGHT,
+	LEFT, PIN, RIGHT, RIGHT, ZERO, LEFT, PIN, LEFT, RIGHT, PIN,
+	RIGHT, LEFT, PIN, LEFT}}},
+    {"swan",
+      {{ZERO, PIN, ZERO, ZERO, ZERO, LEFT, ZERO, LEFT, ZERO, ZERO,
+	RIGHT, PIN, LEFT, ZERO, ZERO, LEFT, PIN, RIGHT, ZERO, ZERO,
+	LEFT, ZERO, LEFT}}},
+
 /* These models come from the website at
  * http://www.geocities.com/stigeide/snake */
 #if 0

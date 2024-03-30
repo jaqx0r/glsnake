@@ -1,12 +1,21 @@
 from __future__ import print_function
 
+import os
+
 EnsureSConsVersion(0, 95)
 SConsignFile('.sconsign')
 
+env = Environment(ENV={'PATH': os.environ['PATH']})
 
-env = Environment()
-
+# Require gl
 env.ParseConfig('pkg-config --cflags --libs gl')
+
+# Merge in glu + glut pkg configs if they exist
+for pkg in ['glu', 'glut']:
+	try:
+		env.ParseConfig('pkg-config --cflags --libs ' + pkg)
+	except Exception:
+		pass
 
 # configure
 if not env.GetOption("clean"):
