@@ -27,10 +27,6 @@
 #define ATTRIBUTE_UNUSED
 #endif /* WIN32 */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 /* HAVE_GLUT defined if we're building a standalone glsnake,
  * and not defined if we're building as an xscreensaver hack */
 #ifdef HAVE_GLUT
