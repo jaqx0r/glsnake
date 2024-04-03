@@ -59,10 +59,10 @@ if not env.GetOption("clean"):
     if conf.CheckCHeader('math.h'):
       conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
     else:
-      print("GLUT header file not found!")
+      print("math header file not found!")
       Exit(1)
   else:
-    print("GLUT library not found!")
+    print("libm library not found!")
     Exit(1)
 
   # check whether gettimeofday() exists, and how many arguments it has
