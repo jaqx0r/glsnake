@@ -9,6 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
-        run: sudo apt-get install -y scons libgl-dev libglut-dev ${{ matrix.compiler }}
+        run: sudo apt-get install -y scons libgl1-mesa-dev freeglut3-dev ${{ matrix.compiler }}
       - name: build
         run: scons
