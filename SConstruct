@@ -7,52 +7,56 @@ SConsignFile('.sconsign')
 
 env = Environment(ENV={'PATH': os.environ['PATH']})
 
-# Require gl
-env.ParseConfig('pkg-config --cflags --libs gl')
-
-# Merge in glu + glut pkg configs if they exist
-for pkg in ['glu', 'glut']:
-  try:
-    env.ParseConfig('pkg-config --cflags --libs ' + pkg)
-  except Exception:
-    pass
-
 # configure
 if not env.GetOption("clean"):
   conf = Configure(env)
 
-  # check for GL
-  if conf.CheckLib('GL', 'glLightfv'):
-    if conf.CheckCHeader('GL/gl.h'):
-      conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GL'])
+  # Require gl
+  try:
+    env.ParseConfig('pkg-config --cflags --libs gl')
+    print("pkg-config provided libGL")
+  except OSError:
+    # check for GL
+    if conf.CheckLib('GL', 'glLightfv'):
+      if conf.CheckCHeader('GL/gl.h'):
+        conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GL'])
+      else:
+        print("GL header file not found!")
+        Exit(1)
     else:
-      print("GL header file not found!")
+      print("GL library not found!")
       Exit(1)
-  else:
-    print("GL library not found!")
-    Exit(1)
 
-  # check for GLU
-  if conf.CheckLib('GLU', 'gluOrtho2D'):
-    if conf.CheckCHeader('GL/glu.h'):
-      conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLU'])
+  try:
+    env.ParseConfig('pkg-config --cflags --libs glu')
+    print("pkg-config provided libglu")
+  except OSError:
+    # check for GLU
+    if conf.CheckLib('GLU', 'gluOrtho2D'):
+      if conf.CheckCHeader('GL/glu.h'):
+        conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLU'])
+      else:
+        print("GLU header file not found!")
+        Exit(1)
     else:
-      print("GLU header file not found!")
+      print("GLU library not found!")
       Exit(1)
-  else:
-    print("GLU library not found!")
-    Exit(1)
 
-  # check for GLUT
-  if conf.CheckLib('glut', 'glutMainLoop'):
-    if conf.CheckCHeader('GL/glut.h'):
-      conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
+  try:
+    env.ParseConfig('pkg-config --cflags --libs glut')
+    print("pkg-config provided libglut")
+    conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
+  except OSError:
+    # check for GLUT
+    if conf.CheckLib('glut', 'glutMainLoop'):
+      if conf.CheckCHeader('GL/glut.h'):
+        conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GLUT'])
+      else:
+        print("GLUT header file not found!")
+        Exit(1)
     else:
-      print("GLUT header file not found!")
+      print("GLUT library not found!")
       Exit(1)
-  else:
-    print("GLUT library not found!")
-    Exit(1)
 
   # check for libm
   if conf.CheckLib('m', 'fmod'):
@@ -76,7 +80,7 @@ int main() {
 }
 """, '.c'):
     conf.env.AppendUnique(CPPFLAGS=['-DHAVE_GETTIMEOFDAY',
-				    '-DGETTIMEOFDAY_TWO_ARGS'])
+                                    '-DGETTIMEOFDAY_TWO_ARGS'])
     print("two args")
   else:
     if conf.TryCompile("""#include <stdlib.h>
@@ -93,19 +97,19 @@ int main() {
 
 # set warning flags
 warnings = ['',
-	    'all',
-	    'error',
-	    'aggregate-return',
-	    'cast-align',
-	    'cast-qual',
-	    'nested-externs',
-	    'shadow',
-	    'bad-function-cast',
-	    'write-strings'
-	    ]
+            'all',
+            'error',
+            'aggregate-return',
+            'cast-align',
+            'cast-qual',
+            'nested-externs',
+            'shadow',
+            'bad-function-cast',
+            'write-strings'
+            ]
 env.AppendUnique(CCFLAGS=['-W%s' % (w,) for w in warnings])
 
 glsnake_sources = 'glsnake.c'
 
 glsnake = env.Program('glsnake', glsnake_sources,
-		      LIBS=['m', 'GL', 'GLU', 'glut'])
+                      LIBS=['m', 'GL', 'GLU', 'glut'])
