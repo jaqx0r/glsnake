@@ -12,7 +12,7 @@ Read the fine manual page for usage instructions.
 
 If you've got this in a tarball, make sure you have SCons, and GLUT:
 
-    apt install libgl1-mesa-dev freeglut3-dev
+    apt install libgl-dev libglut-dev
 
 for example,
 
